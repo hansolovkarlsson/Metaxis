@@ -431,6 +431,9 @@ int header_read(Grammar *g, const char *src, const char *file,
 static int use_file(Grammar *g, const char *path, const char *from, char **err)
 {
     if (++g->nfiles > 64) { *err = xstrdup("@use nested more than 64 deep"); return -1; }
+    /* Depth, not a total: two files that both use a third meet it twice and
+       neither is nested in the other. 64 is the depth Solveig allows an
+       @include, which is the number Proto took for the same reason. */
 
     char *full;
     const char *slash = strrchr(from, '/');
@@ -447,6 +450,7 @@ static int use_file(Grammar *g, const char *path, const char *from, char **err)
                     full, line_at(src, at));
         return -1;
     }
+    g->nfiles--;
     return 0;
 }
 

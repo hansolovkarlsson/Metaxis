@@ -7,6 +7,11 @@ grammars it declares keep meeting.
 Everything on this page is implemented and is exercised by `examples/`.
 What is not is under [Not done](#not-done), at the bottom.
 
+**This page argues; [REFERENCE.md](REFERENCE.md) states.** Every directive,
+kind, level, template form, lexer decision and error message is there,
+exhaustively. Read that one to write a `.pt`; read this one to know why it is
+shaped the way it is, and what it cost.
+
 ## The one rule
 
 > **Everything a directive says about text — the text it recognises and the

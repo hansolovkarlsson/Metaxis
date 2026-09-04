@@ -28,6 +28,13 @@ Putting the mention in quotes spends nothing, because a string's boundaries are
 the one thing every reader already agrees on. What it buys, and what it costs,
 is [docs/notation.md](docs/notation.md).
 
+## Reading it
+
+[docs/REFERENCE.md](docs/REFERENCE.md) states what every part of a `.pt` file
+means — directives, patterns, kinds, levels, templates, both modes, the command
+line and every error message. [docs/notation.md](docs/notation.md) says why it
+is shaped that way and what it cost.
+
 ## Build
 
 ```
@@ -92,15 +99,17 @@ commit.
 ## Layout
 
 ```
-include/pt.h   types and the seams
-src/header.c   the fixed half: directives, and nothing a file can reach
-src/lex.c      the lexer the header wrote
-src/expand.c   Pratt with backtracking, templates, and text mode
-cmd/pt.c       pt [-o out] [-g] file.pt
-lib/           files meant to be @use'd
-examples/      .pt beside the .out it must still produce
-tests/errors.sh  what a file gets told when it is wrong
-tests/hygiene.sh what a template that is a string cannot do, compiled and run
+prototype/include/pt.h   types and the seams
+prototype/src/header.c   the fixed half: directives, and nothing a file can reach
+prototype/src/lex.c      the lexer the header wrote
+prototype/src/expand.c   Pratt with backtracking, templates, and text mode
+prototype/cmd/pt.c       pt [-o out] [-g] file.pt
+lib/                     files meant to be @use'd
+examples/                .pt beside the .out it must still produce
+tests/errors.sh          what a file gets told when it is wrong
+tests/hygiene.sh         what a template that is a string cannot do, run
+docs/REFERENCE.md        every part of a .pt file, exhaustively
+docs/notation.md         the one rule, what falls out of it, and what it costs
 ```
 
 ## Proto is read-only

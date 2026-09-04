@@ -402,16 +402,26 @@ static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char 
             i = ce;
             continue;
         }
+        /* Longest leading word first, so `---` is tried before `-` and text
+           mode munches the way the lexer does. Declaration order breaks a tie
+           between two rules whose first word is the same length. */
         char *res = NULL;
-        size_t end = i;
-        for (int k = 0; k < g->nrule && !res; k++) {
+        size_t end = i, best = 0;
+        for (int k = 0; k < g->nrule; k++) {
             Rule *r = &g->rule[k];
             if (r->led || r->el[0].kind != EL_WORD) continue;
             size_t n = strlen(r->el[0].word);
-            if (i + n > len || memcmp(s + i, r->el[0].word, n)) continue;
-            res = text_rule(g, r, s, len, i, &end, depth, err);
-            if (*err) return NULL;
+            if (n > best && i + n <= len && !memcmp(s + i, r->el[0].word, n)) best = n;
         }
+        for (size_t n = best; n > 0 && !res; n--)
+            for (int k = 0; k < g->nrule && !res; k++) {
+                Rule *r = &g->rule[k];
+                if (r->led || r->el[0].kind != EL_WORD) continue;
+                if (strlen(r->el[0].word) != n) continue;
+                if (i + n > len || memcmp(s + i, r->el[0].word, n)) continue;
+                res = text_rule(g, r, s, len, i, &end, depth, err);
+                if (*err) return NULL;
+            }
         if (res) { buf_str(&out, res); i = end; continue; }
         buf_ch(&out, s[i]);
         i++;

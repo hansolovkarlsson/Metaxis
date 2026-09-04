@@ -11,9 +11,16 @@
 @syntax "**" t:text "**"          => "<strong>{t}</strong>"
 @syntax "[[" t:text "|" u:text "]]" => "<a href=\"{u}\">{t}</a>"
 @syntax "~"                       => "&nbsp;"
+
+; Three dashes, declared shortest first on purpose. Text mode munches the way
+; the lexer does -- the longest leading word that matches wins, and the order
+; they were declared in breaks a tie between two of the same length and decides
+; nothing else. Declared in this order and picked in the other one.
+@syntax "-"                       => "&#8209;"
+@syntax "--"                      => "&ndash;"
 @syntax "---"                     => "&mdash;"
 
-; Three of those five are worth a second look.
+; Three of these are worth a second look.
 ;
 ; `"|"` inside the link pattern is the character Proto keeps for a block's
 ; parameters and can never hand to a file. Here it is a separator inside one
@@ -33,6 +40,7 @@
 The //quick// brown fox jumps over the **lazy** dog.
 He was late --- twelve~o'clock, and the gate still shut.
 See [[the manual|https://example.com/manual]] for the rest.
+Pages 3-4, an aside -- and a longer one --- than that.
 
 Nested, because a hole's text is expanded in its turn:
 **a //loud and slanted// claim**.

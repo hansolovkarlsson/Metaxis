@@ -2,10 +2,11 @@
 
 CC      ?= cc
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra -Wno-unused-parameter
-CPPFLAGS = -Iinclude -D_POSIX_C_SOURCE=200809L
+CPPFLAGS = -Iprototype/include -D_POSIX_C_SOURCE=200809L
 
-SRC  = src/util.c src/header.c src/lex.c src/expand.c
-OBJ  = $(SRC:src/%.c=build/%.o) build/pt.o
+SRC  = prototype/src/util.c prototype/src/header.c \
+       prototype/src/lex.c prototype/src/expand.c
+OBJ  = $(SRC:prototype/src/%.c=build/%.o) build/pt.o
 BIN  = bin/pt
 
 EXAMPLES = $(wildcard examples/*.pt)
@@ -17,11 +18,11 @@ $(BIN): $(OBJ)
 	@mkdir -p bin
 	$(CC) $(CFLAGS) -o $@ $(OBJ)
 
-build/%.o: src/%.c include/pt.h
+build/%.o: prototype/src/%.c prototype/include/pt.h
 	@mkdir -p build
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-build/pt.o: cmd/pt.c include/pt.h
+build/pt.o: prototype/cmd/pt.c prototype/include/pt.h
 	@mkdir -p build
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
