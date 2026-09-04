@@ -1,0 +1,73 @@
+; pascal.pt -- Pascal in, C out. The point of this one is that neither
+; language is the tool's, and the tool's own strings are unaffected by either.
+;
+; Pascal's comments are `{ }` and `(* *)`, its strings are `'…'` with a doubled
+; quote for an apostrophe, its assignment is `:=` and its equality is `=`, and
+; `and`, `or`, `not`, `div` and `mod` are words rather than punctuation. Every
+; one of those is a spelling Proto's core had already spent. Here each is a
+; string, and a string is the one thing whose end every reader can find.
+
+@comment "{" "}"
+@comment "(*" "*)"
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@token string "'([^']|'')*'"
+
+@separator ";" => ";\n"
+
+@syntax "(" e ")"                              => "({e})"
+
+@syntax a ":=" b                  10           => "{a} = {b}"
+@syntax a "=" b                   40           => "({a} == {b})"
+@syntax a "<>" b                  40           => "({a} != {b})"
+@syntax a "<" b                   40           => "({a} < {b})"
+@syntax a ">" b                   40           => "({a} > {b})"
+@syntax a "+" b                   60           => "({a} + {b})"
+@syntax a "-" b                   60           => "({a} - {b})"
+@syntax a "*" b                   70           => "({a} * {b})"
+@syntax a "div" b                 70           => "({a} / {b})"
+@syntax a "mod" b                 70           => "({a} % {b})"
+@syntax "not" a                   80           => "(!{a})"
+@syntax a "and" b                 30           => "({a} && {b})"
+@syntax a "or" b                  25           => "({a} || {b})"
+
+; A declared word is still not reserved. `mod` above is a word between two
+; operands and a name everywhere else, which is why the body can have a
+; variable called `mod` without this line and that one arguing.
+
+@syntax "begin" body:rest "end"                => "{{\n{body}\n}}"
+@syntax "if" c "then" t                        => "if ({c}) {t}"
+@syntax "if" c "then" t "else" f               => "if ({c}) {t} else {f}"
+@syntax "while" c "do" b                       => "while ({c}) {b}"
+@syntax "writeln" "(" x ")"                    => "puts({x})"
+
+; The hole before a word must be able to stop at it. `i:name` is why this
+; pattern's `:=` is the `for`'s and not the infix rule's -- a kind is how a
+; hole says how far it reaches, and it is the one thing quoting does not do
+; by itself.
+@syntax "for" i:name ":=" a "to" b "do" s
+    => "for (int {i} = {a}; {i} <= {b}; {i}++) {s}"
+
+@end
+
+{ Everything below is Pascal. Nothing below is Prototype's. }
+
+begin
+  total := 0;
+  mod := 3;
+  for i := 1 to 20 do
+    if (i mod mod = 0) and (i <> 9) then
+      total := total + i
+    else
+      total := total - 1;
+  if not (total > 100) then writeln('it''s middling') else writeln('big')
+end
+
+; One thing this file does not do, and the omission is the interesting part.
+; `'it''s middling'` reaches the output as Pascal spelled it, because a
+; `string` hole splices the source text it matched and nothing translates a
+; literal unless a rule says so. C wants `"it's middling"`. That is a seventh
+; rule -- a `@syntax` over the `string` token class -- and its absence here is
+; what a text template looks like when it is honest: the tool moved the token,
+; it did not understand it.

@@ -1,0 +1,39 @@
+; tour.pt -- the whole idea in one file. Emits Solveig, the way Proto does.
+;
+; The header mentions text. The body is text. Quotes are what tell the two
+; apart, on both sides of the arrow, and they are the only thing that has to.
+
+@token  number "#-?[0-9]+"
+@token  name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator "." => ".\n"
+
+@syntax a "+" b           60        => "{a}:add({b})"
+@syntax a "-" b           60        => "{a}:sub({b})"
+@syntax a "<" b           40        => "{a}:lessThan({b})"
+@syntax a "=" b           10 right  => "{a} := {b}"
+
+; A pattern beginning with a word is a prefix rule and needs no level. One
+; beginning with a hole is infix or postfix and does. There is no second
+; directive saying which -- the shape says it.
+@syntax "unless" c "then" t:block            => "{c}:not:ifTrue({t})"
+@syntax "if" c "then" t:block "else" f:block => "{c}:ifElse({t}, {f})"
+
+; Words at both ends: a circumfix. Proto has no directive with this shape,
+; because there a directive's name is what named the shape.
+@syntax "|" a "|"                    => "{a}:abs"
+
+; And a lone bar is a bar. It is one character inside a string; it has nothing
+; to do with the bar that opens a block's temporaries, six lines down.
+@syntax a "|" b           20        => "{a}:bitOr({b})"
+
+n = #3.
+unless n < #1 then { n:print }.                 ; #3
+if n < #5 then { "small":print } else { "big":print }.
+|#0 - #7|:print.                                ; #7
+(#5 | #2):print.                                ; #7, the other way
+
+; `if`, `then` and `unless` are not reserved -- they are matched by position,
+; never by the lexer. Here `then` is an ordinary name, in the file that
+; declared it as a word.
+then = #1.
+(then + n):print.                               ; #4

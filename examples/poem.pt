@@ -1,0 +1,36 @@
+; poem.pt -- @mode text. The body is prose, not a program: a rule fires where
+; it matches and everything else is copied through untouched.
+;
+; Same directives, same rule about quoting. The only difference is what happens
+; to text no rule claimed -- an error in expression mode, output in this one.
+
+@mode text
+@comment "%%" eol
+
+@syntax "//" t:rest "//"          => "<em>{t}</em>"
+@syntax "**" t:rest "**"          => "<strong>{t}</strong>"
+@syntax "[[" t "|" u "]]"         => "<a href=\"{u}\">{t}</a>"
+@syntax "~"                       => "&nbsp;"
+@syntax "---"                     => "&mdash;"
+
+; Three of those five are worth a second look.
+;
+; `"|"` inside the link pattern is the character Proto keeps for a block's
+; parameters and can never hand to a file. Here it is a separator inside one
+; rule's pattern and means nothing anywhere else.
+;
+; `"~"` is a pattern with a word and no hole at all -- neither prefix, infix
+; nor anything Proto has a directive for.
+;
+; `"<a href=\"{u}\">{t}</a>"` is the whole argument in one line. The template
+; contains quotes; it is a string; a string escapes a quote as `\"`; and there
+; is no second reader, no second rule and no place where knowing what kind of
+; thing you are looking at comes before finding where it ends.
+
+@end
+
+%% This line is a comment and does not reach the output.
+
+The //quick// brown fox jumps over the **lazy** dog.
+He was late --- twelve~o'clock, and the gate still shut.
+See [[the manual|https://example.com/manual]] for the rest.

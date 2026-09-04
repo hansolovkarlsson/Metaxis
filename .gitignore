@@ -1,0 +1,6 @@
+# Yours, not the repository's -- comments, thoughts and experiments
+scratch/
+
+# Editor / OS
+.DS_Store
+*.swp

@@ -1,0 +1,36 @@
+; reserved.pt -- nothing is reserved, including Prototype's own spellings.
+;
+; The point of the quoting rule is that a directive cannot be read as the thing
+; it declares. The test of it is to declare, one at a time, every character
+; Prototype uses to write a directive with.
+
+@token name "[A-Za-z_][A-Za-z0-9_]*"
+@separator "\n"
+
+@syntax a "@" b        50        => "{a}:at({b})"        ; the directive sigil
+@syntax a "=>" b       15        => "{a}:then({{ {b} }})" ; the template arrow
+@syntax a "." m:name   95        => "{a}:{m}"            ; Proto's terminator
+@syntax a ":" b        90        => "{a}:pair({b})"      ; the send colon
+@syntax "<" a ">"                => "{a}:tagged"         ; Proto's hole brackets
+@syntax a "\"" b       50        => "{a}:quote({b})"     ; the quote itself
+@syntax a "{" b "}"    50        => "{a}:brace({b})"     ; and the splice braces
+
+@end
+
+env@"home".print
+ready => "go".print
+<x>.print
+a " b
+k{v}.print
+
+; The last two are the only interesting cases.
+;
+; `"\""` is a string containing a quote, spelled the way every string in every
+; language spells one. `"{" ` and `"}"` are strings containing a brace; where
+; the template needs a literal brace it writes `{{` and `}}`, which is the one
+; extra escaping rule this notation adds and it is confined to templates.
+;
+; There is no rule beyond those two, no escape hatch, and no place where the
+; reader has to know what kind of thing it is looking at before it can find the
+; end of it. That is the argument: the boundary between what a directive says
+; and what it says it about is a boundary the reader already had.

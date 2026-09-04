@@ -1,0 +1,79 @@
+; clike.pt -- the six things Proto's lib/clike.pro lists as impossible.
+;
+; That file's header says what C has and a Proto dialect cannot take: `;`
+; between statements, `x++` and `a[i]` and `p->f`, a lone `|`, `for`, and `42`
+; without a `#`. Five of the six are impossible for one reason -- the spelling
+; collides with something Proto's own grammar had already spent -- and the
+; sixth is the lexer's rule about literals. All six are written below. The
+; first five because a spelling inside a string collides with nothing; the
+; sixth because a literal is a declaration here too.
+;
+; Output is Solveig, so the comparison with Proto/examples/clike.pro is direct.
+
+; `;` opens a comment in Proto, which is why `;` cannot end a statement there.
+; The comment opener is declared here, so `;` is free the moment this line says
+; something else is the opener. These two lines are themselves still written in
+; `;` comments: the header is read top to bottom and a declaration takes effect
+; after it, which is a rule that has to be stated and is stated in notation.md.
+@comment "//" eol
+@comment "/*" "*/"
+
+@token number "0x[0-9a-fA-F]+|[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ".\n"
+
+// From here down the file is C's, including its comments.
+
+// Parentheses as an ordinary rule rather than as core syntax.
+@syntax "(" e ")"                              => "({e})"
+
+// `.` is Proto's statement terminator and cannot be lent out. Here it is a
+// field access, and the file that uses it terminates statements with `;`.
+@syntax a "." m:name              95           => "{a}:{m}"
+
+// Postfix and index. Proto has prefix and infix and nothing else, because the
+// directive's name is what fixed the shape. Here the shape is the pattern's.
+@syntax a "[" i "]"               95           => "{a}:at({i})"
+@syntax a "++"                    95           => "{a} := {a}:add(1)"
+@syntax a "->" m:name             95           => "{a}:deref:{m}"
+
+// A lone `|`. Proto keeps it for a block's parameters and has nothing to lend.
+@syntax a "|" b                   20           => "{a}:bitOr({b})"
+@syntax a "||" b                  25           => "{a}:or({{ {b} }})"
+@syntax a "&&" b                  30           => "{a}:and({{ {b} }})"
+@syntax "!" a                     80           => "{a}:not"
+
+@syntax a "=" b                   10 right     => "{a} := {b}"
+@syntax a "==" b                  40           => "{a}:equals({b})"
+@syntax a "!=" b                  40           => "{a}:notEquals({b})"
+@syntax a "<" b                   40           => "{a}:lessThan({b})"
+@syntax a "<=" b                  40           => "{a}:lessOrEqual({b})"
+@syntax a ">" b                   40           => "{a}:greaterThan({b})"
+@syntax a "+" b                   60           => "{a}:add({b})"
+@syntax a "-" b                   60           => "{a}:sub({b})"
+@syntax a "%" b                   70           => "{a}:mod({b})"
+
+@syntax "while" "(" c ")" b:block              => "{{ {c} }}:whileTrue({b})"
+@syntax "if" "(" c ")" t:block                 => "{c}:ifTrue({t})"
+@syntax "if" "(" c ")" t:block "else" f:block  => "{c}:ifElse({t}, {f})"
+
+// `for`, the one loop C has and Proto does not. Three `;` inside one pattern,
+// which is the entire demonstration: the character that ends a statement in
+// this file's body appears three times in the declaration of a form, and there
+// is nothing to disambiguate because there was never an ambiguity.
+@syntax "for" "(" init ";" c ";" step ")" b:block
+    => "{init}.\n{{ {c} }}:whileTrue({{ {b}. {step} }})"
+
+@end
+
+total = 0;
+
+for (i = 0; i < 20; i++) {
+    if (i % 3 == 0 && i != 9) { total = total + i; }
+    else { total = total - 1; }
+}
+
+total.print;                    // 40
+
+flags = 0x0c | 3;
+if (!(flags == 0) && flags <= 0x0f) { flags.print; }
