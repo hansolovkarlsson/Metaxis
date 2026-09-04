@@ -10,6 +10,32 @@ argued away.*
 
 Newest first.
 
+## Groups in text mode, and the matcher that made them possible
+
+`[ … ]`, `[ … ]*` and `[ … ]+` work in `@mode text`. `examples/poem.pt` writes a
+markdown image whose title is optional and a shortcode whose argument list is
+not, one rule each, and both use a code template because both need to ask
+something — whether the optional part was there, and what each turn was.
+
+**What it cost was the matcher.** Text mode was a single forward scan: walk the
+elements once, find a hole's end by looking for the next literal word. A group
+makes that impossible, because an optional part may or may not be there and what
+really follows a hole is not known until the rest of the pattern has been tried.
+So matching is now a search — take an alternative, try the whole remainder, put
+the cursor and every binding back on failure — with a step budget against a
+pattern that has too many ways to match.
+
+**And one bound, which took two attempts.** A hole may not span the word that
+*closes* the rule. The first version said *every word still to come*, which
+fixed the defect it was written for and quietly broke
+`"![" alt "](" src [ " " title ] ")"` — the group's space is a later word, and
+`alt` is allowed to contain spaces. The image rule simply stopped firing, and
+the output looked like prose that no rule had claimed, which is what text mode
+does with anything it does not recognise. The closer is the one word whose
+arrival means this construct has ended.
+
+*Verified at 9 examples, 27 error cases, `tests/hygiene.sh`; `make check` clean.*
+
 ## `terminated`: a rule that says its output ends a statement
 
 The output separator used to be joined between every pair of statements,

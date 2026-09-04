@@ -25,6 +25,24 @@
 ; the lexer does -- the longest leading word that matches wins, and the order
 ; they were declared in breaks a tie between two of the same length and decides
 ; nothing else. Declared in this order and picked in the other one.
+; A part that need not be there, and a part that repeats -- in prose. Until
+; groups reached text mode the first of these was two rules and the second was
+; not writable at all. Both use the other kind of template, because both need to
+; ask something: whether the optional part was there, and what each turn was.
+@syntax "![" alt:text "](" src:text [ " " title:text ] ")"
+    => {
+        emit "<img src=\"" + src + "\" alt=\"" + alt + "\""
+        if matched(title) { emit " title=" + title }
+        emit ">"
+    }
+
+@syntax "{{" n:text [ "," a:text ]* "}}"
+    => {
+        emit "<call name=\"" + n + "\">"
+        for x in a { emit "<arg>" + x + "</arg>" }
+        emit "</call>"
+    }
+
 @syntax "-"                       => "&#8209;"
 @syntax "--"                      => "&ndash;"
 @syntax "---"                     => "&mdash;"
@@ -51,6 +69,8 @@ He was late --- twelve~o'clock, and the gate still shut.
 See [[the manual|https://example.com/manual]] for the rest.
 Or just [[https://example.com]], and a stray | pipe well after it.
 Pages 3-4, an aside -- and a longer one --- than that.
+![a cat](cat.png) beside ![a dog](dog.png "Good dog").
+Shortcodes {{plain}} and {{sum,one,two,three}} in one rule each.
 
 Nested, because a hole's text is expanded in its turn:
 **a //loud and slanted// claim**.

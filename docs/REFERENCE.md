@@ -460,20 +460,26 @@ If the body does not parse, the error names the furthest token reached:
 else is copied through unchanged.
 
 - Only **nud** rules apply. A led rule has nothing to continue.
-- **A group is refused**: `a group belongs to @mode expression`, reported before
-  anything is scanned. [ROADMAP.md](ROADMAP.md) 1 says what it would take.
+- **Matching is a search, not a scan.** A rule takes an alternative, tries the
+  whole remainder of its pattern, and puts the cursor and every binding back if
+  it fails. That is what groups need — an optional part may or may not be there,
+  so what follows a hole is not known until the rest has been tried — and it is
+  bounded by a budget (`this rule has too many ways to match`).
+- **Groups work**, `[ … ]`, `[ … ]*` and `[ … ]+` with `sep` and `join`, exactly
+  as in expression mode (§4.4). A hole inside a repeated group is a list, which
+  a code template can loop over.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else — `examples/poem.pt`
   declares `-`, `--` and `---` in that order and `---` still wins.
-- **Every hole is text**, whatever kind it was given, and stops at the first
-  occurrence of the pattern's next word. A hole with no word after it takes the
-  rest of the enclosing text.
-- **A hole also stops at every other word still to come in its pattern**, and if
-  one of those is reached first the rule does not match. In
-  `"[[" t "|" u "]]"`, a `]]` found before the `|` means the construct has
-  already ended, so the rule fails and the next one is tried — rather than `t`
-  swallowing the close and the search running on to whatever `|` appears later
-  in the file. `examples/poem.pt` pins both halves.
+- **Every hole is text**, whatever kind it was given, and takes the shortest
+  run that lets the rest of the pattern match. A hole with nothing after it
+  takes the rest of the enclosing text.
+- **A hole may not span the word that closes the rule** — the last literal word
+  in its pattern, groups looked into. In `"[[" t "|" u "]]"`, a `]]` reached
+  before the `|` means the construct has already ended, so the rule fails and
+  the next one is tried, rather than `t` swallowing the close and the search
+  running on to whatever `|` appears later in the file. `examples/poem.pt` pins
+  it, and [POSTMORTEM.md](POSTMORTEM.md) 4 says what it cost to find.
 - **A hole's text is expanded in its turn**, so `**a //slanted// claim**` nests.
   Depth is capped at 64 (`a text rule expands into itself`).
 - If a rule's pattern does not complete, nothing is consumed and the next rule is
@@ -706,9 +712,9 @@ Every message the tool can produce, and what it means.
 | `no rule reads 'x' here` | the parser stopped; `x` is the furthest token it reached |
 | `the file ends in the middle of something` | as above, at end of file |
 | `a 'text' hole belongs to @mode text` | §4.3 |
-| `a group belongs to @mode expression` | §7 |
 | `the grammar recurses without consuming anything` | 400 deep — §6.2 |
 | `a text rule expands into itself` | 64 deep — §7 |
+| `this rule has too many ways to match` | a text rule's search ran past its budget — §7 |
 | `no fresh name for '{~t}' is free` | 100000 candidates were all taken — §8.1 |
 
 ---
@@ -720,6 +726,7 @@ Every message the tool can produce, and what it means.
 | `@use` nesting | 64 |
 | group nesting | 16 |
 | loop nesting in a code template | 32 |
+| text-mode match attempts per rule | 200000 |
 | expression recursion | 400 |
 | text-mode expansion depth | 64 |
 | fresh-name attempts | 100000 |

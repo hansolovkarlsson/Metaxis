@@ -4,6 +4,8 @@ He was late &mdash; twelve&nbsp;o'clock, and the gate still shut.
 See <a href="https://example.com/manual">the manual</a> for the rest.
 Or just <a href="https://example.com">https://example.com</a>, and a stray | pipe well after it.
 Pages 3&#8209;4, an aside &ndash; and a longer one &mdash; than that.
+<img src="cat.png" alt="a cat"> beside <img src="dog.png" alt="a dog" title="Good dog">.
+Shortcodes <call name="plain"></call> and <call name="sum"><arg>one</arg><arg>two</arg><arg>three</arg></call> in one rule each.
 
 Nested, because a hole's text is expanded in its turn:
 <strong>a <em>loud and slanted</em> claim</strong>.

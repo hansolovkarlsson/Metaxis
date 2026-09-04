@@ -12,6 +12,11 @@ are grouped by the day the work happened, newest first.
 
 The first day. The notation, the tool, and everything below.
 
+**Groups in text mode.** `[ … ]`, `[ … ]*` and `[ … ]+` work under `@mode text`.
+Matching there is now a search with backtracking rather than a single forward
+scan, and a hole takes the shortest run that lets the rest of the pattern match
+without spanning the word that closes the rule.
+
 **`terminated`.** A word after a template, saying the rule's output already ends
 a statement so no separator is joined after it. A hole may still be called
 `terminated`.

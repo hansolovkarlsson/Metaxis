@@ -510,52 +510,158 @@ static size_t find_word(const char *s, size_t len, size_t pos, const char *w)
     return len;
 }
 
+/* Matching a text-mode pattern is a search, not a scan.
+ *
+ * It was a scan until groups arrived: walk the elements once, and find a hole's
+ * end by looking for the next literal word. A group makes that impossible --
+ * an optional part may or may not be there, so what really follows a hole is
+ * not known until the rest of the pattern has been tried. So the matcher takes
+ * an alternative, tries the whole remainder, and puts the cursor and every
+ * binding back if it fails.
+ *
+ * `Cont` is what is left to match after the current array runs out. When it
+ * carries a group, that array was one turn of a repetition and the choice at
+ * the end of it is another turn or moving on.
+ */
+typedef struct Cont {
+    Elem  *el; int nel; int k;   /* continue here                       */
+    Elem  *grp;                  /* the turn just finished, if any      */
+    int    turns;
+    struct Cont *up;
+} Cont;
+
+typedef struct {
+    Grammar *g;
+    Rule    *r;
+    const char *s;
+    size_t   len;
+    Bind    *b;
+    int      nb;
+    int      depth, steps;
+    size_t   end;
+    char    *closer;
+    char   **err;
+} TM;
+
+static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
+                    int append, const char *join);
+
+/* The word that closes the rule: the last literal one in its pattern, groups
+   looked into. **A hole may not span it.** Without that, `"[[" t "|" u "]]"`
+   given `[[here]] and a bar|pipe` lets `t` walk past the `]]` it should have
+   stopped at and take the `|` from three words later, which is the defect
+   POSTMORTEM.md 4 records.
+
+   The first version of this bound was *every* word still to come, which is
+   stricter and was wrong: in `"![" alt "](" src [ " " title ] ")"` the group's
+   space is a later word, and `alt` is allowed to contain spaces. The closer is
+   the one word whose arrival means this construct has ended. */
+static char *closing_word(Elem *el, int nel)
+{
+    char *last = NULL;
+    for (int i = 0; i < nel; i++) {
+        if (el[i].kind == EL_WORD) last = el[i].word;
+        else if (el[i].kind == EL_GROUP) {
+            char *w = closing_word(el[i].sub, el[i].nsub);
+            if (w) last = w;
+        }
+    }
+    return last;
+}
+
+static Bind *tm_save(TM *t)
+{
+    Bind *c = xmalloc(sizeof *c * (size_t)(t->nb + 1));
+    memcpy(c, t->b, sizeof *c * (size_t)t->nb);
+    return c;
+}
+
+static void tm_load(TM *t, Bind *c)
+{
+    memcpy(t->b, c, sizeof *c * (size_t)t->nb);
+}
+
+static int tm_done(TM *t, size_t pos, Cont *cont, int append, const char *join)
+{
+    if (!cont) { t->end = pos; return 1; }
+
+    if (cont->grp) {
+        Elem *g = cont->grp;
+        size_t p2 = pos;
+        int    ok = 1;
+        if (g->sep) {
+            size_t n = strlen(g->sep);
+            if (pos + n <= t->len && !memcmp(t->s + pos, g->sep, n)) p2 = pos + n;
+            else ok = 0;
+        }
+        if (ok) {
+            Cont c2 = { cont->el, cont->nel, cont->k, g, cont->turns + 1, cont->up };
+            Bind *snap = tm_save(t);
+            if (tm_match(t, g->sub, g->nsub, 0, p2, &c2, 1, g->join)) return 1;
+            tm_load(t, snap);
+        }
+    }
+    return tm_match(t, cont->el, cont->nel, cont->k, pos, cont->up, append, join);
+}
+
+static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
+                    int append, const char *join)
+{
+    if (--t->steps < 0) {
+        if (!*t->err) *t->err = xfmt("%s:%d: this rule has too many ways to match",
+                                     t->r->file, t->r->line);
+        return 0;
+    }
+    if (k == nel) return tm_done(t, pos, cont, append, join);
+
+    Elem *e = &el[k];
+
+    if (e->kind == EL_WORD) {
+        size_t n = strlen(e->word);
+        if (pos + n > t->len || memcmp(t->s + pos, e->word, n)) return 0;
+        return tm_match(t, el, nel, k + 1, pos + n, cont, append, join);
+    }
+
+    if (e->kind == EL_GROUP) {
+        Bind *snap = tm_save(t);
+        Cont  c    = { el, nel, k + 1, e->rep == REP_ONE ? NULL : e, 1, cont };
+        if (tm_match(t, e->sub, e->nsub, 0, pos, &c,
+                     e->rep == REP_ONE ? append : 1,
+                     e->rep == REP_ONE ? join : e->join)) return 1;
+        tm_load(t, snap);
+        if (e->rep == REP_PLUS) return 0;
+        return tm_match(t, el, nel, k + 1, pos, cont, append, join);
+    }
+
+    /* A hole. Shortest first, and never past the word that closes the rule. */
+    size_t cap = t->closer ? find_word(t->s, t->len, pos, t->closer) : t->len;
+    for (size_t stop = pos; stop <= cap; stop++) {
+        Bind *snap = tm_save(t);
+        char *v = text_expand(t->g, t->s + pos, stop - pos, t->depth + 1, t->err);
+        if (!v) return 0;
+        bind_put(t->b, t->nb, e->hole, v, append, join, LEVEL_ATOM);
+        if (tm_match(t, el, nel, k + 1, stop, cont, append, join)) return 1;
+        tm_load(t, snap);
+        if (cap == t->len && stop == t->len) break;
+    }
+    return 0;
+}
+
 static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
                        size_t i, size_t *end, int depth, char **err)
 {
-    Bind *b  = xmalloc(sizeof *b * (size_t)(r->nel + 1));
     int   nb = 0;
-    size_t pos = i;
-    memset(b, 0, sizeof *b * (size_t)(r->nel + 1));
+    Bind *b  = xmalloc(sizeof *b * (size_t)(count_holes(r->el, r->nel) + 1));
+    bind_pre(r->el, r->nel, b, &nb, 0);
 
-    for (int k = 0; k < r->nel; k++) {
-        Elem *e = &r->el[k];
-        if (e->kind == EL_WORD) {
-            size_t n = strlen(e->word);
-            if (pos + n > len || memcmp(s + pos, e->word, n)) return NULL;
-            pos += n;
-            continue;
-        }
-        const char *term = k + 1 < r->nel && r->el[k + 1].kind == EL_WORD
-                         ? r->el[k + 1].word : NULL;
-        size_t stop;
-        if (!term) stop = len;
-        else {
-            stop = find_word(s, len, pos, term);
-            if (stop == len) return NULL;
+    TM t;
+    memset(&t, 0, sizeof t);
+    t.g = g; t.r = r; t.s = s; t.len = len;
+    t.b = b; t.nb = nb; t.depth = depth; t.steps = 200000; t.err = err;
+    t.closer = closing_word(r->el, r->nel);
 
-            /* And it stops at the earliest of *every* word still to come in
-               this pattern, not only at the next one. A `]]` reached before the
-               `|` that was being looked for means the construct this rule reads
-               has already ended, and the rule does not match -- rather than the
-               hole swallowing the close and the search running on to whatever
-               `|` happens to appear later in the file. */
-            for (int j = k + 1; j < r->nel; j++) {
-                if (r->el[j].kind != EL_WORD) continue;
-                size_t at = find_word(s, len, pos, r->el[j].word);
-                if (at < stop) return NULL;
-            }
-        }
-        char *v = text_expand(g, s + pos, stop - pos, depth + 1, err);
-        if (!v) return NULL;
-        b[nb].name  = e->hole;
-        b[nb].val   = v;
-        b[nb].set   = 1;
-        b[nb].level = LEVEL_ATOM;
-        nb++;
-        pos = stop;
-    }
-    *end = pos;
+    if (!tm_match(&t, r->el, r->nel, 0, i, NULL, 0, NULL)) return NULL;
+    *end = t.end;
 
     if (r->body) return code_eval(r, b, nb, err);
 
@@ -607,24 +713,10 @@ static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char 
     return out.p;
 }
 
-static int has_group(Elem *el, int nel)
-{
-    for (int i = 0; i < nel; i++)
-        if (el[i].kind == EL_GROUP ||
-            (el[i].kind == EL_GROUP && has_group(el[i].sub, el[i].nsub))) return 1;
-    return 0;
-}
-
 char *expand_text(Grammar *g, const char *src, size_t from,
                   const char *file, char **err)
 {
     (void)file;
-    for (int i = 0; i < g->nrule; i++)
-        if (has_group(g->rule[i].el, g->rule[i].nel)) {
-            *err = xfmt("%s:%d: a group belongs to @mode expression",
-                        g->rule[i].file, g->rule[i].line);
-            return NULL;
-        }
     fresh_src = src; fresh_g = g; fresh_n = 0;
     return text_expand(g, src + from, strlen(src + from), 0, err);
 }

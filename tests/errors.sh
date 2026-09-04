@@ -125,11 +125,6 @@ expect "needs a 'sep' to know where one turn stops" <<'EOF'
 @syntax "f" [ a ]* "end" => "{a}"
 EOF
 
-expect "a group belongs to @mode expression" <<'EOF'
-@mode text
-@syntax "f" [ "x" ] => "y"
-EOF
-
 expect "the template uses 'b' and the pattern has no such hole" <<'EOF'
 @token name "[a-z]+"
 @syntax "f" a => { emit b }
