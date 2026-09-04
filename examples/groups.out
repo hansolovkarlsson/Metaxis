@@ -1,0 +1,25 @@
+let a, b, c;
+function nothing() {
+a = 1;
+};
+function one(x) {
+a = x;
+};
+function three(x, y, z) {
+a = ((x + y) + z);
+};
+nothing();
+one(1);
+three(1, (2 + 3), a);
+for (let i__1 = 0; i__1 < 3; i__1++) {
+one(a);
+}
+if (!3) {
+;
+};
+for (let i__2 = 0; i__2 < 0; i__2++) {
+one(a);
+}
+if (!0) {
+nothing();
+}

@@ -100,6 +100,36 @@ expect "cannot share a label" <<'EOF'
 @syntax "f" a => "{~a} {a}"
 EOF
 
+expect "cannot begin with a group" <<'EOF'
+@token name "[a-z]+"
+@syntax [ "x" ] a => "{a}"
+EOF
+
+expect "a group needs something in it" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ ] a => "{a}"
+EOF
+
+expect "belongs to a repeated group" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ a ] sep "," => "{a}"
+EOF
+
+expect "expected ']'" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ a => "{a}"
+EOF
+
+expect "needs a 'sep' to know where one turn stops" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ a ]* "end" => "{a}"
+EOF
+
+expect "a group belongs to @mode expression" <<'EOF'
+@mode text
+@syntax "f" [ "x" ] => "y"
+EOF
+
 expect "cannot open" <<'EOF'
 @use "no-such-file.pt"
 EOF

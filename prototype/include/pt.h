@@ -28,19 +28,26 @@ char *buf_take(Buf *b);
 /* ----------------------------------------------------------------- grammar */
 
 enum { MODE_EXPR, MODE_TEXT };
-enum { EL_WORD, EL_HOLE };
+enum { EL_WORD, EL_HOLE, EL_GROUP };
 enum { K_EXPR, K_CLASS, K_STMTS, K_TEXT };
+enum { REP_ONE, REP_STAR, REP_PLUS };
 
 typedef struct { char *name, *src; regex_t re; } Class;
 typedef struct { char *open, *close; int eol; } Comment;
 
-typedef struct {
-    int   kind;      /* EL_WORD or EL_HOLE                       */
+typedef struct Elem Elem;
+struct Elem {
+    int   kind;      /* EL_WORD, EL_HOLE or EL_GROUP             */
     char *word;      /* EL_WORD: the literal text, as declared   */
     char *hole;      /* EL_HOLE: the hole's name                 */
     int   hk;        /* EL_HOLE: K_*                             */
     int   cls;       /* K_CLASS: index into Grammar.cls          */
-} Elem;
+    Elem *sub;       /* EL_GROUP: what is inside the brackets    */
+    int   nsub;
+    int   rep;       /* EL_GROUP: REP_*                          */
+    char *sep;       /* EL_GROUP: the input separator, or NULL   */
+    char *join;      /* EL_GROUP: the output joiner, or NULL     */
+};
 
 typedef struct {
     Elem *el;

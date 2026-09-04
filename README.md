@@ -31,9 +31,11 @@ is [docs/notation.md](docs/notation.md).
 ## Reading it
 
 [docs/REFERENCE.md](docs/REFERENCE.md) states what every part of a `.pt` file
-means — directives, patterns, kinds, levels, templates, both modes, the command
-line and every error message. [docs/notation.md](docs/notation.md) says why it
-is shaped that way and what it cost.
+means — directives, patterns, groups, kinds, levels, templates, both modes, the
+command line and every error message. [docs/notation.md](docs/notation.md) says
+why it is shaped that way and what it cost.
+[docs/ROADMAP.md](docs/ROADMAP.md) says what is not built and what would have to
+be true for it to land.
 
 ## Build
 
@@ -56,6 +58,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [poem.pt](examples/poem.pt) | `@mode text`: prose in, HTML out |
 | [reserved.pt](examples/reserved.pt) | every character Prototype writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator |
+| [groups.pt](examples/groups.pt) | `[ … ]`, `[ … ]*` and `[ … ]+` — an argument list of any arity in one rule, and an optional part |
 | [hygiene.pt](examples/hygiene.pt) | `{~t}`, and the half of hygiene it cannot close. `tests/hygiene.sh` compiles the C it emits and runs it, so the remaining wrong answer is a number |
 
 The headline is `for`, which puts two `;` inside a pattern in a file whose body
@@ -110,6 +113,7 @@ tests/errors.sh          what a file gets told when it is wrong
 tests/hygiene.sh         what a template that is a string cannot do, run
 docs/REFERENCE.md        every part of a .pt file, exhaustively
 docs/notation.md         the one rule, what falls out of it, and what it costs
+docs/ROADMAP.md          what is not built, and what would settle it
 ```
 
 ## Proto is read-only

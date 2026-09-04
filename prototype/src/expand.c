@@ -14,7 +14,7 @@
 #include <ctype.h>
 #include <string.h>
 
-typedef struct { const char *name; char *val; } Bind;
+typedef struct { const char *name; char *val; int set; } Bind;
 typedef struct { char *label; char *name; } Fresh;
 
 /* ------------------------------------------------------------ fresh names */
@@ -148,53 +148,147 @@ static char *subst(P *p, Rule *r, Bind *b, int nb)
 static char *p_expr(P *p, int minbp);
 static char *p_stmts(P *p, const char *term);
 
-static char *p_rule(P *p, Rule *r, char *leftval)
+/* Every hole the pattern declares, groups included, starts bound to nothing.
+   A group that matched no turns leaves its holes empty rather than unbound, so
+   a template never has to ask whether a part was there. */
+static int count_holes(Elem *el, int nel)
 {
-    Bind *b = xmalloc(sizeof *b * (size_t)(r->nel + 1));
-    int   nb = 0, k = 0;
+    int n = 0;
+    for (int i = 0; i < nel; i++)
+        if (el[i].kind == EL_HOLE) n++;
+        else if (el[i].kind == EL_GROUP) n += count_holes(el[i].sub, el[i].nsub);
+    return n;
+}
 
-    if (r->led) { b[nb].name = r->el[0].hole; b[nb].val = leftval; nb++; k = 1; }
+static void bind_pre(Elem *el, int nel, Bind *b, int *nb)
+{
+    for (int i = 0; i < nel; i++) {
+        if (el[i].kind == EL_HOLE) {
+            b[*nb].name = el[i].hole;
+            b[*nb].val  = xstrdup("");
+            b[*nb].set  = 0;
+            (*nb)++;
+        } else if (el[i].kind == EL_GROUP) {
+            bind_pre(el[i].sub, el[i].nsub, b, nb);
+        }
+    }
+}
 
-    for (; k < r->nel; k++) {
-        Elem *e = &r->el[k];
+static void bind_put(Bind *b, int nb, const char *name, char *val,
+                     int append, const char *join)
+{
+    for (int i = 0; i < nb; i++) {
+        if (strcmp(b[i].name, name)) continue;
+        if (append && b[i].set) b[i].val = xfmt("%s%s%s", b[i].val, join ? join : "", val);
+        else                    b[i].val = val;
+        b[i].set = 1;
+        return;
+    }
+}
+
+static Bind *bind_copy(Bind *b, int nb)
+{
+    Bind *c = xmalloc(sizeof *c * (size_t)(nb + 1));
+    memcpy(c, b, sizeof *c * (size_t)nb);
+    return c;
+}
+
+static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
+                   int append, const char *join, Bind *b, int nb);
+
+static int m_group(P *p, Rule *r, Elem *e, Bind *b, int nb)
+{
+    const char *join = e->join;
+
+    if (e->rep == REP_ONE) {
+        int   save = p->i;
+        Bind *snap = bind_copy(b, nb);
+        /* A group is read at binding power 0: it is delimited by its own words,
+           not by precedence. */
+        if (!m_elems(p, r, e->sub, e->nsub, 0, 0, NULL, b, nb)) {
+            p->i = save;
+            memcpy(b, snap, sizeof *b * (size_t)nb);
+        }
+        return 1;
+    }
+
+    int turns = 0;
+    for (;;) {
+        int   save = p->i;
+        Bind *snap = bind_copy(b, nb);
+        if (turns && e->sep) {
+            if (!tok_is(p, e->sep)) break;
+            adv(p);
+        }
+        if (!m_elems(p, r, e->sub, e->nsub, 0, 1, join, b, nb) || p->i == save) {
+            p->i = save;
+            memcpy(b, snap, sizeof *b * (size_t)nb);
+            break;
+        }
+        turns++;
+    }
+    return !(e->rep == REP_PLUS && turns == 0);
+}
+
+static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
+                   int append, const char *join, Bind *b, int nb)
+{
+    for (int k = 0; k < nel; k++) {
+        Elem *e = &el[k];
+
         if (e->kind == EL_WORD) {
-            if (!tok_is(p, e->word)) return NULL;
+            if (!tok_is(p, e->word)) return 0;
             adv(p);
             continue;
         }
+        if (e->kind == EL_GROUP) {
+            if (!m_group(p, r, e, b, nb)) return 0;
+            continue;
+        }
+
         char *v = NULL;
         switch (e->hk) {
         case K_CLASS: {
             Tok *t = cur(p);
-            if (t->kind != T_CLASS || t->cls != e->cls) return NULL;
+            if (t->kind != T_CLASS || t->cls != e->cls) return 0;
             v = xstrndup(t->p, t->n);
             adv(p);
             break;
         }
         case K_EXPR: {
             int bp = 0;
-            if (k == r->nel - 1) {
+            if (tail && k == nel - 1) {
                 if (r->led) bp = r->right ? r->level - 1 : r->level;
                 else if (r->level >= 0) bp = r->level;
             }
             v = p_expr(p, bp);
-            if (!v) return NULL;
+            if (!v) return 0;
             break;
         }
         case K_STMTS: {
-            const char *term = k + 1 < r->nel ? r->el[k + 1].word : NULL;
+            const char *term = k + 1 < nel ? el[k + 1].word : NULL;
             v = p_stmts(p, term);
-            if (!v) return NULL;
+            if (!v) return 0;
             break;
         }
         default:
             p->err = xfmt("%s:%d: a 'text' hole belongs to @mode text", r->file, r->line);
-            return NULL;
+            return 0;
         }
-        b[nb].name = e->hole;
-        b[nb].val  = v;
-        nb++;
+        bind_put(b, nb, e->hole, v, append, join);
     }
+    return 1;
+}
+
+static char *p_rule(P *p, Rule *r, char *leftval)
+{
+    int   nb = 0;
+    Bind *b  = xmalloc(sizeof *b * (size_t)(count_holes(r->el, r->nel) + 1));
+    bind_pre(r->el, r->nel, b, &nb);
+
+    int k = 0;
+    if (r->led) { bind_put(b, nb, r->el[0].hole, leftval, 0, NULL); k = 1; }
+    if (!m_elems(p, r, r->el + k, r->nel - k, 1, 0, NULL, b, nb)) return NULL;
     return subst(p, r, b, nb);
 }
 
@@ -430,10 +524,24 @@ static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char 
     return out.p;
 }
 
+static int has_group(Elem *el, int nel)
+{
+    for (int i = 0; i < nel; i++)
+        if (el[i].kind == EL_GROUP ||
+            (el[i].kind == EL_GROUP && has_group(el[i].sub, el[i].nsub))) return 1;
+    return 0;
+}
+
 char *expand_text(Grammar *g, const char *src, size_t from,
                   const char *file, char **err)
 {
     (void)file;
+    for (int i = 0; i < g->nrule; i++)
+        if (has_group(g->rule[i].el, g->rule[i].nel)) {
+            *err = xfmt("%s:%d: a group belongs to @mode expression",
+                        g->rule[i].file, g->rule[i].line);
+            return NULL;
+        }
     fresh_src = src; fresh_g = g; fresh_n = 0;
     return text_expand(g, src + from, strlen(src + from), 0, err);
 }

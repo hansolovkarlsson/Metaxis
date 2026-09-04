@@ -1,9 +1,10 @@
 # Reference
 
 *What every part of a `.pt` file means, exhaustively and in one place. This
-file states behaviour and does not argue for it — the reasons, the costs and
-the things that are not done are [notation.md](notation.md)'s job, and where
-the two disagree the code is right and both are wrong.*
+file states behaviour and does not argue for it — the reasons and the costs are
+[notation.md](notation.md)'s job and what is not built is
+[ROADMAP.md](ROADMAP.md)'s, and where any of the three disagrees with the code
+the code is right and the page is wrong.*
 
 Everything here is checked by `make check`. Section headings are stable; the
 examples in them are lifted from `examples/`.
@@ -206,9 +207,11 @@ Ends the header. §2.2.
 
 ```ebnf
 pattern     = element { element } .
-element     = string | hole .
+element     = string | hole | group .
 hole        = name [ ":" kind ] .
 kind        = "expr" | "stmts" | "text" | a class named by @token .
+group       = "[" element { element } "]" [ rep ] .
+rep         = ( "*" | "+" ) [ "sep" string ] [ "join" string ] .
 ```
 
 **A quoted string is a literal word of the input. A bare name is a hole.** That
@@ -238,14 +241,22 @@ a *nud* rule: it starts one, and does not.
 | --- | --- |
 | empty | `a rule needs a pattern` |
 | an empty word `""` | `an empty word matches nothing` |
+| begins with a group | `a rule is found by its first word, so it cannot begin with a group` |
 | begins with a hole, no level | `…is infix or postfix and needs a level` |
 | begins with a hole, second element not a word | `…must have a word after it` |
-| two holes side by side | `two holes in a row: the first would take everything the second wants` |
+| a greedy hole immediately before another hole | `two holes in a row: the first would take everything the second wants` |
 | a `stmts` hole with no word after it | `a 'stmts' hole needs a word after it to stop at` |
+| an empty group | `a group needs something in it` |
+| a repeated group that could not tell one turn from the next | `…needs a 'sep' to know where one turn stops` |
 
-Two holes may not be adjacent because the first would take everything the second
+Two holes may not be adjacent when the first is **greedy** — `expr` or `stmts`,
+the kinds that read up to a word — because it would take everything the second
 wants: given `a b` and input `f x + y`, the first hole takes the sum and the
-second finds nothing. Where a body is wanted, a rule takes its own delimiters —
+second finds nothing. A class-kind hole takes exactly one token and cannot be
+greedy, so `"f" a:name b:name` is allowed. The check looks through a group's
+brackets: a group's last element is adjacent to whatever follows the group.
+
+Where a body is wanted, a rule takes its own delimiters —
 `"if" "(" c ")" "{" t:stmts "}"` — rather than needing a kind that means *a
 block*.
 
@@ -268,6 +279,50 @@ A class-kind hole is how a hole says *stop here*:
 word. An `expr` hole would have taken `i := 1` with the infix assignment rule and
 the pattern would never match. **This is the one thing quoting does not settle
 by itself.**
+
+### 4.4 Groups
+
+`[ … ]` is Prototype's own bracket. It lives outside the strings, so it can
+never be confused with a bracket the body writes — one of those is quoted, and
+this one cannot be.
+
+| form | matches |
+| --- | --- |
+| `[ … ]` | the elements inside, once or not at all |
+| `[ … ]*` | zero or more turns |
+| `[ … ]+` | one or more turns |
+
+A repeated group may say how its turns are told apart and how they are put back
+together:
+
+| suffix | means |
+| --- | --- |
+| `sep "s"` | on the way in, one turn is separated from the next by the word `s` |
+| `join "j"` | on the way out, a hole's turns are spliced with `j` between them |
+
+`join` defaults to `sep`'s text; `sep` defaults to nothing, in which case turns
+are matched by juxtaposition. Both are refused on a group with no `*` or `+`.
+`sep` and `join` are keywords only where a string follows, so a hole may still
+be named either.
+
+```
+@syntax a "(" [ x ]* sep "," join ", " ")"  95   => "{a}({x})"
+@syntax "let" [ n:name ]+ sep "," join ", "      => "let {n}"
+@syntax "loop" n "times" "{" b:stmts "}" [ "or" "{" e:stmts "}" ]
+    => "for (…) {{ {b} }}\nif (!{n}) {{ {e} }}"
+```
+
+**Every hole a pattern declares is bound, groups included.** A hole inside a
+repeated group holds every turn, spliced with the group's `join`; a hole inside
+an optional group that did not match holds the empty string. Nothing is ever
+unbound, so a template never has to ask whether a part was there — and *cannot*
+ask, which is [ROADMAP.md](ROADMAP.md)'s first item.
+
+**A group is matched at binding power 0** and is delimited by its own words. A
+turn that consumes no tokens ends the repetition. A failed optional group, or a
+failed turn, restores both the token cursor and every binding made inside it.
+
+Groups may nest, 16 deep. They are refused in text mode (§7).
 
 ---
 
@@ -292,7 +347,8 @@ rule without a level reads its trailing hole at 0, taking everything up to the
 next word or the end of the statement.
 
 A hole that is **not last** is read at 0. It is delimited by the word after it
-rather than by precedence.
+rather than by precedence. So is every hole inside a group (§4.4), whether or
+not the group is last.
 
 A useful ladder, from `lib/arith.pt`:
 
@@ -375,6 +431,8 @@ If the body does not parse, the error names the furthest token reached:
 else is copied through unchanged.
 
 - Only **nud** rules apply. A led rule has nothing to continue.
+- **A group is refused**: `a group belongs to @mode expression`, reported before
+  anything is scanned. [ROADMAP.md](ROADMAP.md) 2 says what it would take.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else — `examples/poem.pt`
   declares `-`, `--` and `---` in that order and `---` still wins.
@@ -401,7 +459,7 @@ template = string, with "{" name "}" splices, "{~" name "}" fresh names,
 
 | in a template | emits |
 | --- | --- |
-| `{name}` | the hole `name`, expanded |
+| `{name}` | the hole `name`, expanded — every turn of it if it is in a repeated group (§4.4), the empty string if its optional group did not match |
 | `{~label}` | a name nobody else has (§8.1) |
 | `{{` | `{` |
 | `}}` | `}` |
@@ -488,7 +546,13 @@ Every message the tool can produce, and what it means.
 | `expected 'expression' or 'text'` | `@mode` |
 | `expected a class name` | `@token` |
 | `bad pattern for 'x': …` | `@token`'s regex, in the regex library's words |
-| `expected a quoted word, a hole or a level` | a pattern element that is none of those |
+| `expected a quoted word, a hole, a group or a level` | a pattern element that is none of those |
+| `expected ']'` | a group with no closing bracket |
+| `a group needs something in it` | `[ ]` |
+| `'sep' belongs to a repeated group — '[ … ]*' or '[ … ]+'` | §4.4; likewise `join` |
+| `groups nested more than 16 deep` | §11 |
+| `a rule is found by its first word, so it cannot begin with a group` | §4.2 |
+| `a repeated group that ends in a greedy hole and begins with a hole needs a 'sep' to know where one turn stops` | §4.4 |
 | `expected a kind after ':'` | a hole wrote `:` and stopped |
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
 | `a rule needs a pattern` | `@syntax => "…"` |
@@ -515,6 +579,7 @@ Every message the tool can produce, and what it means.
 | `no rule reads 'x' here` | the parser stopped; `x` is the furthest token it reached |
 | `the file ends in the middle of something` | as above, at end of file |
 | `a 'text' hole belongs to @mode text` | §4.3 |
+| `a group belongs to @mode expression` | §7 |
 | `the grammar recurses without consuming anything` | 400 deep — §6.2 |
 | `a text rule expands into itself` | 64 deep — §7 |
 | `no fresh name for '{~t}' is free` | 100000 candidates were all taken — §8.1 |
@@ -526,6 +591,7 @@ Every message the tool can produce, and what it means.
 | | |
 | --- | --- |
 | `@use` nesting | 64 |
+| group nesting | 16 |
 | expression recursion | 400 |
 | text-mode expansion depth | 64 |
 | fresh-name attempts | 100000 |
@@ -543,6 +609,7 @@ Both take a file that declares its own grammar. Where they part:
 | --- | --- | --- |
 | what a directive quotes | nothing — operators and pattern words are bare, holes are `<x>` | every mention of foreign text |
 | rule directives | `@infix`, `@infixr`, `@prefix`, `@syntax` | `@syntax` |
+| repetition and optional parts | declined three times, no customer | `[ … ]`, `[ … ]*`, `[ … ]+` — §4.4 |
 | the shape of a rule | named by the directive | read off the pattern |
 | operator characters | a closed set; `. , : ; |` are spoken for | whatever a string says |
 | literals | the lexer's, fixed | `@token` |

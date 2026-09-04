@@ -1,0 +1,73 @@
+; groups.pt -- a part that repeats, and a part that need not be there.
+;
+; `[ … ]` is Prototype's own bracket and lives outside the strings, so it can
+; never be mistaken for a bracket the body writes -- one of those would be
+; quoted, and this one cannot be. Three forms:
+;
+;     [ … ]     once or not at all
+;     [ … ]*    zero or more
+;     [ … ]+    one or more
+;
+; A repeated group may say what separates its turns on the way in and what
+; joins them on the way out:
+;
+;     [ x ]* sep "," join ", "
+;
+; `join` defaults to `sep`, and `sep` to nothing at all. A hole inside a
+; repeated group collects every turn; a hole inside an optional group that did
+; not match is empty. Nothing is ever unbound, so a template never has to ask
+; whether a part was there.
+;
+; Output is JavaScript.
+
+@comment "//" eol
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@token string "\"[^\"]*\""
+
+@separator ";" => ";\n"
+
+@syntax "(" e ")"                              => "({e})"
+@syntax a "+" b                   60           => "({a} + {b})"
+@syntax a "=" b                   10 right     => "{a} = {b}"
+
+// Zero or more, and the one rule covers every arity there is. Before groups
+// this was a rule per arity, or it was not written.
+@syntax a "(" [ x ]* sep "," join ", " ")"   95
+    => "{a}({x})"
+
+// One or more, with an output joiner that is not the input separator.
+@syntax "let" [ n:name ]+ sep "," join ", "
+    => "let {n}"
+
+// A group may hold words as well as holes, and may nest inside another.
+@syntax "fn" f:name "(" [ p:name ]* sep "," join ", " ")" "{" b:stmts "}"
+    => "function {f}({p}) {{\n{b};\n}}"
+
+// Once or not at all. `{~i}` still means a name nobody else has, and the
+// counter does not care that it is inside a group.
+@syntax "loop" n "times" "{" b:stmts "}" [ "or" "{" e:stmts "}" ]
+    => "for (let {~i} = 0; {~i} < {n}; {~i}++) {{\n{b};\n}}\nif (!{n}) {{\n{e};\n}}"
+
+@end
+
+let a, b, c;
+
+fn nothing() { a = 1 }
+fn one(x) { a = x }
+fn three(x, y, z) { a = x + y + z }
+
+nothing();
+one(1);
+three(1, 2 + 3, a);
+
+loop 3 times { one(a) }
+loop 0 times { one(a) } or { nothing() }
+
+// The optional group above is where a template that is a string runs out. It
+// can leave `{e}` empty and it cannot make the *output* differ: with no `or`
+// part the expansion still writes `if (!0) { ; }`, because a splice is the only
+// thing a string template can vary. Making the shape of the output depend on
+// whether a part matched is the first customer for docs/ROADMAP.md's second
+// kind of template, and is why that entry exists.

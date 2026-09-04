@@ -12,6 +12,23 @@ static void usage(void)
     exit(2);
 }
 
+static void show(Elem *el, int nel)
+{
+    for (int e = 0; e < nel; e++) {
+        switch (el[e].kind) {
+        case EL_WORD: printf("\"%s\" ", el[e].word); break;
+        case EL_HOLE: printf("%s ", el[e].hole);       break;
+        default:
+            printf("[ ");
+            show(el[e].sub, el[e].nsub);
+            printf("]%s", el[e].rep == REP_STAR ? "* " :
+                          el[e].rep == REP_PLUS ? "+ " : " ");
+            if (el[e].sep)  printf("sep \"%s\" ", el[e].sep);
+            if (el[e].join) printf("join \"%s\" ", el[e].join);
+        }
+    }
+}
+
 static void dump(Grammar *g)
 {
     printf("mode       %s\n", g->mode == MODE_TEXT ? "text" : "expression");
@@ -27,9 +44,7 @@ static void dump(Grammar *g)
     for (int i = 0; i < g->nrule; i++) {
         Rule *r = &g->rule[i];
         printf("%-6s    ", r->led ? "infix" : "prefix");
-        for (int e = 0; e < r->nel; e++)
-            if (r->el[e].kind == EL_WORD) printf("\"%s\" ", r->el[e].word);
-            else printf("%s ", r->el[e].hole);
+        show(r->el, r->nel);
         if (r->level >= 0) printf("[%d%s]", r->level, r->right ? " right" : "");
         printf("\n");
     }

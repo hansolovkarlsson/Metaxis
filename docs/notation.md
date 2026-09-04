@@ -7,7 +7,8 @@ grammars it declares keep meeting.
 Everything on this page is implemented and is exercised by `examples/`.
 What is not is under [Not done](#not-done), at the bottom.
 
-**This page argues; [REFERENCE.md](REFERENCE.md) states.** Every directive,
+**This page argues; [REFERENCE.md](REFERENCE.md) states; [ROADMAP.md](ROADMAP.md)
+says what to do about what is missing.** Every directive,
 kind, level, template form, lexer decision and error message is there,
 exhaustively. Read that one to write a `.pt`; read this one to know why it is
 shaped the way it is, and what it cost.
@@ -100,9 +101,11 @@ directive   = "@use"       string
             | "@end" .
 
 pattern     = element { element } .
-element     = string | hole .
+element     = string | hole | group .
 hole        = name [ ":" kind ] .
 kind        = "expr" | "stmts" | "text" | a class named by @token .
+group       = "[" element { element } "]" [ rep ] .
+rep         = ( "*" | "+" ) [ "sep" string ] [ "join" string ] .
 level       = integer [ "left" | "right" ] .
 template    = string, with "{" name "}" splices, "{~" name "}" fresh names,
               and "{{" "}}" for a literal brace .
@@ -165,11 +168,28 @@ name exactly one token of that class. `examples/pascal.pt` needs `i:name` in
 a `name` hole takes one token and stops, where an `expr` hole would take the
 assignment. This is the one thing quoting does not do by itself.
 
+**A group needs no new syntax to be safe from the body.** `[ … ]`, `*`, `+`,
+`sep` and `join` are Prototype's vocabulary and live *outside* the strings, so a
+file that wants `[` and `]` in its own language quotes them and the two never
+meet — `examples/clike.pt` declares `a "[" i "]"` for an index in the same tool
+that reads `[ x ]* sep ","`. Proto declined repetition and optional parts three
+times, in `conventions.md`, on the grounds that no program had asked; a
+language-agnostic tool has argument lists everywhere and asks on the first file.
+
+What a group does **not** buy is an output that differs on whether a part
+matched. Every hole is bound — to its turns, or to nothing — and a splice is the
+only thing a string template can vary, so `examples/groups.pt` still writes
+`if (!0) { ; }` where its optional part was absent. That is
+[ROADMAP.md](ROADMAP.md) 1's plainest customer, and the reason `join` covers
+only the easy half of per-element output.
+
 **Two holes may not sit next to each other.** Proto's rule, kept, and for
 Proto's reason: given `a b` and `f x + y` the first hole takes the sum and the
 second finds nothing. Proto allows the pair when the second is a `block`; here a
 rule takes its own braces instead — `"if" "(" c ")" "{" t:stmts "}"` — so the
-exception is not needed and does not exist.
+exception is not needed and does not exist. The refusal is narrowed to a
+**greedy** first hole, since a class-kind hole takes one token and stops, which
+is what lets `[ p:name ]*` be a parameter list.
 
 **Ties go to the token class.** At each position the lexer takes the longest
 match from a declared class and the longest match from a declared word, and

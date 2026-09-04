@@ -141,21 +141,58 @@ static int dnumber(D *d, int *out)
 
 static const char *KINDS[] = { "expr", "stmts", "text", NULL };
 
-static int rule_syntax(Grammar *g, D *d, int line)
-{
-    Rule r;
-    memset(&r, 0, sizeof r);
-    r.level = -1;
-    r.file  = xstrdup(d->file);
-    r.line  = line;
+/* A pattern element, and a group of them. `[ … ]` is Prototype's vocabulary and
+   lives outside the strings, so it can never be mistaken for the body's own
+   brackets -- those would be quoted. */
+static Elem *parse_elems(Grammar *g, D *d, Rule *r, int *nout, int depth);
 
+static int parse_group(Grammar *g, D *d, Rule *r, Elem *e, int depth)
+{
+    e->kind = EL_GROUP;
+    e->rep  = REP_ONE;
+    e->sub  = parse_elems(g, d, r, &e->nsub, depth + 1);
+    if (!e->sub) return -1;
+    if (!dtake(d, "]")) { derr(d, "expected ']'"); return -1; }
+    if (!e->nsub) { derr(d, "a group needs something in it"); return -1; }
+
+    if (dtake(d, "*"))      e->rep = REP_STAR;
+    else if (dtake(d, "+")) e->rep = REP_PLUS;
+
+    /* `sep` and `join` are keywords only where a string follows, so a hole may
+       still be called either of them. */
+    for (int again = 1; again;) {
+        again = 0;
+        for (int k = 0; k < 2; k++) {
+            const char *kw = k ? "join" : "sep";
+            size_t save = d->i;
+            if (!dtake(d, kw)) continue;
+            if (!dat(d, "\"")) { d->i = save; continue; }
+            char *v = dstring(d);
+            if (!v) return -1;
+            if (e->rep == REP_ONE) {
+                derr(d, xfmt("'%s' belongs to a repeated group -- '[ … ]*' or '[ … ]+'", kw));
+                return -1;
+            }
+            if (k) e->join = v; else e->sep = v;
+            again = 1;
+        }
+    }
+    if (e->rep != REP_ONE && !e->join) e->join = e->sep ? e->sep : xstrdup("");
+    return 0;
+}
+
+static Elem *parse_elems(Grammar *g, D *d, Rule *r, int *nout, int depth)
+{
     Elem *el = NULL;
     int   nel = 0;
+
+    if (depth > 16) { derr(d, "groups nested more than 16 deep"); return NULL; }
 
     for (;;) {
         dskip(d);
         if (d->i >= d->end) break;
         if (dat(d, "=>")) break;
+        if (depth && dat(d, "]")) break;
 
         Elem e;
         memset(&e, 0, sizeof e);
@@ -163,32 +200,34 @@ static int rule_syntax(Grammar *g, D *d, int line)
 
         if (d->s[d->i] == '"') {
             char *w = dstring(d);
-            if (!w) return -1;
-            if (!*w) { derr(d, "an empty word matches nothing"); return -1; }
+            if (!w) return NULL;
+            if (!*w) { derr(d, "an empty word matches nothing"); return NULL; }
             e.kind = EL_WORD;
             e.word = w;
+        } else if (dtake(d, "[")) {
+            if (parse_group(g, d, r, &e, depth) < 0) return NULL;
         } else {
             int lv;
             if (dnumber(d, &lv)) {
-                r.level = lv;
-                if (dtake(d, "left"))       r.right = 0;
-                else if (dtake(d, "right")) r.right = 1;
+                r->level = lv;
+                if (dtake(d, "left"))       r->right = 0;
+                else if (dtake(d, "right")) r->right = 1;
                 continue;
             }
             char *id = dident(d);
-            if (!id) { derr(d, "expected a quoted word, a hole or a level"); return -1; }
+            if (!id) { derr(d, "expected a quoted word, a hole, a group or a level"); return NULL; }
             e.kind = EL_HOLE;
             e.hole = id;
             e.hk   = K_EXPR;
             if (dtake(d, ":")) {
                 char *k = dident(d);
-                if (!k) { derr(d, "expected a kind after ':'"); return -1; }
+                if (!k) { derr(d, "expected a kind after ':'"); return NULL; }
                 int found = 0;
                 for (int i = 0; KINDS[i]; i++)
                     if (!strcmp(k, KINDS[i])) { e.hk = i == 0 ? K_EXPR : (i == 1 ? K_STMTS : K_TEXT); found = 1; }
                 if (!found) {
                     int ci = class_index(g, k);
-                    if (ci < 0) { derr(d, xfmt("no kind or token class called '%s'", k)); return -1; }
+                    if (ci < 0) { derr(d, xfmt("no kind or token class called '%s'", k)); return NULL; }
                     e.hk  = K_CLASS;
                     e.cls = ci;
                 }
@@ -197,6 +236,81 @@ static int rule_syntax(Grammar *g, D *d, int line)
         el = grow(el, nel, sizeof *el);
         el[nel++] = e;
     }
+    *nout = nel;
+    return el ? el : (Elem *)grow(NULL, 0, sizeof *el);
+}
+
+/* ------------------------------------------------------- checking a pattern */
+
+/* A hole is greedy when it reads an expression or a run of statements: it takes
+   everything up to the word that stops it. A class-kind hole takes one token
+   and cannot be greedy, which is why `f a:name b:name` is allowed and `f a b`
+   is not. */
+static int greedy(const Elem *e)
+{
+    return e->kind == EL_HOLE && (e->hk == K_EXPR || e->hk == K_STMTS);
+}
+
+/* Looking through a group's brackets: what could actually come first, or last. */
+static const Elem *edge(const Elem *e, int last)
+{
+    while (e && e->kind == EL_GROUP)
+        e = e->nsub ? &e->sub[last ? e->nsub - 1 : 0] : NULL;
+    return e;
+}
+
+static int hole_named(const Elem *el, int nel, const char *n)
+{
+    for (int i = 0; i < nel; i++) {
+        if (el[i].kind == EL_HOLE && !strcmp(el[i].hole, n)) return 1;
+        if (el[i].kind == EL_GROUP && hole_named(el[i].sub, el[i].nsub, n)) return 1;
+    }
+    return 0;
+}
+
+static int check_elems(D *d, Elem *el, int nel)
+{
+    for (int i = 0; i < nel; i++) {
+        Elem *e = &el[i];
+
+        if (e->kind == EL_HOLE && e->hk == K_STMTS &&
+            (i + 1 >= nel || el[i + 1].kind != EL_WORD)) {
+            derr(d, "a 'stmts' hole needs a word after it to stop at");
+            return -1;
+        }
+        if (i + 1 < nel) {
+            const Elem *a = edge(e, 1), *b = edge(&el[i + 1], 0);
+            if (a && b && greedy(a) && b->kind == EL_HOLE) {
+                derr(d, "two holes in a row: the first would take everything the second wants");
+                return -1;
+            }
+        }
+        if (e->kind != EL_GROUP) continue;
+
+        if (e->rep != REP_ONE && !e->sep) {
+            const Elem *a = edge(e, 1), *b = edge(e, 0);
+            if (a && b && greedy(a) && b->kind == EL_HOLE) {
+                derr(d, "a repeated group that ends in a greedy hole and begins with"
+                        " a hole needs a 'sep' to know where one turn stops");
+                return -1;
+            }
+        }
+        if (check_elems(d, e->sub, e->nsub) < 0) return -1;
+    }
+    return 0;
+}
+
+static int rule_syntax(Grammar *g, D *d, int line)
+{
+    Rule r;
+    memset(&r, 0, sizeof r);
+    r.level = -1;
+    r.file  = xstrdup(d->file);
+    r.line  = line;
+
+    int   nel = 0;
+    Elem *el  = parse_elems(g, d, &r, &nel, 0);
+    if (!el) return -1;
 
     if (!nel) { derr(d, "a rule needs a pattern"); return -1; }
     if (!dtake(d, "=>")) { derr(d, "expected '=>'"); return -1; }
@@ -208,6 +322,10 @@ static int rule_syntax(Grammar *g, D *d, int line)
     r.el = el; r.nel = nel; r.tmpl = tmpl;
     r.led = el[0].kind == EL_HOLE;
 
+    if (el[0].kind == EL_GROUP) {
+        derr(d, "a rule is found by its first word, so it cannot begin with a group");
+        return -1;
+    }
     if (r.led && r.level < 0) {
         derr(d, "a rule that begins with a hole is infix or postfix and needs a level");
         return -1;
@@ -216,17 +334,7 @@ static int rule_syntax(Grammar *g, D *d, int line)
         derr(d, "a rule that begins with a hole must have a word after it");
         return -1;
     }
-    for (int i = 0; i + 1 < nel; i++)
-        if (el[i].kind == EL_HOLE && el[i + 1].kind == EL_HOLE) {
-            derr(d, "two holes in a row: the first would take everything the second wants");
-            return -1;
-        }
-    for (int i = 0; i < nel; i++)
-        if (el[i].kind == EL_HOLE && el[i].hk == K_STMTS &&
-            (i + 1 >= nel || el[i + 1].kind != EL_WORD)) {
-            derr(d, "a 'stmts' hole needs a word after it to stop at");
-            return -1;
-        }
+    if (check_elems(d, el, nel) < 0) return -1;
 
     /* The template is checked here rather than at the first use of the rule,
        so that a splice nobody wrote a hole for is an error at the line that
@@ -243,9 +351,7 @@ static int rule_syntax(Grammar *g, D *d, int line)
         char *n = xstrndup(tmpl + a, j - a);
         i = j + 1;
 
-        int hole = 0;
-        for (int e = 0; e < nel; e++)
-            if (el[e].kind == EL_HOLE && !strcmp(el[e].hole, n)) hole = 1;
+        int hole = hole_named(el, nel, n);
 
         if (fresh) {
             if (!*n) { derr(d, "a fresh name needs a label: '{~name}'"); return -1; }
@@ -466,25 +572,29 @@ static int cmp_len(const void *a, const void *b)
 
 /* The punctuation set is every word any rule quoted, plus the separator.
    Longest first, because the lexer takes the longest it can. */
+static void seal_word(Grammar *g, char *w)
+{
+    if (!w || !*w) return;
+    for (int i = 0; i < g->npunct; i++) if (!strcmp(g->punct[i], w)) return;
+    g->punct = grow(g->punct, g->npunct, sizeof *g->punct);
+    g->punct[g->npunct++] = w;
+}
+
+static void seal_elems(Grammar *g, Elem *el, int nel)
+{
+    for (int e = 0; e < nel; e++) {
+        if (el[e].kind == EL_WORD) seal_word(g, el[e].word);
+        if (el[e].kind == EL_GROUP) {
+            seal_word(g, el[e].sep);
+            seal_elems(g, el[e].sub, el[e].nsub);
+        }
+    }
+}
+
 void grammar_seal(Grammar *g)
 {
     for (int r = 0; r < g->nrule; r++)
-        for (int e = 0; e < g->rule[r].nel; e++) {
-            if (g->rule[r].el[e].kind != EL_WORD) continue;
-            char *w = g->rule[r].el[e].word;
-            int seen = 0;
-            for (int i = 0; i < g->npunct; i++) if (!strcmp(g->punct[i], w)) seen = 1;
-            if (seen) continue;
-            g->punct = grow(g->punct, g->npunct, sizeof *g->punct);
-            g->punct[g->npunct++] = w;
-        }
-    if (g->sep_in && !g->sep_nl) {
-        int seen = 0;
-        for (int i = 0; i < g->npunct; i++) if (!strcmp(g->punct[i], g->sep_in)) seen = 1;
-        if (!seen) {
-            g->punct = grow(g->punct, g->npunct, sizeof *g->punct);
-            g->punct[g->npunct++] = g->sep_in;
-        }
-    }
+        seal_elems(g, g->rule[r].el, g->rule[r].nel);
+    if (g->sep_in && !g->sep_nl) seal_word(g, g->sep_in);
     qsort(g->punct, (size_t)g->npunct, sizeof *g->punct, cmp_len);
 }
