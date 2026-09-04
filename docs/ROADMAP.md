@@ -105,7 +105,89 @@ free. It is the price of being agnostic and it stays where it is, in
 
 ---
 
-## 2 · Groups in text mode
+## 2 · One of these: alternation inside a pattern
+
+**Hans, 2026-09-04**, choosing between the shapes below after asking whether
+`[ … ]` had been picked for a reason. It had — see
+[notation.md](notation.md) — and the answer turned out to bear on this.
+
+### What exists instead
+
+**Alternation between whole rules already works.** Rules sharing a leading word
+are candidates, tried longest-pattern-first with the token cursor restored on
+failure, which is how `if c then t` and `if c then t else f` coexist. So the
+missing case is narrow and specific: alternation in a **nested** position, where
+lifting it out would mean writing the whole rule once per arm.
+
+### The shape it would probably take
+
+```
+( a | b )      one of them, required
+[ a | b ]      one of them, or none
+( a | b )*     repeat a choice
+```
+
+`[ … ]` is already *optional*, so `[ a | b ]` alone would be doing two jobs and
+there would be no way to say *one of these, required*. A second bracket is what
+separates them, and each then has one job: **`( … )` groups, `[ … ]` makes
+optional, `*` and `+` repeat.**
+
+That settles, in passing, a question raised the same day and left open: whether
+`[ … ]` should have been `( … )`. It should not. The brackets are wanted for
+different things and swapping them would spend the one that choice needs.
+
+**Ordered choice**, first arm that matches winning, is the rule to pick: it
+matches PEG, and it matches *declaration order breaks a tie* elsewhere in this
+tool. Holes in an arm that did not match bind to the empty string, as they do in
+an optional group, so nothing is ever unbound. Two arms may share a hole name —
+`( a:name | a:number )` binding `a` either way is the point rather than an
+accident.
+
+**This is a leading candidate and not a decision.** It is written down because
+it reads well and because the bracket argument behind it is worth keeping; when
+somebody builds it, a different shape may turn out better and this entry does
+not outrank that.
+
+### What it would and would not buy
+
+**Synonyms work under any spelling and need nothing else:**
+
+```
+( "fn" | "func" | "function" ) f:name "(" … ")"
+```
+
+Several spellings in, one thing out. That is the honest customer, and it is real
+but small.
+
+**And it is the one case the dispatcher currently forbids.** A rule is found by
+its first word — `collect()` compares the current token against `el[0].word` —
+which is why `a rule is found by its first word, so it cannot begin with a
+group` is an error today. The synonym form above begins with a group, so
+allowing it means a rule can be registered under **several** leading words
+rather than one, and every arm of a leading choice must begin with a word for
+that to be possible at all.
+
+That is not hard, and it is not free either: it is the difference between
+alternation being a matching feature and alternation reaching into how rules are
+found. Worth knowing before starting, because it decides whether a leading
+choice is in scope or whether the first arm's word has to be shared — and the
+narrower version, alternation anywhere *except* first, is a strictly smaller
+piece of work that still covers everything nested.
+
+**Everything else wants to know which arm matched.** `( "+" | "-" )` in one rule
+is useless while the two need different output, and a string template can vary a
+splice and nothing else. So the interesting half of alternation is blocked
+behind item 1 above, exactly as an optional group's is — the same wall, met from
+a second direction, which is worth noticing as evidence about item 1 rather than
+about this one.
+
+### Why it is not built
+
+Nothing in `examples/` needs it, which is this tree's own test for whether a
+surface has earned its place. The synonym case would justify it on its own and
+has not yet come up in a real file.
+
+## 3 · Groups in text mode
 
 `@mode text` refuses a rule with a `[ … ]` in it: *a group belongs to `@mode
 expression`*. The text matcher scans left to right and finds a hole's end by
@@ -118,7 +200,7 @@ would have to be settled: whether the text matcher backtracks over positions the
 way the expression parser backtracks over tokens, or whether groups in text mode
 are restricted to the cases where the next word is unambiguous.
 
-## 3 · A class-kind hole in text mode
+## 4 · A class-kind hole in text mode
 
 `@syntax "[" x:name "]"` in text mode ignores the kind and takes everything up
 to the `]`, silently. It should either match the class at that position or be
@@ -126,14 +208,14 @@ refused at declaration. The second is one line and is probably right, since a
 `text` hole is what a text-mode rule almost always wants; the first is what
 somebody will eventually ask for.
 
-## 4 · Two files declaring one word
+## 5 · Two files declaring one word
 
 `@use` two files that both declare `"+"` and the later one wins, silently.
 Proto's README has a section on this and a rule; this has neither. The question
 is not how to detect it — that is easy — but what the right answer is: refuse,
 warn, or let a file say which it meant.
 
-## 5 · Source maps
+## 6 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside

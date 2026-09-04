@@ -168,6 +168,18 @@ name exactly one token of that class. `examples/pascal.pt` needs `i:name` in
 a `name` hole takes one token and stops, where an `expr` hole would take the
 assignment. This is the one thing quoting does not do by itself.
 
+**Which bracket a group uses is a readability question and not a structural
+one, and that it can be is the rule working.** `[`, `(`, `{` and `<` were all
+equally free, because foreign text is quoted and a pattern's punctuation can
+never collide with it — the same question in Proto would have been painful,
+since `<` and `>` are operator characters a file might want, which is what
+`<x>` holes cost there. `[ … ]` was taken because ISO EBNF already spells an
+optional part that way and a reader arrives knowing it, and because braces were
+spoken for by templates and reading a pattern beside its template is the common
+act. The suffixes `*` and `+` are regex's rather than EBNF's, which buys one
+bracket and three forms in a series instead of two brackets. `( … )` was left
+alone, and [ROADMAP.md](ROADMAP.md) 2 is why that turned out to be right.
+
 **A group needs no new syntax to be safe from the body.** `[ … ]`, `*`, `+`,
 `sep` and `join` are Prototype's vocabulary and live *outside* the strings, so a
 file that wants `[` and `]` in its own language quotes them and the two never
