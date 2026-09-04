@@ -228,6 +228,38 @@ static int rule_syntax(Grammar *g, D *d, int line)
             return -1;
         }
 
+    /* The template is checked here rather than at the first use of the rule,
+       so that a splice nobody wrote a hole for is an error at the line that
+       wrote it. */
+    for (size_t i = 0; tmpl[i];) {
+        if (tmpl[i] == '{' && tmpl[i + 1] == '{') { i += 2; continue; }
+        if (tmpl[i] == '}' && tmpl[i + 1] == '}') { i += 2; continue; }
+        if (tmpl[i] != '{') { i++; continue; }
+
+        int fresh = tmpl[i + 1] == '~';
+        size_t a = i + 1 + (size_t)fresh, j = a;
+        while (tmpl[j] && tmpl[j] != '}') j++;
+        if (!tmpl[j]) { derr(d, "unclosed '{' in a template"); return -1; }
+        char *n = xstrndup(tmpl + a, j - a);
+        i = j + 1;
+
+        int hole = 0;
+        for (int e = 0; e < nel; e++)
+            if (el[e].kind == EL_HOLE && !strcmp(el[e].hole, n)) hole = 1;
+
+        if (fresh) {
+            if (!*n) { derr(d, "a fresh name needs a label: '{~name}'"); return -1; }
+            if (hole) {
+                derr(d, xfmt("'{~%s}' and '{%s}' would read as one thing: a fresh"
+                             " name and a hole cannot share a label", n, n));
+                return -1;
+            }
+        } else if (!hole) {
+            derr(d, xfmt("the template splices '{%s}' and the pattern has no such hole", n));
+            return -1;
+        }
+    }
+
     g->rule = grow(g->rule, g->nrule, sizeof *g->rule);
     g->rule[g->nrule++] = r;
     return 0;

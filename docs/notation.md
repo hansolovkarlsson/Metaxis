@@ -30,8 +30,8 @@ convention:
 ```
 
 - **Left of `=>`**: quoted means a literal word of the input; bare means a hole.
-- **Right of `=>`**: one string; `{name}` splices a hole; `{{` and `}}` are a
-  literal brace.
+- **Right of `=>`**: one string; `{name}` splices a hole; `{~name}` is a name
+  nobody else has; `{{` and `}}` are a literal brace.
 
 The header's own strings are always Prototype's, spelled Prototype's way. The
 body's strings are whatever `@token string` said they are. The two never meet.
@@ -99,7 +99,8 @@ element     = string | hole .
 hole        = name [ ":" kind ] .
 kind        = "expr" | "stmts" | "text" | a class named by @token .
 level       = integer [ "left" | "right" ] .
-template    = string, with "{" name "}" splices and "{{" "}}" for a brace .
+template    = string, with "{" name "}" splices, "{~" name "}" fresh names,
+              and "{{" "}}" for a literal brace .
 ```
 
 Every string above is a Prototype string: `"…"` with `\"` `\\` `\n` `\t` `\r`
@@ -126,6 +127,26 @@ its own comment and separator, which is the division that file is for.
 does not begin a directive. Either way it is one-way: below it nothing is a
 directive, so a body may begin a line with `@` and mean it — which
 `examples/reserved.pt` does, having declared `@` as an operator.
+
+## Fresh names
+
+`{~t}` in a template is **a name nobody else has**. One expansion, one name: two
+`{~t}` in a template are the same name, and the next use of the rule is a
+different one. `examples/hygiene.pt` calls one `swap` twice and the output has
+`t__1` and `t__2`.
+
+A name is taken if it occurs anywhere in the source being expanded or in any
+template any rule declared, `@use` included. That is a substring test, so it is
+conservative in the safe direction — `t__1` is refused while `t__12` is in the
+file — and it costs one scan per name.
+
+A label is not a hole and cannot share a name with one: `{~a}` beside `{a}`
+would read as one thing and is refused where it is written, not where it is
+used. Every splice in a template is checked at the `@syntax` that wrote it.
+
+**This closes exactly half of the hygiene problem, and the half it does not
+close is not a missing feature.** See *A template can name its own temporary and
+nothing else*, below.
 
 ## The rules the implementation had to settle
 
@@ -207,6 +228,28 @@ Proto does not pay this — its templates are trees in a language it knows, and 
 re-prints them with the parentheses they need. Letting a rule declare an output
 level would buy it back and has not been tried.
 
+**A template can name its own temporary and nothing else.** `{~t}` closed the
+half of hygiene where a template *introduces* a name. The half where it
+*reaches out* for one stays open, and is not an unimplemented feature — it is
+the price. `examples/hygiene.pt` declares a `bump` whose template means the
+file-scope `total` that was in scope where the rule was written; a caller that
+shadows `total` gets the shadow updated and the real one left alone, and both
+numbers are wrong and neither is an error:
+
+```
+swap: 2 1      the template's own name, twice over -- {~t}
+again: 4 3     and the second call site did not get the first's
+bump: 105 0    would be  bump: 100 5
+```
+
+There is nothing for a fresh name to invent here. What is wanted is a way to say
+*the outer one*, and a template that is a string cannot see a scope, let alone
+reach past a caller's. Proto can, because its expander works on trees in a
+language whose scopes it knows; closing it here would mean Prototype learning
+the output language's binding rules, which is the one thing being agnostic gave
+up. `tests/hygiene.sh` compiles that output and runs it, so the line stays a
+number.
+
 **The output separator goes between every pair of statements**, including after
 one that ended in a word. The input side knows better — a statement ending in a
 word needs no separator after it, which is what lets C's `}` stand alone — but
@@ -243,35 +286,6 @@ against declaration*. It says nothing about two declarations of `"+"`, which is
 the other problem and a different one. Today the later one wins, silently.
 
 ## Not done
-
-**Hygiene, and it is the serious one.** Proto's templates are trees, so a name a
-template introduces can be renamed. A template that is a string cannot be. This
-was reasoned about here for one revision and is now tested:
-`examples/hygiene.pt` declares two ordinary forms, `tests/hygiene.sh` compiles
-the C that comes out and runs it, and both answers are wrong.
-
-```
-swap: 2 2      hygiene would give  swap: 2 1
-bump: 105 0    hygiene would give  bump: 100 5
-```
-
-**Writing that test found something the reasoning had missed: they are two
-failures and not one, and a fresh-name escape fixes only the first.**
-
-- `swap` *introduces* `t`, and the caller had a `t`. A way for a template to
-  ask for a name nobody else has — `{~t}` — closes this one, and it is
-  self-contained: the expander invents a name and nothing else needs to know.
-- `bump` *reaches out* for `total`, and the caller shadowed it. No naming
-  escape closes this. The template means the binding that was in scope where
-  the rule was declared, and a template that is a string does not know what a
-  scope is, cannot see the caller's, and has no spelling for *the outer one*.
-  Proto closes it because its expander works on trees in a language whose
-  scopes it knows. Closing it here would mean Prototype learning the output
-  language's binding rules, which is the one thing being agnostic gave up.
-
-So the honest statement is narrower than the old one. `{~t}` is worth doing and
-would halve the problem. The other half is not an unimplemented feature; it is
-the price, and `examples/hygiene.pt` is where it is charged.
 
 **Source maps.** The output has no way back to the line that produced it, so an
 error in a downstream compiler points into text nobody wrote. Proto emits a

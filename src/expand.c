@@ -15,6 +15,40 @@
 #include <string.h>
 
 typedef struct { const char *name; char *val; } Bind;
+typedef struct { char *label; char *name; } Fresh;
+
+/* ------------------------------------------------------------ fresh names */
+
+/* `{~t}` is a name nobody else has. It closes the half of the hygiene problem
+   a template can close on its own: the half where the template *introduces* a
+   name. The other half -- a template that reaches out for a name the caller
+   shadowed -- wants a scope, and a template that is a string has no way to see
+   one. See examples/hygiene.pt, which still gets that half wrong on purpose.
+
+   Taken means: it occurs anywhere in the source being expanded, or in any
+   template any rule declared, including the ones a @use brought in. That is a
+   substring test and so is conservative in the safe direction -- `t__1` is
+   refused while `t__12` is in the file -- and it costs one scan per name. */
+static const char *fresh_src;
+static Grammar    *fresh_g;
+static int         fresh_n;
+
+static int name_taken(const char *c)
+{
+    if (fresh_src && strstr(fresh_src, c)) return 1;
+    for (int i = 0; fresh_g && i < fresh_g->nrule; i++)
+        if (strstr(fresh_g->rule[i].tmpl, c)) return 1;
+    return 0;
+}
+
+static char *fresh_name(const char *label)
+{
+    for (int tries = 0; tries < 100000; tries++) {
+        char *c = xfmt("%s__%d", label, ++fresh_n);
+        if (!name_taken(c)) return c;
+    }
+    return NULL;
+}
 
 typedef struct {
     Grammar *g;
@@ -47,9 +81,41 @@ static char *subst(P *p, Rule *r, Bind *b, int nb)
 {
     Buf out = {0};
     const char *s = r->tmpl;
+
+    /* One application, one set of fresh names: two `{~t}` in a template are the
+       same name, and the next use of the rule gets a different one. */
+    Fresh *fr  = xmalloc(sizeof *fr * (strlen(s) / 4 + 2));
+    int    nfr = 0;
+
     for (size_t i = 0; s[i];) {
         if (s[i] == '{' && s[i + 1] == '{') { buf_ch(&out, '{'); i += 2; continue; }
         if (s[i] == '}' && s[i + 1] == '}') { buf_ch(&out, '}'); i += 2; continue; }
+        if (s[i] == '{' && s[i + 1] == '~') {
+            size_t j = i + 2;
+            while (s[j] && s[j] != '}') j++;
+            if (!s[j]) {
+                p->err = xfmt("%s:%d: unclosed '{' in a template", r->file, r->line);
+                return NULL;
+            }
+            char *label = xstrndup(s + i + 2, j - i - 2);
+            char *name  = NULL;
+            for (int k = 0; k < nfr; k++)
+                if (!strcmp(fr[k].label, label)) name = fr[k].name;
+            if (!name) {
+                name = fresh_name(label);
+                if (!name) {
+                    p->err = xfmt("%s:%d: no fresh name for '{~%s}' is free",
+                                  r->file, r->line, label);
+                    return NULL;
+                }
+                fr[nfr].label = label;
+                fr[nfr].name  = name;
+                nfr++;
+            }
+            buf_str(&out, name);
+            i = j + 1;
+            continue;
+        }
         if (s[i] == '{') {
             size_t j = i + 1;
             while (s[j] && s[j] != '}') j++;
@@ -233,6 +299,7 @@ static char *p_stmts(P *p, const char *term)
 
 char *expand_expr(Grammar *g, Toks *tk, char **err)
 {
+    fresh_src = tk->src; fresh_g = g; fresh_n = 0;
     P p = { g, tk, 0, 0, 0, NULL };
     char *out = p_stmts(&p, NULL);
     if (out && cur(&p)->kind != T_EOF) out = NULL;
@@ -357,5 +424,6 @@ char *expand_text(Grammar *g, const char *src, size_t from,
                   const char *file, char **err)
 {
     (void)file;
+    fresh_src = src; fresh_g = g; fresh_n = 0;
     return text_expand(g, src + from, strlen(src + from), 0, err);
 }

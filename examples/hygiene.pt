@@ -1,10 +1,13 @@
-; hygiene.pt -- the failure this notation has not fixed, in a form that runs.
+; hygiene.pt -- one half fixed, one half charged.
 ;
 ; A Proto template is a tree in a language Proto knows, so a name the template
 ; introduces can be renamed before anybody sees it. A Prototype template is a
-; string, and a string has no way to ask for a name nobody else has. Both
-; halves of that are below, and `tests/hygiene.sh` compiles the output and runs
-; it, so the two wrong numbers are numbers rather than an argument.
+; string. `{~t}` gives it the one thing a string can be given: a name nobody
+; else has. That closes the half of the problem where a template *introduces* a
+; name, and does not touch the half where a template *reaches out* for one.
+;
+; Both halves are below and `tests/hygiene.sh` compiles the output and runs it,
+; so which one works is a number rather than an argument.
 ;
 ; The output is C, minus one line: `tests/hygiene.sh` puts `#include <stdio.h>`
 ; in front of it. Everything else here comes out of the tool.
@@ -37,33 +40,52 @@
     => "int {f}(void) {{\n{b};\n}}"
 
 ; ---------------------------------------------------------------------------
-; The two forms. Neither is unusual and neither is careless: `swap` needs
-; somewhere to put a value, and `bump` means a particular variable. Written as
-; a template that is a string, neither can say which name it means.
+; The half a string can close.
+;
+; `swap` needs somewhere to put a value. `{~t}` is a name nobody else has: the
+; two occurrences below are one name within one expansion, and the next use of
+; the rule gets another. The caller's `t` is not it, and neither is the `t` the
+; other call site got.
 
-; It introduces `t`. It cannot ask for a `t` nobody else has.
-@syntax "swap" "(" a "," b ")"           => "t = {a}; {a} = {b}; {b} = t"
+@syntax "swap" "(" a "," b ")"
+    => "{{ int {~t} = {a}; {a} = {b}; {b} = {~t}; }}"
 
-; It reaches out for `total`. It cannot say *the outer one*.
+; ---------------------------------------------------------------------------
+; The half it cannot.
+;
+; `bump` does not introduce a name -- it *means* one, the file-scope `total`
+; that was in scope where this line was written. A fresh name is no use here:
+; there is nothing to invent. What is wanted is a way to say *the outer one*,
+; and a template that is a string has no way to see a scope, let alone reach
+; past a caller's. Proto can, because its expander works on trees in a language
+; whose scopes it knows. That is what agnosticism costs, and it is charged
+; below, in the two numbers `run` returns.
+
 @syntax "bump" "(" n ")"                 => "total = total + {n}"
 
 @end
 
 var t;
 var u;
+var p;
+var q;
 var total;
 var r;
 
-// The caller happens to have a `t`. So does the form.
+// Two callers, one form, one name in its template. The caller happens to have
+// a `t`; and the second call site must not get the first one's temporary.
 fn caller() {
     t = 1;
     u = 2;
     swap(t, u);
+    p = 3;
+    q = 4;
+    swap(p, q);
     give 0;
 }
 
 // The caller happens to have a `total`. So does the form, and it meant the
-// other one -- the file-scope `total` three lines above `caller`.
+// other one -- the file-scope `total` six lines above `caller`.
 fn run() {
     local total = 100;
     bump(5);
@@ -73,6 +95,7 @@ fn run() {
 fn main() {
     r = caller();
     show("swap", t, u);
+    show("again", p, q);
     r = run();
     show("bump", r, total);
     give 0;

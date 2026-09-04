@@ -92,6 +92,14 @@ expect "a 'text' hole belongs to @mode text" <<'EOF'
 f a g
 EOF
 
+expect "a fresh name needs a label" <<'EOF'
+@syntax "f" a => "{~}{a}"
+EOF
+
+expect "cannot share a label" <<'EOF'
+@syntax "f" a => "{~a} {a}"
+EOF
+
 expect "cannot open" <<'EOF'
 @use "no-such-file.pt"
 EOF

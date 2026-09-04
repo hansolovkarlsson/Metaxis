@@ -49,7 +49,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [poem.pt](examples/poem.pt) | `@mode text`: prose in, HTML out |
 | [reserved.pt](examples/reserved.pt) | every character Prototype writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator |
-| [hygiene.pt](examples/hygiene.pt) | the defect: two ordinary forms whose expansion captures a caller's names. `tests/hygiene.sh` compiles the C it emits and runs it, so the two wrong answers are numbers |
+| [hygiene.pt](examples/hygiene.pt) | `{~t}`, and the half of hygiene it cannot close. `tests/hygiene.sh` compiles the C it emits and runs it, so the remaining wrong answer is a number |
 
 The headline is `for`, which puts two `;` inside a pattern in a file whose body
 ends statements with `;`:
@@ -70,16 +70,24 @@ the tool knows the input grammar and nothing about the target's precedence. And
 `examples/hygiene.pt` and prints:
 
 ```
-ok      hygiene.sh: the capture is still here
-            swap: 2 2      hygiene would give  swap: 2 1
-            bump: 105 0    hygiene would give  bump: 100 5
+ok      hygiene.sh: {~t} holds; reaching out still does not
+            swap: 2 1      the template's own name, twice over
+            bump: 105 0    would be  bump: 100 5
 ```
 
-**That test passing means the defect is still here**, which is deliberate: a
-test that merely failed would be turned off, and one that pins the wrong answer
-has to be edited by whoever fixes it. Writing it found that these are two
-failures and not one — a fresh-name escape would close `swap` and cannot close
-`bump`, which wants a scope a string template has no way to see.
+Hygiene is two failures and not one. `{~t}` closes the half where a template
+**introduces** a name — it asks for a name nobody else has, and two calls of one
+rule get two of them. The half where a template **reaches out** for a name the
+caller shadowed stays open, and is not a missing feature: there is nothing for a
+fresh name to invent, what is wanted is a way to say *the outer one*, and a
+template that is a string cannot see a scope. Proto can, because its templates
+are trees in a language whose scopes it knows.
+
+**That test passing means the second half is still wrong**, which is deliberate:
+a test that merely failed would be turned off, and one that pins the wrong
+answer has to be edited by whoever fixes it. Its previous version pinned
+`swap: 2 2`; `{~t}` made that wrong, and rewriting it was part of the same
+commit.
 
 ## Layout
 

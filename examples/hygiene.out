@@ -1,11 +1,16 @@
 int t = 0;
 int u = 0;
+int p = 0;
+int q = 0;
 int total = 0;
 int r = 0;
 int caller(void) {
 t = 1;
 u = 2;
-t = t; t = u; u = t;
+{ int t__1 = t; t = u; u = t__1; };
+p = 3;
+q = 4;
+{ int t__2 = p; p = q; q = t__2; };
 return 0;
 };
 int run(void) {
@@ -16,6 +21,7 @@ return total;
 int main(void) {
 r = caller();
 printf("%s: %d %d\n", "swap", t, u);
+printf("%s: %d %d\n", "again", p, q);
 r = run();
 printf("%s: %d %d\n", "bump", r, total);
 return 0;
