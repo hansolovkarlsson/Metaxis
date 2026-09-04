@@ -501,6 +501,15 @@ static int text_comment(Grammar *g, const char *s, size_t len, size_t i,
     return 0;
 }
 
+/* The first place at or after `pos` where `w` occurs, or `len` for nowhere. */
+static size_t find_word(const char *s, size_t len, size_t pos, const char *w)
+{
+    size_t n = strlen(w);
+    for (size_t j = pos; j + n <= len; j++)
+        if (!memcmp(s + j, w, n)) return j;
+    return len;
+}
+
 static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
                        size_t i, size_t *end, int depth, char **err)
 {
@@ -522,10 +531,20 @@ static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
         size_t stop;
         if (!term) stop = len;
         else {
-            size_t tn = strlen(term), j = pos;
-            while (j + tn <= len && memcmp(s + j, term, tn)) j++;
-            if (j + tn > len) return NULL;
-            stop = j;
+            stop = find_word(s, len, pos, term);
+            if (stop == len) return NULL;
+
+            /* And it stops at the earliest of *every* word still to come in
+               this pattern, not only at the next one. A `]]` reached before the
+               `|` that was being looked for means the construct this rule reads
+               has already ended, and the rule does not match -- rather than the
+               hole swallowing the close and the search running on to whatever
+               `|` happens to appear later in the file. */
+            for (int j = k + 1; j < r->nel; j++) {
+                if (r->el[j].kind != EL_WORD) continue;
+                size_t at = find_word(s, len, pos, r->el[j].word);
+                if (at < stop) return NULL;
+            }
         }
         char *v = text_expand(g, s + pos, stop - pos, depth + 1, err);
         if (!v) return NULL;

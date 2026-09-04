@@ -11,6 +11,58 @@ Newest first.
 
 ---
 
+## 4 · A rule that was wrong, doing exactly what it said
+
+**Issue.** In text mode a hole stopped at *the first occurrence of the pattern's
+next word*, and nothing else. Given two rules for a wiki link — the labelled
+`"[[" t "|" u "]]"` declared before the bare `"[[" t "]]"` — this input
+
+```
+A plain [[here]] and a bar|pipe later.
+A labelled [[url|label]] too.
+```
+
+came out as
+
+```
+A plain <a href="pipe later.
+A labelled [[url|label">here</a> too.
+```
+
+The labelled rule matched `[[here]]`: `t` went looking for a `|`, did not find
+one before the `]]`, kept going, found the one in `bar|pipe` a line later, and
+swallowed the close and everything between. Silent, and wrong.
+
+**Root cause.** Not a code defect. `REFERENCE.md` §7 said *stops at the
+pattern's next word — the first occurrence, not the last*, and that is precisely
+what the code did. **The rule itself was wrong**, which is the harder kind: there
+was nothing to notice by reading the code against the documentation, because
+they agreed.
+
+It was also nearly invisible. `examples/poem.pt` had no rule that could fail
+partway — every pattern there is `"x" hole "x"`, where the terminator is the
+only word left to find — so the whole suite passed while the rule was wrong for
+any pattern with three words in it.
+
+**Solution.** A hole stops at the earliest of **every** word still to come in
+its pattern, and fails if what stops it is not its own terminator. A `]]`
+reached before the `|` means the construct has ended. `examples/poem.pt` now
+declares both link forms and carries the input above.
+
+**Learnings.** The first thing I told Hans about this was that it was a
+correctness bug in the matcher. It was not: the matcher did what it was
+documented to do, and it took reading §7 to see that. **A defect found by
+staring at output should be checked against the specification before it is
+called a bug, because "the code is wrong" and "the rule is wrong" want different
+fixes** — one is a patch and the other is a decision, and only the second has to
+be written down somewhere a reader will meet it.
+
+The example that was supposed to cover this feature could not have caught it.
+Every rule in `poem.pt` had exactly one word after its hole, so the difference
+between *the next word* and *every later word* did not exist in the test data. A
+feature demonstrated only in its easy shape is untested in its real one.
+
+---
 ## 3 · An unimplemented feature that was two features
 
 **Issue.** [notation.md](notation.md) recorded hygiene as a single open problem

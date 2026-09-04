@@ -10,6 +10,15 @@
 @syntax "//" t:text "//"          => "<em>{t}</em>"
 @syntax "**" t:text "**"          => "<strong>{t}</strong>"
 @syntax "[[" t:text "|" u:text "]]" => "<a href=\"{u}\">{t}</a>"
+
+; A link with no label, declared second so the labelled form is tried first.
+; This pair is the regression test for the rule two lines down: on `[[here]]`
+; the labelled form has to *fail*, and before 2026-09-04 it did not -- `t` went
+; looking for a `|` and found one three lines away, swallowing the `]]` and
+; everything between. A hole stops at the earliest of every word still to come
+; in its pattern, and a `]]` reached before the `|` means this construct has
+; already ended.
+@syntax "[[" t:text "]]"            => "<a href=\"{t}\">{t}</a>"
 @syntax "~"                       => "&nbsp;"
 
 ; Three dashes, declared shortest first on purpose. Text mode munches the way
@@ -40,6 +49,7 @@
 The //quick// brown fox jumps over the **lazy** dog.
 He was late --- twelve~o'clock, and the gate still shut.
 See [[the manual|https://example.com/manual]] for the rest.
+Or just [[https://example.com]], and a stray | pipe well after it.
 Pages 3-4, an aside -- and a longer one --- than that.
 
 Nested, because a hole's text is expanded in its turn:

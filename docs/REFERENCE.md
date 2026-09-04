@@ -465,9 +465,15 @@ else is copied through unchanged.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else — `examples/poem.pt`
   declares `-`, `--` and `---` in that order and `---` still wins.
-- **Every hole is text**, whatever kind it was given, and stops at the pattern's
-  next word — the first occurrence, not the last. A hole with no word after it
-  takes the rest of the enclosing text.
+- **Every hole is text**, whatever kind it was given, and stops at the first
+  occurrence of the pattern's next word. A hole with no word after it takes the
+  rest of the enclosing text.
+- **A hole also stops at every other word still to come in its pattern**, and if
+  one of those is reached first the rule does not match. In
+  `"[[" t "|" u "]]"`, a `]]` found before the `|` means the construct has
+  already ended, so the rule fails and the next one is tried — rather than `t`
+  swallowing the close and the search running on to whatever `|` appears later
+  in the file. `examples/poem.pt` pins both halves.
 - **A hole's text is expanded in its turn**, so `**a //slanted// claim**` nests.
   Depth is capped at 64 (`a text rule expands into itself`).
 - If a rule's pattern does not complete, nothing is consumed and the next rule is
