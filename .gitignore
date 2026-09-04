@@ -9,3 +9,7 @@ scratch/
 build/
 bin/
 *.o
+*.d
+*.a
+*.dSYM/
+compile_commands.json

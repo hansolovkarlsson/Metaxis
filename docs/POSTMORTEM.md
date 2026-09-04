@@ -1,0 +1,100 @@
+# Postmortem
+
+*The **scoring**. One entry per mistake or prediction that has met evidence — one
+that held, one that failed, or one that held and then failed — under **Issue**,
+**Root cause**, **Solution** and **Learnings**. Not a bug log: a defect belongs
+here when what it taught outlives it, and a day that scored nothing adds
+nothing. The learning is the part that has to be true a year from now, so it
+says what would have caught the thing rather than resolving to be more careful.*
+
+Newest first.
+
+---
+
+## 3 · An unimplemented feature that was two features
+
+**Issue.** [notation.md](notation.md) recorded hygiene as a single open problem
+with a single fix — *either the template gets a way to ask for a fresh name
+(`{~t}` ) or agnosticism costs hygiene* — and admitted in the same paragraph
+that the gap had been reasoned about and not tested. Building the test showed
+the sentence was wrong: there are two failures, and `{~t}` closes one of them
+and cannot close the other.
+
+**Root cause.** The two failures look identical from outside — a form's
+expansion collides with a caller's name — so one example seemed to cover both.
+They are not the same thing. A template that *introduces* a name needs a name
+nobody else has, which a template can be handed. A template that *reaches out*
+for a name the caller shadowed needs to know what a scope is, which a template
+that is a string cannot be handed at all. Reasoning about the symptom found one
+mechanism where there were two.
+
+**Solution.** `examples/hygiene.pt` declares both forms; `tests/hygiene.sh`
+compiles the C they expand to and runs it. `{~t}` was then built, and the second
+half moved out of "Not done" and into "What it costs", because it is the price
+of being agnostic and not a feature nobody has written yet.
+
+**Learnings.** *Unsolved* and *untested* are different states, and the gap
+between them hid a structural fact rather than a detail. A problem described
+only in prose can be described as one problem when it is two, and nothing in the
+prose will say so — running it is what splits them. The test is written to pin
+the **wrong** answer for the half that is still wrong, so that fixing it forces
+an edit to the test in the same commit; a test that merely failed would have
+been switched off.
+
+---
+
+## 2 · Two claims that survived a passing suite and were killed by a document
+
+**Issue.** Writing [REFERENCE.md](REFERENCE.md) meant checking every statement
+against the code instead of against memory. Two were false.
+
+Text mode tried rules in declaration order, so a file declaring `-` before `---`
+turned `a --- b` into three hyphens — the opposite of the maximal munch the
+lexer had been doing in expression mode all along, and of what the documentation
+said the tool did. And the `@use` limit incremented a counter that was never
+decremented, so the real ceiling was 64 *used files in a run* while three
+documents said "64 deep".
+
+**Root cause.** Text mode was written as a separate scanner and did not inherit
+the rule the lexer had already been given, because nothing forced the two to be
+described in one place until a reference existed. The `@use` counter is the
+plainer failure: the name `nfiles` said what it counted and the prose said
+something else, and no test distinguished them because no test went past one
+level.
+
+**Solution.** Longest leading word wins in text mode, declaration order breaking
+ties only. `examples/poem.pt` now declares `-`, `--` and `---` in that order and
+pins the outcome, so the bug cannot come back quietly. `@use` decrements on the
+way out.
+
+**Learnings.** **A reference is a test.** Four commits and a green suite did not
+find either of these; writing down every claim and checking it found both in one
+pass, and each was a one-line fix once seen. The suite could not have found
+them, because both were places where the code and the *intended rule* differed
+and no example exercised the difference — which is exactly the shape a document
+catches and a test does not, unless somebody first knows to write the test.
+
+---
+
+## 1 · A parse failure that wanted a rule, not a patch
+
+**Issue.** `examples/clike.pt` would not parse. `for (…) { … }` followed by
+`total.print;` failed, because the statement loop required a separator between
+every pair of statements and C's block statements carry none.
+
+**Root cause.** The separator rule had been taken from Proto, where `.` between
+statements is unconditional. It is unconditional there because Solveig has no
+self-terminating statement; C and Pascal both do, and a language-agnostic tool
+meets one on its first real file.
+
+**Solution.** *A separator is wanted between two statements, and not after one
+that ended in a word.* Stated in [REFERENCE.md](REFERENCE.md) §6.3, implemented
+in four lines.
+
+**Learnings.** The first instinct was to make `examples/clike.pt` write the
+semicolons — which would have compiled, passed, and quietly made the tool unable
+to read C. A failure on the first realistic input is evidence about the rule and
+not about the input, and the cost of getting that backwards is a tool that only
+reads the files written to suit it. Proto's `conventions.md` puts the general
+form of this as *a surface does not grow without a customer*; the converse is
+that a customer who cannot be served is telling you about the surface.
