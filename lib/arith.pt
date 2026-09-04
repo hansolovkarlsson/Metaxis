@@ -1,0 +1,19 @@
+; arith.pt -- ordinary arithmetic, for a file that would rather not restate it.
+;
+; A used file holds directives and nothing else, and is looked for beside the
+; file that used it. It declares no comment and no separator: those belong to
+; the file being written, not to the arithmetic in it.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+
+@syntax "(" e ")"                 => "({e})"
+@syntax a ":" m:name    95        => "{a}:{m}"
+
+@syntax a "^" b         80 right  => "{a}:pow({b})"
+@syntax "-" a           90        => "{a}:negated"
+@syntax a "*" b         70        => "{a}:mul({b})"
+@syntax a "/" b         70        => "{a}:div({b})"
+@syntax a "+" b         60        => "{a}:add({b})"
+@syntax a "-" b         60        => "{a}:sub({b})"
+@syntax a "=" b         10 right  => "{a} := {b}"

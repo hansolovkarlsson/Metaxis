@@ -34,9 +34,10 @@
 
 ; A declared word is still not reserved. `mod` above is a word between two
 ; operands and a name everywhere else, which is why the body can have a
-; variable called `mod` without this line and that one arguing.
+; variable called `mod` without this line and that one arguing. Nothing in the
+; lexer knows about `mod`: it is a name token whose text happens to match.
 
-@syntax "begin" body:rest "end"                => "{{\n{body}\n}}"
+@syntax "begin" body:stmts "end"               => "{{\n{body}\n}}"
 @syntax "if" c "then" t                        => "if ({c}) {t}"
 @syntax "if" c "then" t "else" f               => "if ({c}) {t} else {f}"
 @syntax "while" c "do" b                       => "while ({c}) {b}"
@@ -64,10 +65,13 @@ begin
   if not (total > 100) then writeln('it''s middling') else writeln('big')
 end
 
-; One thing this file does not do, and the omission is the interesting part.
-; `'it''s middling'` reaches the output as Pascal spelled it, because a
-; `string` hole splices the source text it matched and nothing translates a
-; literal unless a rule says so. C wants `"it's middling"`. That is a seventh
-; rule -- a `@syntax` over the `string` token class -- and its absence here is
-; what a text template looks like when it is honest: the tool moved the token,
-; it did not understand it.
+(* One thing this file does not do, and the omission is the interesting part.
+   The apostrophe string reaches the output as Pascal spelled it, because a
+   `string` hole splices the source text it matched and nothing translates a
+   literal unless a rule says so. C wants double quotes. That is a seventh
+   rule, a @syntax over the string token class, and its absence here is what a
+   text template looks like when it is honest: the tool moved the token, it did
+   not understand it.
+
+   This note is in a Pascal comment because it is below @end, and below @end
+   the only comments are the ones this file declared. *)

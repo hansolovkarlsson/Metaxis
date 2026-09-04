@@ -7,9 +7,9 @@
 @mode text
 @comment "%%" eol
 
-@syntax "//" t:rest "//"          => "<em>{t}</em>"
-@syntax "**" t:rest "**"          => "<strong>{t}</strong>"
-@syntax "[[" t "|" u "]]"         => "<a href=\"{u}\">{t}</a>"
+@syntax "//" t:text "//"          => "<em>{t}</em>"
+@syntax "**" t:text "**"          => "<strong>{t}</strong>"
+@syntax "[[" t:text "|" u:text "]]" => "<a href=\"{u}\">{t}</a>"
 @syntax "~"                       => "&nbsp;"
 @syntax "---"                     => "&mdash;"
 
@@ -28,9 +28,11 @@
 ; thing you are looking at comes before finding where it ends.
 
 @end
-
 %% This line is a comment and does not reach the output.
 
 The //quick// brown fox jumps over the **lazy** dog.
 He was late --- twelve~o'clock, and the gate still shut.
 See [[the manual|https://example.com/manual]] for the rest.
+
+Nested, because a hole's text is expanded in its turn:
+**a //loud and slanted// claim**.

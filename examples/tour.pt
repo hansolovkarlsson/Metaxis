@@ -2,10 +2,21 @@
 ;
 ; The header mentions text. The body is text. Quotes are what tell the two
 ; apart, on both sides of the arrow, and they are the only thing that has to.
+;
+; Everything the body uses is declared here, including the send and the
+; comment. Nothing is built in, which is the cost of being language agnostic
+; and is paid once per file.
+
+@comment ";" eol
 
 @token  number "#-?[0-9]+"
 @token  name   "[A-Za-z_][A-Za-z0-9_]*"
+@token  string "\"[^\"]*\""
+
 @separator "." => ".\n"
+
+@syntax "(" e ")"                   => "({e})"
+@syntax a ":" m:name      95        => "{a}:{m}"
 
 @syntax a "+" b           60        => "{a}:add({b})"
 @syntax a "-" b           60        => "{a}:sub({b})"
@@ -15,15 +26,17 @@
 ; A pattern beginning with a word is a prefix rule and needs no level. One
 ; beginning with a hole is infix or postfix and does. There is no second
 ; directive saying which -- the shape says it.
-@syntax "unless" c "then" t:block            => "{c}:not:ifTrue({t})"
-@syntax "if" c "then" t:block "else" f:block => "{c}:ifElse({t}, {f})"
+@syntax "unless" c "then" "{" t:stmts "}"
+    => "{c}:not:ifTrue({{ {t} }})"
+@syntax "if" c "then" "{" t:stmts "}" "else" "{" f:stmts "}"
+    => "{c}:ifElse({{ {t} }}, {{ {f} }})"
 
 ; Words at both ends: a circumfix. Proto has no directive with this shape,
 ; because there a directive's name is what named the shape.
-@syntax "|" a "|"                    => "{a}:abs"
+@syntax "|" a "|"                   => "{a}:abs"
 
-; And a lone bar is a bar. It is one character inside a string; it has nothing
-; to do with the bar that opens a block's temporaries, six lines down.
+; And a lone bar is a bar. It is one character inside a string, and it has
+; nothing to do with the bar on the line above.
 @syntax a "|" b           20        => "{a}:bitOr({b})"
 
 n = #3.

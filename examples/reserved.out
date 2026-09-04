@@ -1,0 +1,5 @@
+env:at(home:print)
+ready:then({ go:print })
+x:tagged:print
+a:quote(b)
+k:brace(v):print

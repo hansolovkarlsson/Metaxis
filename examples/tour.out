@@ -1,0 +1,7 @@
+n := #3.
+n:lessThan(#1):not:ifTrue({ n:print }).
+n:lessThan(#5):ifElse({ "small":print }, { "big":print }).
+#0:sub(#7):abs:print.
+(#5:bitOr(#2)):print.
+then := #1.
+(then:add(n)):print

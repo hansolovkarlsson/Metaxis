@@ -1,0 +1,16 @@
+; use.pt -- a file whose arithmetic came from somewhere else.
+;
+; `@use` reads another file's directives into this one's header. The used file
+; is looked for beside this one, holds directives and nothing else, and stops
+; at 64 deep. What it does not bring is a comment or a separator: this file
+; declares those, because they are its own and not its arithmetic's.
+
+@use "../lib/arith.pt"
+
+@comment "#" eol
+@separator ";" => ".\n"
+
+@end
+x = 2 ^ 3 ^ 2;          # right, so 2 ^ (3 ^ 2) and not (2 ^ 3) ^ 2
+y = -x + 4 * 5;         # the prefix `-` binds tighter than the infix one
+(x - y):print;

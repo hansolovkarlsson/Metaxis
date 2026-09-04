@@ -1,0 +1,361 @@
+/* expand.c -- the half the header wrote.
+ *
+ * A pattern that begins with a hole is a led rule and needs a level; one that
+ * begins with a word is a nud rule and does not. Nobody declares which -- it
+ * is read off the shape, which is what quoting the words bought.
+ *
+ * Candidates under one leading word are tried longest first with the token
+ * cursor restored on failure. Proto matches them in lockstep and needs no
+ * backtracking; this backtracks, which is slower and shorter, and the inputs
+ * are files.
+ */
+#include "pt.h"
+
+#include <ctype.h>
+#include <string.h>
+
+typedef struct { const char *name; char *val; } Bind;
+
+typedef struct {
+    Grammar *g;
+    Toks    *tk;
+    int      i, far, depth;
+    char    *err;
+} P;
+
+#define MAXDEPTH 400
+
+static Tok *cur(P *p) { return &p->tk->t[p->i]; }
+
+static int tok_is(P *p, const char *w)
+{
+    Tok *t = cur(p);
+    if (t->kind == T_EOF) return 0;
+    size_t n = strlen(w);
+    return t->n == n && !memcmp(t->p, w, n);
+}
+
+static void adv(P *p)
+{
+    if (cur(p)->kind != T_EOF) p->i++;
+    if (p->i > p->far) p->far = p->i;
+}
+
+/* --------------------------------------------------------------- templates */
+
+static char *subst(P *p, Rule *r, Bind *b, int nb)
+{
+    Buf out = {0};
+    const char *s = r->tmpl;
+    for (size_t i = 0; s[i];) {
+        if (s[i] == '{' && s[i + 1] == '{') { buf_ch(&out, '{'); i += 2; continue; }
+        if (s[i] == '}' && s[i + 1] == '}') { buf_ch(&out, '}'); i += 2; continue; }
+        if (s[i] == '{') {
+            size_t j = i + 1;
+            while (s[j] && s[j] != '}') j++;
+            if (!s[j]) {
+                p->err = xfmt("%s:%d: unclosed '{' in a template", r->file, r->line);
+                return NULL;
+            }
+            char *name = xstrndup(s + i + 1, j - i - 1);
+            char *val  = NULL;
+            for (int k = 0; k < nb; k++)
+                if (!strcmp(b[k].name, name)) val = b[k].val;
+            if (!val) {
+                p->err = xfmt("%s:%d: the template splices '{%s}' and the pattern has no such hole",
+                              r->file, r->line, name);
+                return NULL;
+            }
+            buf_str(&out, val);
+            i = j + 1;
+            continue;
+        }
+        buf_ch(&out, s[i]);
+        i++;
+    }
+    if (!out.p) buf_str(&out, "");
+    return out.p;
+}
+
+/* ------------------------------------------------------------------- parser */
+
+static char *p_expr(P *p, int minbp);
+static char *p_stmts(P *p, const char *term);
+
+static char *p_rule(P *p, Rule *r, char *leftval)
+{
+    Bind *b = xmalloc(sizeof *b * (size_t)(r->nel + 1));
+    int   nb = 0, k = 0;
+
+    if (r->led) { b[nb].name = r->el[0].hole; b[nb].val = leftval; nb++; k = 1; }
+
+    for (; k < r->nel; k++) {
+        Elem *e = &r->el[k];
+        if (e->kind == EL_WORD) {
+            if (!tok_is(p, e->word)) return NULL;
+            adv(p);
+            continue;
+        }
+        char *v = NULL;
+        switch (e->hk) {
+        case K_CLASS: {
+            Tok *t = cur(p);
+            if (t->kind != T_CLASS || t->cls != e->cls) return NULL;
+            v = xstrndup(t->p, t->n);
+            adv(p);
+            break;
+        }
+        case K_EXPR: {
+            int bp = 0;
+            if (k == r->nel - 1) {
+                if (r->led) bp = r->right ? r->level - 1 : r->level;
+                else if (r->level >= 0) bp = r->level;
+            }
+            v = p_expr(p, bp);
+            if (!v) return NULL;
+            break;
+        }
+        case K_STMTS: {
+            const char *term = k + 1 < r->nel ? r->el[k + 1].word : NULL;
+            v = p_stmts(p, term);
+            if (!v) return NULL;
+            break;
+        }
+        default:
+            p->err = xfmt("%s:%d: a 'text' hole belongs to @mode text", r->file, r->line);
+            return NULL;
+        }
+        b[nb].name = e->hole;
+        b[nb].val  = v;
+        nb++;
+    }
+    return subst(p, r, b, nb);
+}
+
+/* Candidates under one leading word, longest pattern first: that is what makes
+   `if c then t else f` win over `if c then t`, and it is the whole of the
+   dangling else -- the inner `if` takes the `else` because it is asked first. */
+static int collect(P *p, Rule **out, int led, int minbp)
+{
+    int n = 0;
+    for (int i = 0; i < p->g->nrule; i++) {
+        Rule *r = &p->g->rule[i];
+        if (r->led != led) continue;
+        Elem *w = led ? &r->el[1] : &r->el[0];
+        if (!tok_is(p, w->word)) continue;
+        if (led && !(r->level > minbp)) continue;
+        int j = n++;
+        while (j > 0 && out[j - 1]->nel < r->nel) { out[j] = out[j - 1]; j--; }
+        out[j] = r;
+    }
+    return n;
+}
+
+static char *p_nud(P *p)
+{
+    if (++p->depth > MAXDEPTH) {
+        p->err = xstrdup("the grammar recurses without consuming anything");
+        return NULL;
+    }
+    char *res = NULL;
+    Tok  *t   = cur(p);
+    if (t->kind != T_EOF) {
+        Rule **c = xmalloc(sizeof *c * (size_t)(p->g->nrule + 1));
+        int    n = collect(p, c, 0, 0);
+        for (int i = 0; i < n && !res && !p->err; i++) {
+            int save = p->i;
+            res = p_rule(p, c[i], NULL);
+            if (!res) p->i = save;
+        }
+        if (!res && !p->err && t->kind == T_CLASS) {
+            res = xstrndup(t->p, t->n);
+            adv(p);
+        }
+    }
+    p->depth--;
+    return res;
+}
+
+static char *p_expr(P *p, int minbp)
+{
+    char *left = p_nud(p);
+    if (!left) return NULL;
+    if (++p->depth > MAXDEPTH) {
+        p->err = xstrdup("the grammar recurses without consuming anything");
+        return NULL;
+    }
+    for (;;) {
+        if (cur(p)->kind == T_EOF || p->err) break;
+        Rule **c = xmalloc(sizeof *c * (size_t)(p->g->nrule + 1));
+        int    n = collect(p, c, 1, minbp);
+        char  *res = NULL;
+        for (int i = 0; i < n && !res && !p->err; i++) {
+            int save = p->i;
+            res = p_rule(p, c[i], left);
+            if (!res) p->i = save;
+        }
+        if (!res) break;
+        left = res;
+    }
+    p->depth--;
+    return left;
+}
+
+static char *p_stmts(P *p, const char *term)
+{
+    Grammar *g = p->g;
+    Buf b = {0};
+    int first = 1;
+
+    if (!g->sep_in) {
+        if (term && tok_is(p, term)) return xstrdup("");
+        return p_expr(p, 0);
+    }
+    for (;;) {
+        while (tok_is(p, g->sep_in)) adv(p);
+        if (cur(p)->kind == T_EOF) break;
+        if (term && tok_is(p, term)) break;
+        char *s = p_expr(p, 0);
+        if (!s) return NULL;
+        if (!first) buf_str(&b, g->sep_out);
+        buf_str(&b, s);
+        first = 0;
+        if (tok_is(p, g->sep_in)) continue;
+        /* A separator is wanted between two statements, and not after one that
+           ended in a word. That is what lets `}` stand on its own, in C and in
+           Pascal alike, without a rule having to declare itself terminating. */
+        if (p->i > 0 && p->tk->t[p->i - 1].kind == T_PUNCT) continue;
+        break;
+    }
+    if (!b.p) buf_str(&b, "");
+    return b.p;
+}
+
+char *expand_expr(Grammar *g, Toks *tk, char **err)
+{
+    P p = { g, tk, 0, 0, 0, NULL };
+    char *out = p_stmts(&p, NULL);
+    if (out && cur(&p)->kind != T_EOF) out = NULL;
+    if (!out) {
+        if (p.err) { *err = p.err; return NULL; }
+        Tok *t = &tk->t[p.far];
+        if (t->kind == T_EOF)
+            *err = xfmt("%s:%d: the file ends in the middle of something", tk->file, t->line);
+        else
+            *err = xfmt("%s:%d: no rule reads '%.*s' here",
+                        tk->file, t->line, (int)t->n, t->p);
+        return NULL;
+    }
+    return out;
+}
+
+/* ---------------------------------------------------------------- text mode */
+
+static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char **err);
+
+static int text_comment(Grammar *g, const char *s, size_t len, size_t i,
+                        size_t *start, size_t *end)
+{
+    for (int c = 0; c < g->ncom; c++) {
+        size_t n = strlen(g->com[c].open);
+        if (i + n > len || memcmp(s + i, g->com[c].open, n)) continue;
+        size_t j = i + n;
+        if (g->com[c].eol) {
+            while (j < len && s[j] != '\n') j++;
+            /* A comment that is the whole line takes the line with it. */
+            size_t a = i;
+            while (a > 0 && (s[a - 1] == ' ' || s[a - 1] == '\t')) a--;
+            if (a == 0 || s[a - 1] == '\n') {
+                if (j < len && s[j] == '\n') j++;
+                *start = a;
+            } else *start = i;
+        } else {
+            size_t m = strlen(g->com[c].close);
+            while (j < len && (j + m > len || memcmp(s + j, g->com[c].close, m))) j++;
+            if (j < len) j += m;
+            *start = i;
+        }
+        *end = j;
+        return 1;
+    }
+    return 0;
+}
+
+static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
+                       size_t i, size_t *end, int depth, char **err)
+{
+    Bind *b  = xmalloc(sizeof *b * (size_t)(r->nel + 1));
+    int   nb = 0;
+    size_t pos = i;
+
+    for (int k = 0; k < r->nel; k++) {
+        Elem *e = &r->el[k];
+        if (e->kind == EL_WORD) {
+            size_t n = strlen(e->word);
+            if (pos + n > len || memcmp(s + pos, e->word, n)) return NULL;
+            pos += n;
+            continue;
+        }
+        const char *term = k + 1 < r->nel && r->el[k + 1].kind == EL_WORD
+                         ? r->el[k + 1].word : NULL;
+        size_t stop;
+        if (!term) stop = len;
+        else {
+            size_t tn = strlen(term), j = pos;
+            while (j + tn <= len && memcmp(s + j, term, tn)) j++;
+            if (j + tn > len) return NULL;
+            stop = j;
+        }
+        char *v = text_expand(g, s + pos, stop - pos, depth + 1, err);
+        if (!v) return NULL;
+        b[nb].name = e->hole;
+        b[nb].val  = v;
+        nb++;
+        pos = stop;
+    }
+    *end = pos;
+
+    P p = { g, NULL, 0, 0, 0, NULL };
+    char *out = subst(&p, r, b, nb);
+    if (!out) *err = p.err;
+    return out;
+}
+
+static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char **err)
+{
+    if (depth > 64) { *err = xstrdup("a text rule expands into itself"); return NULL; }
+    Buf out = {0};
+    for (size_t i = 0; i < len;) {
+        size_t cs, ce;
+        if (text_comment(g, s, len, i, &cs, &ce)) {
+            size_t back = i - cs;              /* un-emit the line's indent */
+            if (back > out.n) back = out.n;
+            out.n -= back;
+            if (out.p) out.p[out.n] = 0;
+            i = ce;
+            continue;
+        }
+        char *res = NULL;
+        size_t end = i;
+        for (int k = 0; k < g->nrule && !res; k++) {
+            Rule *r = &g->rule[k];
+            if (r->led || r->el[0].kind != EL_WORD) continue;
+            size_t n = strlen(r->el[0].word);
+            if (i + n > len || memcmp(s + i, r->el[0].word, n)) continue;
+            res = text_rule(g, r, s, len, i, &end, depth, err);
+            if (*err) return NULL;
+        }
+        if (res) { buf_str(&out, res); i = end; continue; }
+        buf_ch(&out, s[i]);
+        i++;
+    }
+    if (!out.p) buf_str(&out, "");
+    return out.p;
+}
+
+char *expand_text(Grammar *g, const char *src, size_t from,
+                  const char *file, char **err)
+{
+    (void)file;
+    return text_expand(g, src + from, strlen(src + from), 0, err);
+}

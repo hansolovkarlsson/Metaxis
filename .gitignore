@@ -4,3 +4,8 @@ scratch/
 # Editor / OS
 .DS_Store
 *.swp
+
+# Build artefacts
+build/
+bin/
+*.o

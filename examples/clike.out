@@ -1,0 +1,8 @@
+total := 0.
+i := 0.
+{ i:lessThan(20) }:whileTrue({ i:mod(3):equals(0):and({ i:notEquals(9) }):ifElse({ total := total:add(i) }, { total := total:sub(1) }). i := i:add(1) }).
+total:print.
+flags := 0x0c:bitOr(3).
+(flags:equals(0)):not:and({ flags:lessOrEqual(0x0f) }):ifTrue({ flags:print }).
+xs:first:deref:next:print.
+xs:at(2):print

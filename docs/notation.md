@@ -1,8 +1,11 @@
 # The notation
 
-An experiment, and nothing here is implemented. `.pt` in, `.out` out. What it
-changes is the *mention* of foreign text inside a directive, which is where
-Proto's grammar and the grammars it declares keep meeting.
+`.pt` in, `.out` out. What this changes, against Proto, is the *mention* of
+foreign text inside a directive — which is where Proto's grammar and the
+grammars it declares keep meeting.
+
+Everything on this page is implemented and is exercised by `examples/`.
+What is not is under [Not done](#not-done), at the bottom.
 
 ## The one rule
 
@@ -45,38 +48,39 @@ operands. Once words are quoted, position says it:
 | `"-" a` | prefix | begins with a word |
 | `a "++"` | postfix | begins with a hole, ends with a word |
 | `"(" e ")"` | circumfix | words at both ends |
+| `"~"` | a word alone | no holes at all |
 | `"if" c "then" t` | mixfix | the general case |
 
 The Pratt distinction is already in the shape: a pattern that **begins with a
 hole** is a led rule and needs a level; one that **begins with a word** is a nud
-rule and does not. Nobody declares which — it is read off.
+rule and does not. Nobody declares which — it is read off, in
+`header.c:rule_syntax`, in one line.
 
 **`<` and `>` stop being needed.** A hole is a bare name because a word is a
 quoted string, so a pattern's own punctuation no longer comes out of the pool of
 characters the file is busy declaring.
 
 **The lexer stops being a fixed budget.** Proto's operator characters are a
-closed set — `. , : | ;` are spoken for and `;` opens a comment — because the
-lexer runs before it knows what the file declared. Here the whole header is read
-first, and declared punctuation joins the token set by longest match. `;` as a
-statement separator, `|` as bitwise or, `.` as field access: all writable,
-because none of them is anything until a string says so.
+closed set — `. , : | ;` are spoken for and `;` opens a comment — because its
+lexer runs before it knows what the file declared. Here the header is read
+first and `lex.c` runs second, so `;` as a statement separator, `|` as bitwise
+or and `.` as field access are all writable: none of them is anything until a
+string says so.
 
 **Literals become declarable too.** `@token number "[0-9]+"` is what lets `42`
 be an integer without a sigil — the one thing on Proto's impossible list that is
 the lexer's rule about literals rather than a collision. Pascal's `'it''s'` and
 C's `0x1f` are the same directive with a different string in it.
 
-**Alphabetic words still are not reserved.** They are matched by position, not
-by the lexer, which is Proto's rule and a good one. `then` is a form's word
-where a form wants one and a name everywhere else, including in the same file.
+**Alphabetic words still are not reserved.** See *Ties*, below. `then` is a
+form's word where a form wants one and a name everywhere else, including in the
+same file — `examples/tour.pt` uses `then` both ways four lines apart.
 
 **Directives stop needing a terminator.** Proto ends one with `.`, which is also
-the statement separator inside the template. A directive here ends at a newline
-that is not inside brackets or a string, so nothing has to guess where the
-template stopped.
+the statement separator inside the template. Here a directive ends at a newline,
+and continues only onto a line that is *indented*.
 
-## Grammar
+## The directives
 
 ```ebnf
 module      = header body .
@@ -86,83 +90,175 @@ directive   = "@use"       string
             | "@mode"      ( "expression" | "text" )
             | "@token"     name string
             | "@comment"   string ( string | "eol" )
-            | "@separator" string [ "=>" template ]
-            | "@syntax"    pattern [ level ] "=>" template .
+            | "@separator" string [ "=>" string ]
+            | "@syntax"    pattern [ level ] "=>" template
+            | "@end" .
 
 pattern     = element { element } .
 element     = string | hole .
 hole        = name [ ":" kind ] .
-kind        = "expr" | "name" | "number" | "string" | "block" | "line" | "rest"
-            | a class named by @token .
+kind        = "expr" | "stmts" | "text" | a class named by @token .
 level       = integer [ "left" | "right" ] .
 template    = string, with "{" name "}" splices and "{{" "}}" for a brace .
 ```
 
-Every string above is a Prototype string: `"…"` with `\"` `\\` `\n` `\t`. That
-never varies, in any file, whatever the file declares.
+Every string above is a Prototype string: `"…"` with `\"` `\\` `\n` `\t` `\r`
+and no other escape. That never varies, in any file, whatever the file declares.
 
-**The header ends at the first line that does not begin a directive**, or at
-`@end`. One-way: below it nothing is a directive, so a body may begin a line
-with `@` and mean it. `@end` is there for the file that declares `@` as an
-operator and wants to open the body with one.
+**`@token`** names a class and gives a POSIX extended regular expression for it.
+Redeclaring a name replaces it.
 
-**Two holes may not sit adjacent unless the second is a `block`** — Proto's
-rule, kept, and for Proto's reason: given `a b` and `f x + y` the first hole
-takes the sum and the second finds nothing.
+**`@comment`** adds an opener. It does not replace anything: `;` to end of line
+is Prototype's own header comment and always works, and a declared comment joins
+it. Below the body, only the declared ones are left.
 
-**`@separator` has two halves for the same reason a rule does.** `@separator ";" => ";\n"` says the input separates statements with `;` and the output joins them with `;` and a newline. Where the output half is left off, the input text is reused.
+**`@separator`** gives the input separator and, after `=>`, what to join the
+output with. Without the second half the input text is reused. A separator of
+`"\n"` makes newline a token instead of whitespace — `examples/reserved.pt`
+uses it.
 
-**Two modes.** `@mode expression`, the default, parses the whole body with the
-declared grammar and calls anything unmatched an error — a programming
-language. `@mode text` scans the body, fires a rule where one matches and copies
-everything else through verbatim — prose, markup, a poem. Same directives, same
+**`@use`** reads another file's directives into this header. It is looked for
+beside the file that used it, holds directives and nothing else, and stops at
+64 deep. `examples/use.pt` takes its arithmetic from `lib/arith.pt` and keeps
+its own comment and separator, which is the division that file is for.
+
+**`@end`** ends the header. Without it the header ends at the first line that
+does not begin a directive. Either way it is one-way: below it nothing is a
+directive, so a body may begin a line with `@` and mean it — which
+`examples/reserved.pt` does, having declared `@` as an operator.
+
+## The rules the implementation had to settle
+
+Six things quoting does not decide by itself. Each is a decision, and each is
+one line to state.
+
+**A hole's kind is how far it reaches.** `expr` parses an expression, `stmts` a
+run of statements up to the pattern's next word, `text` raw source, and a class
+name exactly one token of that class. `examples/pascal.pt` needs `i:name` in
+`"for" i:name ":=" …` so that the `:=` is the `for`'s and not the infix rule's:
+a `name` hole takes one token and stops, where an `expr` hole would take the
+assignment. This is the one thing quoting does not do by itself.
+
+**Two holes may not sit next to each other.** Proto's rule, kept, and for
+Proto's reason: given `a b` and `f x + y` the first hole takes the sum and the
+second finds nothing. Proto allows the pair when the second is a `block`; here a
+rule takes its own braces instead — `"if" "(" c ")" "{" t:stmts "}"` — so the
+exception is not needed and does not exist.
+
+**Ties go to the token class.** At each position the lexer takes the longest
+match from a declared class and the longest match from a declared word, and
+**the class wins a tie**. That is the whole of *an alphabetic word is not
+reserved*: `div` is a `name` token whose text happens to be `div`, a rule that
+wants the word compares text, and `divisor` is a longer class match than the
+word so it never splits.
+
+**Comments are looked for before words.** A file whose comment opener is also an
+operator gets the comment. It is the only precedence in the lexer the file did
+not set, and it is stated because it is not derivable.
+
+**Candidates under one leading word are tried longest first**, with the token
+cursor restored on failure. That is what makes `if c then t else f` win over
+`if c then t`, and it is the whole of the dangling else: the inner `if` takes
+the `else` because it is asked first. Proto matches its candidates in lockstep
+and needs no backtracking; this backtracks, which is shorter and slower, and the
+inputs are files.
+
+**A separator is wanted between two statements, and not after one that ended in
+a word.** That is what lets `}` stand on its own — C's `for (…) { … }` takes no
+`;` after it, and Pascal's `end` takes none either — without a rule having to
+declare itself terminating.
+
+## Two modes
+
+`@mode expression`, the default, parses the whole body with the declared grammar
+and calls anything unmatched an error. `@mode text` scans the body, fires a rule
+where one matches and copies everything else through verbatim; a hole's text is
+expanded in its turn, so `**a //slanted// claim**` nests. Same directives, same
 rule about quoting; the difference is only what happens to text no rule claimed.
+
+## Running it
+
+```
+make            # bin/pt
+make check      # every example against the .out beside it, then tests/errors.sh
+make record     # re-record those .out files; read the diff before committing it
+
+bin/pt examples/clike.pt          # to stdout
+bin/pt -o out.sol examples/clike.pt
+bin/pt -g examples/pascal.pt      # the grammar the header declared, and stop
+```
+
+C11 and `make`, plus POSIX `<regex.h>` for `@token` — which is in libc and is
+the only thing here Proto does not also need.
 
 ## What it costs
 
 **Output parenthesisation is the author's problem.** Prototype knows the input
 grammar because the file declared it, and knows nothing about the output's
-precedence because the output is a string. Splicing `{a}` — which expanded to
-`x + y` — into `"{a} * {b}"` gives `x + y * z`. The author writes
-`"({a}) * ({b})"`, and that is the price of agnosticism, paid on every
-arithmetic rule. Proto does not pay it: its templates are trees in a language it
-knows, and it re-prints them with the parentheses they need. Letting a rule
-declare its output level would buy it back and has not been tried.
+precedence because the output is a string. So `examples/pascal.pt` writes
+`"({a} + {b})"` on every arithmetic rule, and `examples/pascal.out` is checked
+in with the parenthesis noise that produces:
+
+```
+if (((((i % mod) == 0)) && ((i != 9)))) total = (total + i) else …
+```
+
+Proto does not pay this — its templates are trees in a language it knows, and it
+re-prints them with the parentheses they need. Letting a rule declare an output
+level would buy it back and has not been tried.
+
+**A literal is moved, not understood.** `examples/pascal.pt` emits
+`puts('it''s middling')` into C, because a `string` hole splices the source text
+it matched. Translating it is a seventh rule the file does not write, and the
+omission is left in as the honest shape of a text template.
 
 **Verbosity, on the common case.** `@infix + 60 add.` becomes
 `@syntax a "+" b 60 => "{a}:add({b})"` — half again as long, on the line a
 dialect writes forty times. Sugar should be *derived* from `@syntax` rather than
-primitive, so the general form stays the thing that is true.
+primitive, so the general form stays the thing that is true. None is implemented.
 
-**The lexer can no longer run alone.** It needs the header, so a file cannot be
+**The lexer cannot run alone.** It needs the header, so a file cannot be
 tokenised for an editor, a highlighter or an error message before its `@use`
 chain has been resolved. Proto can. This is the real price of declared tokens.
 
-**An undeclared character has no good error.** Today `;` is a comment and says
-so. Here it is nothing until declared, and "unexpected character" is all that is
-left to say.
+**An undeclared character has no good error.** In Proto `;` is a comment and
+says so. Here it is nothing until declared, and *nothing here is anything this
+file declared* is all that is left to say.
 
 **Longest match is now the file's business.** Declaring `"<"` and `"<<"` is
-fine; declaring `"<"` and then `@use`-ing a dialect that adds `"<<"` re-lexes
-every `a < <b` that was already written. Reading the entire header before the
-body contains this, but does not remove it.
+fine; declaring `"<"` and then `@use`-ing a file that adds `"<<"` re-lexes every
+`a < <b` that was already written. Reading the whole header before the body
+contains this, and does not remove it.
 
-**Collision between two dialects is unchanged.** Quoting settles *directive
+**Collision between two used files is unchanged.** Quoting settles *directive
 against declaration*. It says nothing about two declarations of `"+"`, which is
-the other problem and a different one.
+the other problem and a different one. Today the later one wins, silently.
 
-## Unproven
+## Not done
+
+**Hygiene, and it is the serious one.** Proto's templates are trees, so a name a
+template introduces can be renamed. A template that is a string cannot be —
+`"{{ | t | t := {a} }}"` captures whatever the caller called `t`, silently,
+which is the failure `Proto/examples/forms.pro` exists to demonstrate. Either
+the template gets a way to ask for a fresh name (`{~t}`) or agnosticism costs
+hygiene. There is no answer here yet, and no example that needs one, which is
+itself a warning: the gap has not been *tested*, only reasoned about.
+
+**Source maps.** The output has no way back to the line that produced it, so an
+error in a downstream compiler points into text nobody wrote. Proto emits a
+`.map` beside its output.
 
 **A rule's own words winning inside its brackets.** Proto has one place where a
 context outranks a declaration — `#[k = v]`, where the pair separator shadows a
-declared `=` at the top level of a key, and the README admits it is the
-exception. If a dictionary is itself a rule, its `","` and `"="` are words in
-*its* pattern and the exception becomes ordinary. This needs a `list` kind with
-a declared separator, and it has not been tried.
+declared `=` at the top level of a key. Here a bracketed rule's interior words
+are ordinary pattern elements, so the case does not arise in the same shape; but
+nothing has been written that tests it, and a `list` kind with a declared
+separator is the shape that would.
 
-**Hygiene.** Proto's templates are trees, so a name introduced by a template can
-be renamed. A template that is a string cannot be — `"{{ | t | t := {a} }}"`
-captures whatever the caller called `t`, silently, which is the failure
-`Proto/examples/forms.pro` exists to demonstrate. Either the template gets a way
-to ask for a fresh name (`{~t}`) or agnosticism costs hygiene. This is the most
-serious open question here and the notation currently has no answer.
+**Backtracking has no budget.** Candidates are retried with the cursor restored
+and only a recursion depth of 400 stops it. A pathological header would be slow
+and nothing measures it.
+
+**`left` is accepted and does nothing**, since left is the default; and a level
+on a nud rule sets its trailing hole's binding power, which is used by `"!" a
+80` and `"not" a 80` and is not documented anywhere but here.

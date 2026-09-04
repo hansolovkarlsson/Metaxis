@@ -1,0 +1,102 @@
+#!/bin/sh
+# errors.sh -- what a file gets told when it is wrong.
+#
+# An error message is a surface like any other and goes stale the same way, so
+# each one here is pinned to the text it is meant to produce. `pt` must exit
+# non-zero and say the fragment.
+
+PT="${1:-./bin/pt}"
+TMP="${TMPDIR:-/tmp}/pt-errors.$$"
+mkdir -p "$TMP" || exit 1
+trap 'rm -rf "$TMP"' EXIT
+
+fail=0
+n=0
+
+expect() {
+    want="$1"; shift
+    n=$((n + 1))
+    f="$TMP/case$n.pt"
+    cat > "$f"
+    got=$("$PT" "$f" 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "FAILED  errors.sh case $n: expected a failure, got output"
+        fail=1
+        return
+    fi
+    case "$got" in
+        *"$want"*) echo "ok      errors.sh case $n: $want" ;;
+        *) echo "FAILED  errors.sh case $n"
+           echo "        wanted: $want"
+           echo "        got:    $got"
+           fail=1 ;;
+    esac
+}
+
+expect "no directive called '@infix'" <<'EOF'
+@infix "+" 60 add
+EOF
+
+expect "begins with a hole is infix or postfix and needs a level" <<'EOF'
+@syntax a "+" b => "{a}"
+EOF
+
+expect "two holes in a row" <<'EOF'
+@syntax "f" a b 10 => "{a}{b}"
+EOF
+
+expect "the pattern has no such hole" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => "{b}"
+@end
+f x
+EOF
+
+expect "no kind or token class called 'block'" <<'EOF'
+@syntax "f" a:block => "{a}"
+EOF
+
+expect "needs a word after it to stop at" <<'EOF'
+@token name "[a-z]+"
+@syntax "begin" b:stmts => "{b}"
+EOF
+
+expect "unterminated string" <<'EOF'
+@syntax "f => "x"
+EOF
+
+expect "nothing here is anything this file declared" <<'EOF'
+@token name "[a-z]+"
+@end
+a $ b
+EOF
+
+expect "no rule reads" <<'EOF'
+@token name "[a-z]+"
+@syntax a "+" b 60 => "{a}{b}"
+@end
+a b
+EOF
+
+expect "the file ends in the middle of something" <<'EOF'
+@token name "[a-z]+"
+@syntax a "+" b 60 => "{a}{b}"
+@end
+a +
+EOF
+
+expect "a 'text' hole belongs to @mode text" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a:text "g" => "{a}"
+@end
+f a g
+EOF
+
+expect "cannot open" <<'EOF'
+@use "no-such-file.pt"
+EOF
+
+if [ $fail -eq 0 ]; then
+    echo "ok      errors.sh: $n cases"
+fi
+exit $fail
