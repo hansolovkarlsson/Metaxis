@@ -35,6 +35,7 @@ typedef struct {
     int    kind;
     char  *text;
     long   num;
+    size_t close;   /* just past the outermost '}', before the lookahead */
 } C;
 
 static void cerr(C *c, const char *msg)
@@ -338,7 +339,11 @@ static Stmt *block(C *c, int *nout)
         v = push(v, &n, s);
     }
     if (c->err) return NULL;
-    cnext(c);                                    /* the '}' */
+    /* c->i already sits past the '}'; cnext would read one token beyond it, and
+       what follows a template is the directive reader's business -- `terminated`
+       lives there. */
+    c->close = c->i;
+    cnext(c);
     *nout = n;
     return v ? v : xmalloc(1);
 }
@@ -353,7 +358,7 @@ Stmt *code_parse(const char *s, size_t *i, size_t end, const char *file,
     cnext(&c);
     Stmt *v = block(&c, nout);
     if (c.err || !v) { *err = c.err ? c.err : xfmt("%s: bad template", file); return NULL; }
-    *i = c.i;
+    *i = c.close;
     return v;
 }
 

@@ -106,7 +106,7 @@ directive   = "@use"       string
             | "@token"     name string
             | "@comment"   string ( string | "eol" )
             | "@separator" string [ "=>" string ]
-            | "@syntax"    pattern [ level ] "=>" template
+            | "@syntax"    pattern [ level ] "=>" template [ "terminated" ]
             | "@end" .
 ```
 
@@ -164,7 +164,7 @@ before the first token or after the last.
 Without `@separator` the body is a single expression and a `stmts` hole takes
 one expression.
 
-### 3.4 `@syntax pattern [level] => template`
+### 3.4 `@syntax pattern [level] => template [terminated]`
 
 The only rule-making directive. §4, §5 and §6 are about the pattern; §8 about
 the template, of which there are two kinds.
@@ -188,6 +188,12 @@ the template, of which there are two kinds.
 A directive ends at a newline, so a code template spanning lines works the way
 anything else spanning lines does — except that a directive never ends while a
 brace is open, which is what lets the closing `}` sit at the left margin.
+
+**`terminated`** says the rule's output already ends a statement, so no
+separator is joined after it (§6.3). It goes after the template, which is the
+one place in a rule where a bare word cannot be anything else — a hole only
+appears in the pattern — so it reserves nothing and a hole may still be called
+`terminated`. `examples/reserved.pt` has a rule that is both.
 
 ### 3.5 `@use "path"`
 
@@ -427,12 +433,21 @@ The body is a sequence of statements. So is a `stmts` hole, up to the word that
 closes it.
 
 - Leading and repeated separators are skipped, so an empty statement is nothing.
-- **A separator is wanted between two statements, and not after one that ended
-  in a word.** That is what lets `}` and `end` stand on their own, so C's
-  `for (…) { … }` needs no `;` after it.
-- The output is joined with the separator's output form **unconditionally**,
-  including after a statement that ended in a word. That is why
-  `examples/hygiene.out` carries a `};` at file scope.
+- **On the way in, a separator is wanted between two statements, and not after
+  one that ended in a word.** That is what lets `}` and `end` stand on their
+  own, so C's `for (…) { … }` needs no `;` after it.
+- **On the way out, a separator is joined between two statements unless the rule
+  that produced the first was declared `terminated`** (§3.4), in which case a
+  newline is joined instead.
+
+**These are two rules and not one, deliberately.** The first is about the
+language being read and the second about the language being written, and this
+tool is not entitled to assume they agree. `examples/clike.pt` and
+`examples/groups.pt` both read C's braces; the first emits Solveig, where a `.`
+is wanted between two statements however the one before ended, and declares
+nothing; the second emits JavaScript, where a `}` ends a statement, and declares
+`terminated`. Working it out from the last character emitted would get one of
+them wrong, and would get C's `struct { … };` wrong in the other direction.
 
 If the body does not parse, the error names the furthest token reached:
 `no rule reads 'x' here`, or `the file ends in the middle of something`.
@@ -446,7 +461,7 @@ else is copied through unchanged.
 
 - Only **nud** rules apply. A led rule has nothing to continue.
 - **A group is refused**: `a group belongs to @mode expression`, reported before
-  anything is scanned. [ROADMAP.md](ROADMAP.md) 2 says what it would take.
+  anything is scanned. [ROADMAP.md](ROADMAP.md) 1 says what it would take.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else — `examples/poem.pt`
   declares `-`, `--` and `---` in that order and `---` still wins.
@@ -651,6 +666,7 @@ Every message the tool can produce, and what it means.
 | `expected a kind after ':'` | a hole wrote `:` and stopped |
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
 | `a rule needs a pattern` | `@syntax => "…"` |
+| `trailing text after the template` | something after the template that is not `terminated` |
 | `an empty word matches nothing` | `""` as a pattern element |
 | `expected '=>'` | a rule with no template |
 | `trailing text after the template` | something after the closing `"` |

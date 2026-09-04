@@ -12,26 +12,7 @@ it is last.
 
 ---
 
-## 1 · A rule that says it needs no separator after it
-
-`examples/hygiene.out` carries a `};` at file scope because statements are
-joined with `@separator`'s output form unconditionally, including after one that
-ended in a word. The input side already knows better — a statement ending in a
-word needs no separator after it, which is what lets C's `for (…) { … }` stand
-alone — and only the output side is unconditional.
-
-This was the fifth customer for the code template and is the one it did not
-serve, because it is not a property of the template: a rule would have to say
-something about *itself* rather than about the text it produces. Which is the
-question to settle before writing anything — whether that is a word on the
-`@syntax` line, something the code template can `emit` into a channel other than
-the output, or a rule the joiner works out from the last character it sees.
-
-Small, visible in a recorded output, and the last of the code template's five
-customers left standing — the other four went with it into
-[COMPLETED.md](COMPLETED.md).
-
-## 2 · Groups in text mode
+## 1 · Groups in text mode
 
 `@mode text` refuses a rule with a `[ … ]` in it: *a group belongs to `@mode
 expression`*. The text matcher scans left to right and finds a hole's end by
@@ -44,7 +25,7 @@ would have to be settled: whether the text matcher backtracks over positions the
 way the expression parser backtracks over tokens, or whether groups in text mode
 are restricted to the cases where the next word is unambiguous.
 
-## 3 · A class-kind hole in text mode
+## 2 · A class-kind hole in text mode
 
 `@syntax "[" x:name "]"` in text mode ignores the kind and takes everything up
 to the `]`, silently. It should either match the class at that position or be
@@ -52,14 +33,14 @@ refused at declaration. The second is one line and is probably right, since a
 `text` hole is what a text-mode rule almost always wants; the first is what
 somebody will eventually ask for.
 
-## 4 · Two files declaring one word
+## 3 · Two files declaring one word
 
 `@use` two files that both declare `"+"` and the later one wins, silently.
 Proto's README has a section on this and a rule; this has neither. The question
 is not how to detect it — that is easy — but what the right answer is: refuse,
 warn, or let a file say which it meant.
 
-## 5 · Source maps
+## 4 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -68,7 +49,7 @@ this far down.
 
 ---
 
-## 6 · Alternation inside a pattern — explored, not wanted yet
+## 5 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

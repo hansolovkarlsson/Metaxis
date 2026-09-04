@@ -12,6 +12,10 @@ are grouped by the day the work happened, newest first.
 
 The first day. The notation, the tool, and everything below.
 
+**`terminated`.** A word after a template, saying the rule's output already ends
+a statement so no separator is joined after it. A hole may still be called
+`terminated`.
+
 **Two kinds of template.** `=> "…"` splices. `=> { … }` is a small interpreted
 language: `emit`, `if`/`else`, `for … in … sep …`, text with `+`, comparison,
 `and`/`or`/`not`, and the builtins `matched`, `count`, `level`, `group`,

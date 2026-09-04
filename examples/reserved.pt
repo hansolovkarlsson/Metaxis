@@ -16,12 +16,19 @@
 @syntax a "\"" b       50        => "{a}:quote({b})"       ; the quote itself
 @syntax a "{" b "}"    50        => "{a}:brace({b})"       ; and the splice braces
 
+; `terminated` says a rule's output ends a statement on its own, and it sits
+; after the template because that is the one place in a rule where a bare word
+; cannot be a hole. So it reserves nothing, and this line is the proof: the hole
+; is called `terminated` and the rule is `terminated`, four words apart.
+@syntax "hold" terminated        => "{terminated}:held"    terminated
+
 @end
 env@home.print
 ready => go.print
 <x>.print
 a " b
 k{v}.print
+hold x
 
 ; The last two are the only interesting cases.
 ;

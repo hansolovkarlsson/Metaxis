@@ -72,6 +72,13 @@
 
 @end
 
+// Not one rule here is `terminated`, and that is a decision rather than an
+// oversight. The output is Solveig, where a `.` *is* wanted between two
+// statements however the one before ended -- so a `}` that needs no `;` in the
+// C being read still needs a `.` in the Solveig being written. The input side
+// and the output side are about two different languages, and this file is where
+// they disagree. examples/groups.pt reads the same braces and declares the word.
+
 total = 0;
 
 for (i = 0; i < 20; i++) {

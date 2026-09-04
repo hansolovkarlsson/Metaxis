@@ -10,6 +10,34 @@ argued away.*
 
 Newest first.
 
+## `terminated`: a rule that says its output ends a statement
+
+The output separator used to be joined between every pair of statements,
+including after one that ended in a word, so `examples/hygiene.out` carried a
+`};` at file scope where C wants none. A rule may now be declared `terminated`,
+and nothing is joined after it.
+
+**The cheap answer would have been wrong, and wrong in both directions.**
+Looking at the last character emitted and skipping the separator after a `}`
+fails for `examples/clike.pt`, which reads C's braces and emits Solveig — where
+a `.` is wanted between two statements however the one before ended — and it
+fails the other way for C's own `struct { … };`. `examples/groups.pt` reads the
+same braces as clike.pt and emits JavaScript, where the brace does end a
+statement. So the input rule and the output rule are about two different
+languages and had to stay two rules. Guessing is what this tool declines to do
+about precedence and about scopes, and it declined here for the same reason.
+
+The word sits **after the template**, which is the one place in a rule where a
+bare word cannot be anything else, since a hole only appears in the pattern. So
+it reserves nothing: `examples/reserved.pt` has a rule whose hole is called
+`terminated` and which is itself `terminated`, four words apart.
+
+This was the fifth of the code template's five customers, and the one that did
+not come with the other four, because it turned out not to be a property of a
+template at all but of a rule — so it works on both kinds.
+
+*Verified at 9 examples, 28 error cases, `tests/hygiene.sh`; `make check` clean.*
+
 ## The code template: `=> { … }`
 
 A second kind of template, an interpreted block rather than a string. A string

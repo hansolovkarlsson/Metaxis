@@ -46,6 +46,7 @@ static void dump(Grammar *g)
         printf("%-6s    ", r->led ? "infix" : "prefix");
         show(r->el, r->nel);
         if (r->level >= 0) printf("[%d%s]", r->level, r->right ? " right" : "");
+        if (r->terminated) printf(" terminated");
         printf("\n");
     }
 }

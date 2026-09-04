@@ -12,11 +12,12 @@
 ; The output is C, minus one line: `tests/hygiene.sh` puts `#include <stdio.h>`
 ; in front of it. Everything else here comes out of the tool.
 ;
-; Read `hygiene.out` for a third sighting of the cost the other examples show
-; twice. It carries `};` at file scope, where C wants no semicolon at all: the
-; input side knows that a statement ending in a word needs no separator after
-; it, and the output side joins unconditionally with what `@separator` was
-; given. `cc` accepts it. C11 does not oblige it to.
+; `fn` below is declared `terminated`: what it emits is a C function definition,
+; and C wants no semicolon after one. Until that word existed this file's output
+; carried a `};` at file scope -- `cc` accepted it and C11 did not oblige it to --
+; because the input side knew a statement ending in a word needs no separator
+; and the output side joined unconditionally anyway. The two sides are about two
+; different languages and now say so separately.
 
 @comment "//" eol
 
@@ -38,6 +39,7 @@
     => "printf(\"%s: %d %d\\n\", {s}, {a}, {b})"
 @syntax "fn" f:name "(" ")" "{" b:stmts "}"
     => "int {f}(void) {{\n{b};\n}}"
+    terminated
 
 ; ---------------------------------------------------------------------------
 ; The half a string can close.

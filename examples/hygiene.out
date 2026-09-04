@@ -12,12 +12,12 @@ p = 3;
 q = 4;
 { int t__2 = p; p = q; q = t__2; };
 return 0;
-};
+}
 int run(void) {
 int total = 100;
 total = total + 5;
 return total;
-};
+}
 int main(void) {
 r = caller();
 printf("%s: %d %d\n", "swap", t, u);

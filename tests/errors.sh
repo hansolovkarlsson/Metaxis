@@ -165,6 +165,11 @@ expect "a block ends in the middle of something" <<'EOF'
 @syntax "f" a => { emit a
 EOF
 
+expect "trailing text after the template" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => "{a}" terminated nonsense
+EOF
+
 expect "cannot open" <<'EOF'
 @use "no-such-file.pt"
 EOF

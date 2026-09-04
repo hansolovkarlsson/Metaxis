@@ -337,6 +337,10 @@ static int rule_syntax(Grammar *g, D *d, int line)
         if (!tmpl) return -1;
         r.tmpl = tmpl;
     }
+    /* `terminated` sits after the template, which is the one place in a rule
+       where a bare word cannot be anything else -- a hole can only appear in the
+       pattern. So it needs no quoting and reserves nothing. */
+    if (dtake(d, "terminated")) r.terminated = 1;
     dskip(d);
     if (d->i < d->end) { derr(d, "trailing text after the template"); return -1; }
 

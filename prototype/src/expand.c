@@ -65,6 +65,11 @@ typedef struct {
 
 #define MAXDEPTH 400
 
+/* What a parsed expression turns out to be, besides its text: the level of the
+   rule that produced it, so a code template can ask whether an operand needs
+   bracketing, and whether that rule said its output ends a statement. */
+typedef struct { int level, terminated; } Out;
+
 static Tok *cur(P *p) { return &p->tk->t[p->i]; }
 
 static int tok_is(P *p, const char *w)
@@ -151,7 +156,7 @@ static char *subst(P *p, Rule *r, Bind *b, int nb)
 
 /* ------------------------------------------------------------------- parser */
 
-static char *p_expr(P *p, int minbp, int *lev);
+static char *p_expr(P *p, int minbp, Out *o);
 static char *p_stmts(P *p, const char *term);
 
 /* Every hole the pattern declares, groups included, starts bound to nothing.
@@ -284,8 +289,12 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
                 if (r->led) bp = r->right ? r->level - 1 : r->level;
                 else if (r->level >= 0) bp = r->level;
             }
-            v = p_expr(p, bp, &lev);
-            if (!v) return 0;
+            {
+                Out o = { LEVEL_ATOM, 0 };
+                v = p_expr(p, bp, &o);
+                if (!v) return 0;
+                lev = o.level;
+            }
             break;
         }
         case K_STMTS: {
@@ -344,9 +353,10 @@ static int collect(P *p, Rule **out, int led, int minbp)
 /* The level of what a rule produced, so that a code template can ask an operand
    whether it needs bracketing. A bare token, and a rule that declared no level,
    are atoms: nothing binds tighter than they do. */
-static char *p_nud(P *p, int *lev)
+static char *p_nud(P *p, Out *o)
 {
-    *lev = LEVEL_ATOM;
+    o->level = LEVEL_ATOM;
+    o->terminated = 0;
     if (++p->depth > MAXDEPTH) {
         p->err = xstrdup("the grammar recurses without consuming anything");
         return NULL;
@@ -360,7 +370,10 @@ static char *p_nud(P *p, int *lev)
             int save = p->i;
             res = p_rule(p, c[i], NULL, LEVEL_ATOM);
             if (!res) p->i = save;
-            else if (c[i]->level >= 0) *lev = c[i]->level;
+            else {
+                if (c[i]->level >= 0) o->level = c[i]->level;
+                o->terminated = c[i]->terminated;
+            }
         }
         if (!res && !p->err && t->kind == T_CLASS) {
             res = xstrndup(t->p, t->n);
@@ -371,10 +384,10 @@ static char *p_nud(P *p, int *lev)
     return res;
 }
 
-static char *p_expr(P *p, int minbp, int *lev)
+static char *p_expr(P *p, int minbp, Out *o)
 {
-    int   mylev = LEVEL_ATOM;
-    char *left  = p_nud(p, &mylev);
+    Out   mine  = { LEVEL_ATOM, 0 };
+    char *left  = p_nud(p, &mine);
     if (!left) return NULL;
     if (++p->depth > MAXDEPTH) {
         p->err = xstrdup("the grammar recurses without consuming anything");
@@ -387,15 +400,15 @@ static char *p_expr(P *p, int minbp, int *lev)
         char  *res = NULL;
         for (int i = 0; i < n && !res && !p->err; i++) {
             int save = p->i;
-            res = p_rule(p, c[i], left, mylev);
+            res = p_rule(p, c[i], left, mine.level);
             if (!res) p->i = save;
-            else mylev = c[i]->level;
+            else { mine.level = c[i]->level; mine.terminated = c[i]->terminated; }
         }
         if (!res) break;
         left = res;
     }
     p->depth--;
-    if (lev) *lev = mylev;
+    if (o) *o = mine;
     return left;
 }
 
@@ -409,15 +422,23 @@ static char *p_stmts(P *p, const char *term)
         if (term && tok_is(p, term)) return xstrdup("");
         return p_expr(p, 0, NULL);
     }
+    int prev_terminated = 0;
     for (;;) {
         while (tok_is(p, g->sep_in)) adv(p);
         if (cur(p)->kind == T_EOF) break;
         if (term && tok_is(p, term)) break;
-        char *s = p_expr(p, 0, NULL);
+        Out o = { LEVEL_ATOM, 0 };
+        char *s = p_expr(p, 0, &o);
         if (!s) return NULL;
-        if (!first) buf_str(&b, g->sep_out);
+        /* The separator goes between two statements unless the one before said
+           its own output already ends one. The input side has its own rule and
+           they are deliberately not the same rule: one is about the language
+           being read and the other about the language being written, and this
+           tool is not entitled to assume they agree. */
+        if (!first) buf_str(&b, prev_terminated ? "\n" : g->sep_out);
         buf_str(&b, s);
         first = 0;
+        prev_terminated = o.terminated;
         if (tok_is(p, g->sep_in)) continue;
         /* A separator is wanted between two statements, and not after one that
            ended in a word. That is what lets `}` stand on its own, in C and in

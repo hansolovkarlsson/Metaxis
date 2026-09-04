@@ -299,13 +299,20 @@ the output language's binding rules, which is the one thing being agnostic gave
 up. `tests/hygiene.sh` compiles that output and runs it, so the line stays a
 number.
 
-**The output separator goes between every pair of statements**, including after
-one that ended in a word. The input side knows better — a statement ending in a
-word needs no separator after it, which is what lets C's `}` stand alone — but
-the output side joins unconditionally, so `examples/hygiene.out` carries a `};`
-at file scope where C wants none. `cc` and `gcc` accept it; C11 does not oblige
-them to. Same family as the parentheses, and the same cause: the tool knows the
-input grammar and not the output's.
+**The output separator was joined between every pair of statements**, including
+after one that ended in a word, so `examples/hygiene.out` used to carry a `};`
+at file scope where C wants none. **This is settled**: a rule may be declared
+`terminated`, and then nothing is joined after it.
+
+What settled it is worth more than the fix. The obvious cheap answer — look at
+the last character emitted, and skip the separator after a `}` — would have been
+*wrong*, and wrong in both directions at once. `examples/clike.pt` reads C's
+braces and emits Solveig, where a `.` is wanted between two statements however
+the one before ended; `examples/groups.pt` reads the same braces and emits
+JavaScript, where it is not; and C's own `struct { … };` wants the semicolon
+after the brace. So the input rule and the output rule are about two different
+languages and had to be two rules. Guessing is what this tool declines to do
+about precedence and about scopes, and it declines here for the same reason.
 
 **A literal is moved, not understood — again, in a string template.**
 `examples/pascal.pt` emits `puts('it''s middling')` into C, because a `string`

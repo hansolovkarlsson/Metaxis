@@ -89,6 +89,7 @@ typedef struct {
     char *tmpl;      /* a string template, or NULL               */
     Stmt *body;      /* a code template, or NULL                 */
     int   nbody;
+    int   terminated;/* its output ends a statement on its own    */
     char *file;
     int   line;
 } Rule;
