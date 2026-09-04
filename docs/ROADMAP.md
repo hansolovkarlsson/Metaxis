@@ -27,7 +27,22 @@ Proto's README has a section on this and a rule; this has neither. The question
 is not how to detect it — that is easy — but what the right answer is: refuse,
 warn, or let a file say which it meant.
 
-## 3 · Source maps
+## 3 · A budget for expression-mode backtracking
+
+Candidates under one leading word are retried with the cursor restored, and the
+only thing that stops it is a recursion depth of 400. Text mode was in the same
+position until its matcher became a search, and got a budget of 200000 attempts
+per rule at the same time — and a measurement, 113KB of markdown in 60ms. The
+expression side has neither.
+
+Nothing has hit it, which is why it is here rather than done: a grammar that is
+slow to parse would have to be written on purpose, and none has been. What the
+item is really asking for is the **measurement** — a large program in one of the
+declared dialects, timed — because a budget picked without one is a number
+somebody made up. `programs/` in Proto is where that kind of evidence lives
+there; there is no equivalent here yet.
+
+## 4 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -36,7 +51,7 @@ this far down.
 
 ---
 
-## 4 · Alternation inside a pattern — explored, not wanted yet
+## 5 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

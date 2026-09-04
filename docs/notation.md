@@ -356,10 +356,17 @@ are ordinary pattern elements, so the case does not arise in the same shape; but
 nothing has been written that tests it, and a `list` kind with a declared
 separator is the shape that would.
 
-**Backtracking has no budget.** Candidates are retried with the cursor restored
-and only a recursion depth of 400 stops it. A pathological header would be slow
-and nothing measures it.
+**Expression-mode backtracking has no budget.** Candidates are retried with the
+cursor restored and only a recursion depth of 400 stops it; a pathological
+header would be slow and nothing measures it. Text mode is no longer in that
+position — its matcher became a search on 2026-09-04 and was given a budget of
+200000 attempts per rule at the same time, and it *is* measured: 113KB of
+markdown, 2000 lines, 60ms, with the `**` and `[[…]]` rules of
+`examples/poem.pt`. The expression side has had no such measurement and no such
+budget. See [ROADMAP.md](ROADMAP.md).
 
-**`left` is accepted and does nothing**, since left is the default; and a level
-on a nud rule sets its trailing hole's binding power, which is used by `"!" a
-80` and `"not" a 80` and is not documented anywhere but here.
+**`left` is accepted and does nothing**, since left is the default. It stays
+because writing it is sometimes clearer than leaving it out. (The other half of
+this entry — that a level on a nud rule sets its trailing hole's binding power
+and was documented nowhere but here — stopped being true when
+[REFERENCE.md](REFERENCE.md) §5 was written.)
