@@ -196,8 +196,9 @@ What a group does **not** buy is an output that differs on whether a part
 matched. Every hole is bound — to its turns, or to nothing — and a splice is the
 only thing a string template can vary, so `examples/groups.pt` still writes
 `if (!0) { ; }` where its optional part was absent. That is
-[ROADMAP.md](ROADMAP.md) 1's plainest customer, and the reason `join` covers
-only the easy half of per-element output.
+the plainest customer for the code template (§ *What it costs*), and the reason
+`join` covers only the easy half of per-element output — `examples/code.pt`
+writes the other half with a `for … sep` loop.
 
 **Two holes may not sit next to each other.** Proto's rule, kept, and for
 Proto's reason: given `a b` and `f x + y` the first hole takes the sum and the
@@ -255,9 +256,9 @@ the only thing here Proto does not also need.
 
 ## What it costs
 
-**Output parenthesisation is the author's problem.** Prototype knows the input
-grammar because the file declared it, and knows nothing about the output's
-precedence because the output is a string. So `examples/pascal.pt` writes
+**Output parenthesisation is the author's problem, in a string template.**
+Prototype knows the input grammar because the file declared it, and a string
+template can splice and nothing else. So `examples/pascal.pt` writes
 `"({a} + {b})"` on every arithmetic rule, and `examples/pascal.out` is checked
 in with the parenthesis noise that produces:
 
@@ -265,12 +266,17 @@ in with the parenthesis noise that produces:
 if (((((i % mod) == 0)) && ((i != 9)))) total = (total + i) else …
 ```
 
-Proto does not pay this — its templates are trees in a language it knows, and it
-re-prints them with the parentheses they need. Letting a rule declare an output
-level would buy it back and has not been tried.
+**A code template does not pay it.** `examples/code.pt` is the same file with
+`=> { emit group(a, 60) + " + " + group(b, 61) }` in place of the string, and
+`group(h, n)` asks an operand what level it was parsed at and brackets it only
+where it must. Both outputs are recorded, and the diff between them is why the
+second form exists. The cost is real and it is now a choice: it is what a string
+template costs, and the price of a string template is that it is four times
+shorter.
 
-**A template can name its own temporary and nothing else.** `{~t}` closed the
-half of hygiene where a template *introduces* a name. The half where it
+**A template can name its own temporary and nothing else.** `{~t}`, and
+`fresh("t")` in a code template, closed the half of hygiene where a template
+*introduces* a name. The half where it
 *reaches out* for one stays open, and is not an unimplemented feature — it is
 the price. `examples/hygiene.pt` declares a `bump` whose template means the
 file-scope `total` that was in scope where the rule was written; a caller that
@@ -284,8 +290,10 @@ bump: 105 0    would be  bump: 100 5
 ```
 
 There is nothing for a fresh name to invent here. What is wanted is a way to say
-*the outer one*, and a template that is a string cannot see a scope, let alone
-reach past a caller's. Proto can, because its expander works on trees in a
+*the outer one*, and **neither kind of template can see a scope**, let alone
+reach past a caller's — the code template was built and this did not move, which
+was predicted in the roadmap before it was written and is the one prediction
+there that held. Proto can, because its expander works on trees in a
 language whose scopes it knows; closing it here would mean Prototype learning
 the output language's binding rules, which is the one thing being agnostic gave
 up. `tests/hygiene.sh` compiles that output and runs it, so the line stays a
@@ -299,10 +307,12 @@ at file scope where C wants none. `cc` and `gcc` accept it; C11 does not oblige
 them to. Same family as the parentheses, and the same cause: the tool knows the
 input grammar and not the output's.
 
-**A literal is moved, not understood.** `examples/pascal.pt` emits
-`puts('it''s middling')` into C, because a `string` hole splices the source text
-it matched. Translating it is a seventh rule the file does not write, and the
-omission is left in as the honest shape of a text template.
+**A literal is moved, not understood — again, in a string template.**
+`examples/pascal.pt` emits `puts('it''s middling')` into C, because a `string`
+hole splices the source text it matched and a splice is all there is.
+`examples/code.pt` writes `replace(drop(x, 1, 1), "''", "'")` and gets
+`puts("it's middling")`. Both are recorded, for the same reason as the
+parentheses above.
 
 **Verbosity, on the common case.** `@infix + 60 add.` becomes
 `@syntax a "+" b 60 => "{a}:add({b})"` — half again as long, on the line a

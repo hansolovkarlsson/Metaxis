@@ -14,7 +14,6 @@
 #include <ctype.h>
 #include <string.h>
 
-typedef struct { const char *name; char *val; int set; } Bind;
 typedef struct { char *label; char *name; } Fresh;
 
 /* ------------------------------------------------------------ fresh names */
@@ -36,10 +35,17 @@ static int         fresh_n;
 static int name_taken(const char *c)
 {
     if (fresh_src && strstr(fresh_src, c)) return 1;
-    for (int i = 0; fresh_g && i < fresh_g->nrule; i++)
-        if (strstr(fresh_g->rule[i].tmpl, c)) return 1;
+    for (int i = 0; fresh_g && i < fresh_g->nrule; i++) {
+        Rule *r = &fresh_g->rule[i];
+        if (r->tmpl && strstr(r->tmpl, c)) return 1;
+        if (r->body && code_mentions(r, c))  return 1;
+    }
     return 0;
 }
+
+static char *fresh_name(const char *label);
+
+char *pt_fresh(const char *label) { return fresh_name(label); }
 
 static char *fresh_name(const char *label)
 {
@@ -145,7 +151,7 @@ static char *subst(P *p, Rule *r, Bind *b, int nb)
 
 /* ------------------------------------------------------------------- parser */
 
-static char *p_expr(P *p, int minbp);
+static char *p_expr(P *p, int minbp, int *lev);
 static char *p_stmts(P *p, const char *term);
 
 /* Every hole the pattern declares, groups included, starts bound to nothing.
@@ -160,28 +166,44 @@ static int count_holes(Elem *el, int nel)
     return n;
 }
 
-static void bind_pre(Elem *el, int nel, Bind *b, int *nb)
+static void bind_pre(Elem *el, int nel, Bind *b, int *nb, int inrep)
 {
     for (int i = 0; i < nel; i++) {
         if (el[i].kind == EL_HOLE) {
-            b[*nb].name = el[i].hole;
-            b[*nb].val  = xstrdup("");
-            b[*nb].set  = 0;
+            memset(&b[*nb], 0, sizeof b[*nb]);
+            b[*nb].name   = el[i].hole;
+            b[*nb].val    = xstrdup("");
+            b[*nb].level  = -1;
+            b[*nb].islist = inrep;
             (*nb)++;
         } else if (el[i].kind == EL_GROUP) {
-            bind_pre(el[i].sub, el[i].nsub, b, nb);
+            bind_pre(el[i].sub, el[i].nsub, b, nb,
+                     inrep || el[i].rep != REP_ONE);
         }
     }
 }
 
+/* A hole in a repeated group keeps both shapes: the turns joined, which is what
+   a string template splices, and the turns themselves, which is what a code
+   template loops over. Keeping only the first is what `join` used to throw
+   away, and is the whole difference between the two kinds of template. */
 static void bind_put(Bind *b, int nb, const char *name, char *val,
-                     int append, const char *join)
+                     int append, const char *join, int level)
 {
     for (int i = 0; i < nb; i++) {
         if (strcmp(b[i].name, name)) continue;
-        if (append && b[i].set) b[i].val = xfmt("%s%s%s", b[i].val, join ? join : "", val);
-        else                    b[i].val = val;
-        b[i].set = 1;
+        if (append) {
+            char **v = xmalloc(sizeof *v * (size_t)(b[i].nitems + 1));
+            if (b[i].items) memcpy(v, b[i].items, sizeof *v * (size_t)b[i].nitems);
+            v[b[i].nitems] = val;
+            b[i].items = v;
+            b[i].nitems++;
+            b[i].val = b[i].set ? xfmt("%s%s%s", b[i].val, join ? join : "", val) : val;
+        } else {
+            b[i].val = val;
+        }
+        b[i].set   = 1;
+        b[i].level = level;
         return;
     }
 }
@@ -247,6 +269,7 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
         }
 
         char *v = NULL;
+        int   lev = LEVEL_ATOM;
         switch (e->hk) {
         case K_CLASS: {
             Tok *t = cur(p);
@@ -261,7 +284,7 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
                 if (r->led) bp = r->right ? r->level - 1 : r->level;
                 else if (r->level >= 0) bp = r->level;
             }
-            v = p_expr(p, bp);
+            v = p_expr(p, bp, &lev);
             if (!v) return 0;
             break;
         }
@@ -275,20 +298,27 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
             p->err = xfmt("%s:%d: a 'text' hole belongs to @mode text", r->file, r->line);
             return 0;
         }
-        bind_put(b, nb, e->hole, v, append, join);
+        bind_put(b, nb, e->hole, v, append, join, lev);
     }
     return 1;
 }
 
-static char *p_rule(P *p, Rule *r, char *leftval)
+static char *p_rule(P *p, Rule *r, char *leftval, int leftlev)
 {
     int   nb = 0;
     Bind *b  = xmalloc(sizeof *b * (size_t)(count_holes(r->el, r->nel) + 1));
-    bind_pre(r->el, r->nel, b, &nb);
+    bind_pre(r->el, r->nel, b, &nb, 0);
 
     int k = 0;
-    if (r->led) { bind_put(b, nb, r->el[0].hole, leftval, 0, NULL); k = 1; }
+    if (r->led) { bind_put(b, nb, r->el[0].hole, leftval, 0, NULL, leftlev); k = 1; }
     if (!m_elems(p, r, r->el + k, r->nel - k, 1, 0, NULL, b, nb)) return NULL;
+
+    if (r->body) {
+        char *err = NULL;
+        char *out = code_eval(r, b, nb, &err);
+        if (!out) { p->err = err; return NULL; }
+        return out;
+    }
     return subst(p, r, b, nb);
 }
 
@@ -311,8 +341,12 @@ static int collect(P *p, Rule **out, int led, int minbp)
     return n;
 }
 
-static char *p_nud(P *p)
+/* The level of what a rule produced, so that a code template can ask an operand
+   whether it needs bracketing. A bare token, and a rule that declared no level,
+   are atoms: nothing binds tighter than they do. */
+static char *p_nud(P *p, int *lev)
 {
+    *lev = LEVEL_ATOM;
     if (++p->depth > MAXDEPTH) {
         p->err = xstrdup("the grammar recurses without consuming anything");
         return NULL;
@@ -324,8 +358,9 @@ static char *p_nud(P *p)
         int    n = collect(p, c, 0, 0);
         for (int i = 0; i < n && !res && !p->err; i++) {
             int save = p->i;
-            res = p_rule(p, c[i], NULL);
+            res = p_rule(p, c[i], NULL, LEVEL_ATOM);
             if (!res) p->i = save;
+            else if (c[i]->level >= 0) *lev = c[i]->level;
         }
         if (!res && !p->err && t->kind == T_CLASS) {
             res = xstrndup(t->p, t->n);
@@ -336,9 +371,10 @@ static char *p_nud(P *p)
     return res;
 }
 
-static char *p_expr(P *p, int minbp)
+static char *p_expr(P *p, int minbp, int *lev)
 {
-    char *left = p_nud(p);
+    int   mylev = LEVEL_ATOM;
+    char *left  = p_nud(p, &mylev);
     if (!left) return NULL;
     if (++p->depth > MAXDEPTH) {
         p->err = xstrdup("the grammar recurses without consuming anything");
@@ -351,13 +387,15 @@ static char *p_expr(P *p, int minbp)
         char  *res = NULL;
         for (int i = 0; i < n && !res && !p->err; i++) {
             int save = p->i;
-            res = p_rule(p, c[i], left);
+            res = p_rule(p, c[i], left, mylev);
             if (!res) p->i = save;
+            else mylev = c[i]->level;
         }
         if (!res) break;
         left = res;
     }
     p->depth--;
+    if (lev) *lev = mylev;
     return left;
 }
 
@@ -369,13 +407,13 @@ static char *p_stmts(P *p, const char *term)
 
     if (!g->sep_in) {
         if (term && tok_is(p, term)) return xstrdup("");
-        return p_expr(p, 0);
+        return p_expr(p, 0, NULL);
     }
     for (;;) {
         while (tok_is(p, g->sep_in)) adv(p);
         if (cur(p)->kind == T_EOF) break;
         if (term && tok_is(p, term)) break;
-        char *s = p_expr(p, 0);
+        char *s = p_expr(p, 0, NULL);
         if (!s) return NULL;
         if (!first) buf_str(&b, g->sep_out);
         buf_str(&b, s);
@@ -448,6 +486,7 @@ static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
     Bind *b  = xmalloc(sizeof *b * (size_t)(r->nel + 1));
     int   nb = 0;
     size_t pos = i;
+    memset(b, 0, sizeof *b * (size_t)(r->nel + 1));
 
     for (int k = 0; k < r->nel; k++) {
         Elem *e = &r->el[k];
@@ -469,12 +508,16 @@ static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
         }
         char *v = text_expand(g, s + pos, stop - pos, depth + 1, err);
         if (!v) return NULL;
-        b[nb].name = e->hole;
-        b[nb].val  = v;
+        b[nb].name  = e->hole;
+        b[nb].val   = v;
+        b[nb].set   = 1;
+        b[nb].level = LEVEL_ATOM;
         nb++;
         pos = stop;
     }
     *end = pos;
+
+    if (r->body) return code_eval(r, b, nb, err);
 
     P p = { g, NULL, 0, 0, 0, NULL };
     char *out = subst(&p, r, b, nb);

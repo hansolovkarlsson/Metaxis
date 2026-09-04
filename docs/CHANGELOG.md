@@ -12,6 +12,12 @@ are grouped by the day the work happened, newest first.
 
 The first day. The notation, the tool, and everything below.
 
+**Two kinds of template.** `=> "…"` splices. `=> { … }` is a small interpreted
+language: `emit`, `if`/`else`, `for … in … sep …`, text with `+`, comparison,
+`and`/`or`/`not`, and the builtins `matched`, `count`, `level`, `group`,
+`replace`, `drop` and `fresh`. One character after the `=>` says which form it
+is. A directive no longer ends at a newline while a brace is open.
+
 **The notation.** A `.pt` file declares its own grammar in a header and is then
 read with it. Every mention of foreign text inside a directive is a string —
 quoted words on the pattern side, a quoted template with `{hole}` splices on the

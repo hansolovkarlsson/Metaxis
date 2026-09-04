@@ -164,16 +164,30 @@ before the first token or after the last.
 Without `@separator` the body is a single expression and a `stmts` hole takes
 one expression.
 
-### 3.4 `@syntax pattern [level] => "template"`
+### 3.4 `@syntax pattern [level] => template`
 
-The only rule-making directive. §4, §5 and §6 are all about it.
+The only rule-making directive. §4, §5 and §6 are about the pattern; §8 about
+the template, of which there are two kinds.
 
 ```
 @syntax a "+" b            60           => "{a}:add({b})"
 @syntax "if" c "then" t                 => "if ({c}) {t}"
 @syntax "swap" "(" a "," b ")"
     => "{{ int {~t} = {a}; {a} = {b}; {b} = {~t}; }}"
+
+@syntax a "*" b            70           => { emit group(a, 70) + " * " + group(b, 71) }
+@syntax "fn" f:name "(" [ p:name ]* sep "," ")"
+    => {
+        emit "int " + f + "("
+        if count(p) == 0 { emit "void" }
+        for x in p sep ", " { emit "int " + x }
+        emit ")"
+    }
 ```
+
+A directive ends at a newline, so a code template spanning lines works the way
+anything else spanning lines does — except that a directive never ends while a
+brace is open, which is what lets the closing `}` sit at the left margin.
 
 ### 3.5 `@use "path"`
 
@@ -316,7 +330,7 @@ be named either.
 repeated group holds every turn, spliced with the group's `join`; a hole inside
 an optional group that did not match holds the empty string. Nothing is ever
 unbound, so a template never has to ask whether a part was there — and *cannot*
-ask, which is [ROADMAP.md](ROADMAP.md)'s first item.
+ask — a code template can (§8.3), and a string template cannot.
 
 **A group is matched at binding power 0** and is delimited by its own words. A
 turn that consumes no tokens ends the repetition. A failed optional group, or a
@@ -452,15 +466,32 @@ else is copied through unchanged.
 
 ## 8 · Templates
 
+**There are two kinds, and one character tells them apart.** After the `=>`, a
+`"` begins a string template and a `{` begins a code template. Nothing had to be
+reserved for this: a template had always been a string, and a string never
+starts with a brace.
+
 ```ebnf
-template = string, with "{" name "}" splices, "{~" name "}" fresh names,
-           and "{{" "}}" for a literal brace .
+template = string                      (* §8.1, splicing            *)
+         | "{" { stmt } "}" .          (* §8.3, an interpreted one  *)
+```
+
+A string template **splices** and does nothing else. A code template can loop
+over a repeated hole, ask whether an optional part matched, ask an operand what
+level it was parsed at, and build text. Use the first where it is enough, which
+is most of the time.
+
+### 8.1 The string template
+
+```ebnf
+string template = string, with "{" name "}" splices, "{~" name "}" fresh names,
+                  and "{{" "}}" for a literal brace .
 ```
 
 | in a template | emits |
 | --- | --- |
 | `{name}` | the hole `name`, expanded — every turn of it if it is in a repeated group (§4.4), the empty string if its optional group did not match |
-| `{~label}` | a name nobody else has (§8.1) |
+| `{~label}` | a name nobody else has (§8.2) |
 | `{{` | `{` |
 | `}}` | `}` |
 | `}` alone | `}` |
@@ -474,7 +505,7 @@ of the rule:
 - `{~}` is `a fresh name needs a label: '{~name}'`;
 - `{~a}` beside a hole named `a` is refused — they would read as one thing.
 
-### 8.1 Fresh names
+### 8.2 Fresh names
 
 `{~t}` is **a name nobody else has**. Within one expansion every `{~t}` is the
 same name; the next use of the rule gets a different one.
@@ -489,10 +520,74 @@ occurs anywhere in the source being expanded or in any template any rule
 declared, `@use` included; the test is a substring test, so it is conservative
 in the safe direction — `t__1` is refused while `t__12` is in the file.
 
+`fresh("t")` is the same thing in a code template, and draws from the same
+counter.
+
 This closes the half of hygiene where a template **introduces** a name. It does
 not touch the half where a template **reaches out** for one the caller shadowed:
-there is nothing to invent there, and a template that is a string cannot see a
+there is nothing to invent there, and **neither** kind of template can see a
 scope. `examples/hygiene.pt` demonstrates both and `tests/hygiene.sh` runs them.
+
+### 8.3 The code template
+
+```ebnf
+code   = "{" { stmt } "}" .
+stmt   = "emit" expr
+       | "if" expr code [ "else" code ]
+       | "for" name "in" expr [ "sep" expr ] code .
+expr   = expr ( "and" | "or" ) expr
+       | expr ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) expr
+       | expr "+" expr                        (* text, joined      *)
+       | "not" expr
+       | string | integer | name
+       | name "(" [ expr { "," expr } ] ")"
+       | "(" expr ")" .
+```
+
+`emit` is the only way out: what a rule expands to is everything it emitted, in
+order. Statements need no separator; a `;` between them is allowed and ignored.
+Strings in a code template are **Prototype strings**, spelled Prototype's way,
+exactly as `@syntax`'s own words are — the language is Prototype's, so it lives
+outside the strings and the foreign text it emits lives inside them.
+
+**Its own words are `emit`, `if`, `else`, `for`, `in`, `sep`, `not`, `and` and
+`or`.** A hole may not be one of them.
+
+**What is in scope**: every hole the pattern declares, and the loop variables
+around the statement. A hole inside a repeated group is a **list**; every other
+hole is text. That list is the one thing `join` throws away, and having it is the
+whole difference between the two kinds of template.
+
+**Truth**: a list is true when it has turns, an integer when it is not zero, a
+text when it is not empty.
+
+| builtin | gives |
+| --- | --- |
+| `matched(h)` | whether `h`'s group matched at all |
+| `count(h)` | how many turns a repeated hole took |
+| `level(h)` | the level of the rule that filled `h`; 1000 for an atom |
+| `group(h, n)` | `h`, bracketed in `(` `)` when `level(h) < n` |
+| `replace(s, from, to)` | `s` with every `from` replaced |
+| `drop(s, front, back)` | `s` with that many characters off each end |
+| `fresh(label)` | a name nobody else has — §8.2 |
+
+Everything in a code template is checked at the `@syntax` that wrote it: a name
+that is neither a hole nor a loop variable, a builtin nobody has, the wrong
+number of arguments, a loop variable that is also a hole.
+
+`examples/code.pt` is `examples/pascal.pt` with every rule rewritten in this
+form and the body left alone, so `diff examples/pascal.out examples/code.out` is
+what the second form is for:
+
+```
+-for (int i = 1; i <= 20; i++) if (((((i % mod) == 0)) && ((i != 9))))
++for (int i = 1; i <= 20; i++) if ((i % mod == 0) && (i != 9))
+-if ((!((total > 100)))) puts('it''s middling') else puts('big')
++if (!(total > 100)) puts("it's middling") else puts("big")
+```
+
+The parentheses come from `group(a, 60)` asking an operand its level; the
+literal from `replace(drop(x, 1, 1), "''", "'")`.
 
 ---
 
@@ -565,8 +660,18 @@ Every message the tool can produce, and what it means.
 | `a 'stmts' hole needs a word after it to stop at` | §4.3 |
 | `unclosed '{' in a template` | §8 |
 | `the template splices '{x}' and the pattern has no such hole` | §8 |
-| `a fresh name needs a label: '{~name}'` | §8.1 |
+| `a fresh name needs a label: '{~name}'` | §8.2 |
 | `'{~a}' and '{a}' would read as one thing: …` | §8.1 |
+| `expected 'emit', 'if' or 'for'` | a code template's statement is none of those — §8.3 |
+| `expected a value` · `expected ')'` · `expected '{'` · `expected 'in'` · `expected a name after 'for'` | a code template's own syntax — §8.3 |
+| `'in' is one of this language's own words and cannot be a value` | §8.3 |
+| `a block ends in the middle of something` | an unclosed code template |
+| `nothing in this language is written 'x'` | a character a code template has no use for |
+| `the template uses 'x' and the pattern has no such hole` | §8.3 |
+| `no such thing as 'x'` | a builtin nobody has — §8.3 |
+| `'group' takes 2 and was given 1 — it gives …` | wrong arity for a builtin |
+| `the loop variable 'a' is also a hole — one of them has to be called something else` | §8.3 |
+| `loops nested more than 32 deep` | §11 |
 | `cannot open path` | `@use` |
 | `a used file holds directives and nothing else` | §3.5 |
 | `@use nested more than 64 deep` | §3.5 |
@@ -592,6 +697,7 @@ Every message the tool can produce, and what it means.
 | --- | --- |
 | `@use` nesting | 64 |
 | group nesting | 16 |
+| loop nesting in a code template | 32 |
 | expression recursion | 400 |
 | text-mode expansion depth | 64 |
 | fresh-name attempts | 100000 |
@@ -615,8 +721,8 @@ Both take a file that declares its own grammar. Where they part:
 | literals | the lexer's, fixed | `@token` |
 | comments | `;`, fixed | `@comment` |
 | statement separator | `.`, fixed | `@separator` |
-| the template | an expression in the target language | a string |
-| output precedence | Proto re-prints and parenthesises | the author's parentheses |
+| the template | an expression in the target language | a string, or an interpreted block — §8 |
+| output precedence | Proto re-prints and parenthesises | `group(h, n)` in a code template; the author's own parentheses in a string one |
 | hygiene | the expander renames | `{~t}` for half of it, §8.1 |
 | source maps | a `.map` beside the output | none |
 | the target | Solveig | anything |

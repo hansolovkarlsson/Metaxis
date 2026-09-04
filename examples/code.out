@@ -1,0 +1,6 @@
+{
+total = 0;
+mod = 3;
+for (int i = 1; i <= 20; i++) if ((i % mod == 0) && (i != 9)) total = total + i else total = total - 1;
+if (!(total > 100)) puts("it's middling") else puts("big")
+}

@@ -130,6 +130,41 @@ expect "a group belongs to @mode expression" <<'EOF'
 @syntax "f" [ "x" ] => "y"
 EOF
 
+expect "the template uses 'b' and the pattern has no such hole" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { emit b }
+EOF
+
+expect "no such thing as 'shout'" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { emit shout(a) }
+EOF
+
+expect "'group' takes 2 and was given 1" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { emit group(a) }
+EOF
+
+expect "the loop variable 'a' is also a hole" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ a:name ]+ => { for a in a { emit a } }
+EOF
+
+expect "expected 'emit', 'if' or 'for'" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { a }
+EOF
+
+expect "is one of this language's own words" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { emit in }
+EOF
+
+expect "a block ends in the middle of something" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { emit a
+EOF
+
 expect "cannot open" <<'EOF'
 @use "no-such-file.pt"
 EOF

@@ -268,6 +268,11 @@ static int hole_named(const Elem *el, int nel, const char *n)
     return 0;
 }
 
+int rule_has_hole(Rule *r, const char *name)
+{
+    return hole_named(r->el, r->nel, name);
+}
+
 static int check_elems(D *d, Elem *el, int nel)
 {
     for (int i = 0; i < nel; i++) {
@@ -314,13 +319,26 @@ static int rule_syntax(Grammar *g, D *d, int line)
 
     if (!nel) { derr(d, "a rule needs a pattern"); return -1; }
     if (!dtake(d, "=>")) { derr(d, "expected '=>'"); return -1; }
-    char *tmpl = dstring(d);
-    if (!tmpl) return -1;
+
+    /* A template has always been a string, and a string never starts with a
+       brace, so one character says which of the two forms this is. Nothing had
+       to be reserved and no file written before today changes meaning. */
+    char *tmpl = NULL;
+    dskip(d);
+    r.el = el; r.nel = nel;
+    r.led = el[0].kind == EL_HOLE;
+
+    if (d->i < d->end && d->s[d->i] == '{') {
+        char *cerr = NULL;
+        r.body = code_parse(d->s, &d->i, d->end, d->file, &r.nbody, &cerr);
+        if (!r.body) { if (!d->err) d->err = cerr; return -1; }
+    } else {
+        tmpl = dstring(d);
+        if (!tmpl) return -1;
+        r.tmpl = tmpl;
+    }
     dskip(d);
     if (d->i < d->end) { derr(d, "trailing text after the template"); return -1; }
-
-    r.el = el; r.nel = nel; r.tmpl = tmpl;
-    r.led = el[0].kind == EL_HOLE;
 
     if (el[0].kind == EL_GROUP) {
         derr(d, "a rule is found by its first word, so it cannot begin with a group");
@@ -338,7 +356,14 @@ static int rule_syntax(Grammar *g, D *d, int line)
 
     /* The template is checked here rather than at the first use of the rule,
        so that a splice nobody wrote a hole for is an error at the line that
-       wrote it. */
+       wrote it. Both forms are checked; only the spelling differs. */
+    if (r.body) {
+        char *cerr = NULL;
+        if (code_check(&r, &cerr) < 0) { if (!d->err) d->err = cerr; return -1; }
+        g->rule = grow(g->rule, g->nrule, sizeof *g->rule);
+        g->rule[g->nrule++] = r;
+        return 0;
+    }
     for (size_t i = 0; tmpl[i];) {
         if (tmpl[i] == '{' && tmpl[i + 1] == '{') { i += 2; continue; }
         if (tmpl[i] == '}' && tmpl[i + 1] == '}') { i += 2; continue; }
@@ -488,14 +513,16 @@ static size_t skip_trivia(Grammar *g, const char *s, size_t i)
    separator inside its template; there is nothing here to guess. */
 static size_t directive_end(const char *s, size_t i)
 {
-    int instr = 0;
+    int instr = 0, depth = 0;
     for (;;) {
-        while (s[i] && (instr || s[i] != '\n')) {
+        while (s[i] && (instr || depth || s[i] != '\n')) {
             if (instr) {
                 if (s[i] == '\\' && s[i + 1]) i++;
                 else if (s[i] == '"') instr = 0;
             } else if (s[i] == '"') instr = 1;
-            else if (s[i] == ';') { while (s[i] && s[i] != '\n') i++; break; }
+            else if (s[i] == '{') depth++;
+            else if (s[i] == '}') { if (depth) depth--; }
+            else if (s[i] == ';' && !depth) { while (s[i] && s[i] != '\n') i++; break; }
             i++;
         }
         if (!s[i]) return i;

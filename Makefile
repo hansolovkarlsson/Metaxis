@@ -4,8 +4,8 @@ CC      ?= cc
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra -Wno-unused-parameter
 CPPFLAGS = -Iprototype/include -D_POSIX_C_SOURCE=200809L
 
-SRC  = prototype/src/util.c prototype/src/header.c \
-       prototype/src/lex.c prototype/src/expand.c
+SRC  = prototype/src/util.c prototype/src/header.c prototype/src/lex.c \
+       prototype/src/expand.c prototype/src/code.c
 OBJ  = $(SRC:prototype/src/%.c=build/%.o) build/pt.o
 BIN  = bin/pt
 

@@ -10,6 +10,53 @@ argued away.*
 
 Newest first.
 
+## The code template: `=> { … }`
+
+A second kind of template, an interpreted block rather than a string. A string
+template splices and does nothing else; this one loops over a repeated hole,
+asks whether an optional part matched, asks an operand what level it was parsed
+at, and builds text with `emit`.
+
+It cost nothing to tell the two apart. A template had always been a string and a
+string never starts with a brace, so one character after the `=>` decides, with
+no lookahead, nothing reserved, and no file written before it changing meaning.
+And it keeps the one rule rather than bending it: the language is Prototype's
+own, so it lives outside the strings, and the foreign text it emits lives inside
+them.
+
+Four of the five customers [ROADMAP.md](ROADMAP.md) recorded for it are served,
+each named a file and each is now a recorded output:
+
+  - **per-element output** — `for x in p sep ", " { emit "int " + x }`, where
+    `join` could only put one fixed text between turns;
+  - **output that depends on an optional part** — `matched(h)` and `count(h)`;
+  - **parenthesisation** — `level(h)` and `group(h, n)`, which needed the
+    expander to start recording the level a hole was parsed at;
+  - **translating a literal** — `replace` and `drop`.
+
+The fifth, a rule that says it needs no separator after it, is not a property of
+a template and stayed behind as [ROADMAP.md](ROADMAP.md) 1.
+
+`examples/code.pt` is `examples/pascal.pt` with every rule rewritten in the new
+form and the body left character for character alone, so the diff between the
+two recorded outputs is the whole argument:
+
+```
+-for (int i = 1; i <= 20; i++) if (((((i % mod) == 0)) && ((i != 9))))
++for (int i = 1; i <= 20; i++) if ((i % mod == 0) && (i != 9))
+-if ((!((total > 100)))) puts('it''s middling') else puts('big')
++if (!(total > 100)) puts("it's middling") else puts("big")
+```
+
+Both files stay. The string template's cost is real and is now a **choice**: it
+is what a string template costs, and what a string template buys is being four
+times shorter.
+
+What did not move is the reach-out half of hygiene, which the roadmap predicted
+would not and is the one prediction there that held.
+
+*Verified at 9 examples, 27 error cases, `tests/hygiene.sh`; `make check` clean.*
+
 ## Groups: a part that repeats and a part that need not be there
 
 `[ … ]` once or not at all, `[ … ]*` zero or more, `[ … ]+` one or more, with

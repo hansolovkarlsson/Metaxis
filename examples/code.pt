@@ -1,0 +1,87 @@
+; code.pt -- the same Pascal as examples/pascal.pt, through the other kind of
+; template.
+;
+;     diff examples/pascal.out examples/code.out
+;
+; is the whole argument for this file existing. The body below is character for
+; character the body of pascal.pt. Every rule is the same rule. The only
+; difference is that a template here is `=> { … }` rather than `=> "…"`, and
+; two things pascal.out is recorded as getting wrong come out right:
+;
+;   the parentheses  pascal.out writes `(((((i % mod) == 0)) && ((i != 9))))`,
+;                    because a string template can only bracket every operand
+;                    unconditionally. Here a rule asks an operand what level it
+;                    was parsed at and brackets it only when it must.
+;
+;   the literal      pascal.out writes `puts('it''s middling')` into C, because
+;                    a `string` hole splices the source text it matched. Here
+;                    the rule translates it.
+;
+; The language is Prototype's own, so it lives outside the strings; the foreign
+; text it emits lives inside them. That is the same rule the pattern side
+; follows, which is why `{` after the `=>` was enough to tell the two forms
+; apart and nothing had to be reserved.
+
+@comment "{" "}"
+@comment "(*" "*)"
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@token string "'([^']|'')*'"
+
+@separator ";" => ";\n"
+
+; A group is an atom whatever is inside it, so nothing below ever needs to
+; bracket it again.
+@syntax "(" e ")"                              => { emit "(" + e + ")" }
+
+; `group(x, n)` is the operand `x`, bracketed when the rule that produced it
+; binds looser than `n`. The right operand asks for one more than the left, so
+; `a - b - c` keeps its grouping and `a - (b - c)` keeps its brackets.
+@syntax a ":=" b                  10           => { emit a + " = " + b }
+@syntax a "=" b                   40           => { emit group(a, 40) + " == " + group(b, 41) }
+@syntax a "<>" b                  40           => { emit group(a, 40) + " != " + group(b, 41) }
+@syntax a "<" b                   40           => { emit group(a, 40) + " < "  + group(b, 41) }
+@syntax a ">" b                   40           => { emit group(a, 40) + " > "  + group(b, 41) }
+@syntax a "+" b                   60           => { emit group(a, 60) + " + "  + group(b, 61) }
+@syntax a "-" b                   60           => { emit group(a, 60) + " - "  + group(b, 61) }
+@syntax a "*" b                   70           => { emit group(a, 70) + " * "  + group(b, 71) }
+@syntax a "div" b                 70           => { emit group(a, 70) + " / "  + group(b, 71) }
+@syntax a "mod" b                 70           => { emit group(a, 70) + " % "  + group(b, 71) }
+@syntax "not" a                   80           => { emit "!" + group(a, 80) }
+@syntax a "and" b                 30           => { emit group(a, 30) + " && " + group(b, 31) }
+@syntax a "or" b                  25           => { emit group(a, 25) + " || " + group(b, 26) }
+
+@syntax "begin" body:stmts "end"               => { emit "{\n" + body + "\n}" }
+@syntax "if" c "then" t                        => { emit "if (" + c + ") " + t }
+@syntax "if" c "then" t "else" f               => { emit "if (" + c + ") " + t + " else " + f }
+@syntax "while" c "do" b                       => { emit "while (" + c + ") " + b }
+
+; Pascal's `'it''s'` becomes C's "it's": drop the quote off each end, undouble
+; what is left, and put C's quotes back. `drop` and `replace` are the two
+; smallest things a template needs to translate a literal rather than move it.
+@syntax "writeln" "(" x:string ")"
+    => { emit "puts(\"" + replace(drop(x, 1, 1), "''", "'") + "\")" }
+
+@syntax "for" i:name ":=" a "to" b "do" s
+    => {
+        emit "for (int " + i + " = " + a + "; "
+        emit i + " <= " + b + "; " + i + "++) "
+        emit s
+    }
+
+@end
+
+{ Everything below is Pascal. Nothing below is Prototype's.
+  It is the body of examples/pascal.pt, unchanged. }
+
+begin
+  total := 0;
+  mod := 3;
+  for i := 1 to 20 do
+    if (i mod mod = 0) and (i <> 9) then
+      total := total + i
+    else
+      total := total - 1;
+  if not (total > 100) then writeln('it''s middling') else writeln('big')
+end

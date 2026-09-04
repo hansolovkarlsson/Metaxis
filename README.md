@@ -58,6 +58,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [poem.pt](examples/poem.pt) | `@mode text`: prose in, HTML out |
 | [reserved.pt](examples/reserved.pt) | every character Prototype writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator |
+| [code.pt](examples/code.pt) | `=> { … }` — `examples/pascal.pt` rule for rule, with the parenthesis noise gone and the literal translated. `diff examples/pascal.out examples/code.out` is the point |
 | [groups.pt](examples/groups.pt) | `[ … ]`, `[ … ]*` and `[ … ]+` — an argument list of any arity in one rule, and an optional part |
 | [hygiene.pt](examples/hygiene.pt) | `{~t}`, and the half of hygiene it cannot close. `tests/hygiene.sh` compiles the C it emits and runs it, so the remaining wrong answer is a number |
 
@@ -70,6 +71,26 @@ ends statements with `;`:
 ```
 
 There is nothing to disambiguate because there was never an ambiguity.
+
+## Two kinds of template
+
+`=> "…"` splices, and is enough most of the time. `=> { … }` is a small
+interpreted language for when it is not:
+
+```
+@syntax "fn" f:name "(" [ p:name ]* sep "," ")"
+    => {
+        emit "int " + f + "("
+        if count(p) == 0 { emit "void" }
+        for x in p sep ", " { emit "int " + x }
+        emit ")"
+    }
+```
+
+One character after the `=>` says which form it is — a template had always been
+a string, and a string never starts with a brace. The language is Prototype's
+own, so it lives outside the strings and the foreign text it emits lives inside
+them, which is the same rule the pattern side follows.
 
 ## What it costs
 
@@ -106,6 +127,7 @@ prototype/include/pt.h   types and the seams
 prototype/src/header.c   the fixed half: directives, and nothing a file can reach
 prototype/src/lex.c      the lexer the header wrote
 prototype/src/expand.c   Pratt with backtracking, templates, and text mode
+prototype/src/code.c     the second kind of template, parsed and run
 prototype/cmd/pt.c       pt [-o out] [-g] file.pt
 lib/                     files meant to be @use'd
 examples/                .pt beside the .out it must still produce
