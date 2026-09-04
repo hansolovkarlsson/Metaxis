@@ -432,7 +432,7 @@ else is copied through unchanged.
 
 - Only **nud** rules apply. A led rule has nothing to continue.
 - **A group is refused**: `a group belongs to @mode expression`, reported before
-  anything is scanned. [ROADMAP.md](ROADMAP.md) 3 says what it would take.
+  anything is scanned. [ROADMAP.md](ROADMAP.md) 2 says what it would take.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else — `examples/poem.pt`
   declares `-`, `--` and `---` in that order and `---` still wins.

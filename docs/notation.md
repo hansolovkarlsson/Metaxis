@@ -177,8 +177,12 @@ since `<` and `>` are operator characters a file might want, which is what
 optional part that way and a reader arrives knowing it, and because braces were
 spoken for by templates and reading a pattern beside its template is the common
 act. The suffixes `*` and `+` are regex's rather than EBNF's, which buys one
-bracket and three forms in a series instead of two brackets. `( … )` was left
-alone, and [ROADMAP.md](ROADMAP.md) 2 is why that turned out to be right.
+bracket and three forms in a series instead of two brackets — `[ … ]`,
+`[ … ]*`, `[ … ]+`, one thing to learn.
+
+Swapping the pair for `( … )` was offered and declined, and the brackets are
+settled. It leaves `( … )` unspent, which is worth something on its own: a
+bracket nothing has claimed is cheap to keep and expensive to get back.
 
 **A group needs no new syntax to be safe from the body.** `[ … ]`, `*`, `+`,
 `sep` and `join` are Prototype's vocabulary and live *outside* the strings, so a

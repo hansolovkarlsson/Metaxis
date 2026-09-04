@@ -6,7 +6,9 @@ against**, which is a result and stays written down with its reason.
 [notation.md](notation.md)'s "Not done" is the same list seen from the other
 side: what the notation admits it cannot do. This file is what to do about it.*
 
-Ordered by how much is already known about them, not by size.
+Ordered by how much is wanted, not by size and not by how much is known —
+the last entry is the best worked out and the least asked for, which is why
+it is last.
 
 ---
 
@@ -105,11 +107,53 @@ free. It is the price of being agnostic and it stays where it is, in
 
 ---
 
-## 2 · One of these: alternation inside a pattern
+## 2 · Groups in text mode
 
-**Hans, 2026-09-04**, choosing between the shapes below after asking whether
-`[ … ]` had been picked for a reason. It had — see
-[notation.md](notation.md) — and the answer turned out to bear on this.
+`@mode text` refuses a rule with a `[ … ]` in it: *a group belongs to `@mode
+expression`*. The text matcher scans left to right and finds a hole's end by
+looking for the pattern's next literal word, and a group makes *the next word*
+a question with more than one answer.
+
+It is wanted — an optional part is at least as natural in prose as in a
+language — and it is a real piece of work rather than a missing line. What
+would have to be settled: whether the text matcher backtracks over positions the
+way the expression parser backtracks over tokens, or whether groups in text mode
+are restricted to the cases where the next word is unambiguous.
+
+## 3 · A class-kind hole in text mode
+
+`@syntax "[" x:name "]"` in text mode ignores the kind and takes everything up
+to the `]`, silently. It should either match the class at that position or be
+refused at declaration. The second is one line and is probably right, since a
+`text` hole is what a text-mode rule almost always wants; the first is what
+somebody will eventually ask for.
+
+## 4 · Two files declaring one word
+
+`@use` two files that both declare `"+"` and the later one wins, silently.
+Proto's README has a section on this and a rule; this has neither. The question
+is not how to detect it — that is easy — but what the right answer is: refuse,
+warn, or let a file say which it meant.
+
+## 5 · Source maps
+
+The output has no way back to the line that produced it, so an error from a
+downstream compiler points into text nobody wrote. Proto emits a `.map` beside
+its output. Nothing here has needed one yet, which is the only reason it is
+this far down.
+
+---
+
+## 6 · Alternation inside a pattern — explored, not wanted yet
+
+**Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
+can wait to later, if we even need it.* It is last on this page for that reason
+and not because it is the largest. Nothing asks for it, no file is worse without
+it, and it may never be built.
+
+It is kept because two things came out of the exploring that are worth more than
+the feature would be, and that somebody would otherwise re-derive: the bracket
+argument, and a constraint in how rules are found. Both are below.
 
 ### What exists instead
 
@@ -119,7 +163,7 @@ failure, which is how `if c then t` and `if c then t else f` coexist. So the
 missing case is narrow and specific: alternation in a **nested** position, where
 lifting it out would mean writing the whole rule once per arm.
 
-### The shape it would probably take
+### The shape it would take, if it were built
 
 ```
 ( a | b )      one of them, required
@@ -132,9 +176,11 @@ there would be no way to say *one of these, required*. A second bracket is what
 separates them, and each then has one job: **`( … )` groups, `[ … ]` makes
 optional, `*` and `+` repeat.**
 
-That settles, in passing, a question raised the same day and left open: whether
-`[ … ]` should have been `( … )`. It should not. The brackets are wanted for
-different things and swapping them would spend the one that choice needs.
+**And it is the reason `( … )` stays unspent.** The same day, `[ … ]` for an
+optional group was queried and swapping it for `( … )` was offered; the offer
+was declined and the brackets stay as they are. Even if this entry is never
+built, keeping a second bracket free costs nothing and having spent it would
+have been hard to undo.
 
 **Ordered choice**, first arm that matches winning, is the rule to pick: it
 matches PEG, and it matches *declaration order breaks a tie* elsewhere in this
@@ -143,10 +189,9 @@ an optional group, so nothing is ever unbound. Two arms may share a hole name �
 `( a:name | a:number )` binding `a` either way is the point rather than an
 accident.
 
-**This is a leading candidate and not a decision.** It is written down because
-it reads well and because the bracket argument behind it is worth keeping; when
-somebody builds it, a different shape may turn out better and this entry does
-not outrank that.
+**None of this is a decision.** It reads well and it is written down for that
+reason alone; when and if somebody builds this, a different shape may turn out
+better and nothing here outranks it.
 
 ### What it would and would not buy
 
@@ -185,39 +230,6 @@ about this one.
 
 Nothing in `examples/` needs it, which is this tree's own test for whether a
 surface has earned its place. The synonym case would justify it on its own and
-has not yet come up in a real file.
-
-## 3 · Groups in text mode
-
-`@mode text` refuses a rule with a `[ … ]` in it: *a group belongs to `@mode
-expression`*. The text matcher scans left to right and finds a hole's end by
-looking for the pattern's next literal word, and a group makes *the next word*
-a question with more than one answer.
-
-It is wanted — an optional part is at least as natural in prose as in a
-language — and it is a real piece of work rather than a missing line. What
-would have to be settled: whether the text matcher backtracks over positions the
-way the expression parser backtracks over tokens, or whether groups in text mode
-are restricted to the cases where the next word is unambiguous.
-
-## 4 · A class-kind hole in text mode
-
-`@syntax "[" x:name "]"` in text mode ignores the kind and takes everything up
-to the `]`, silently. It should either match the class at that position or be
-refused at declaration. The second is one line and is probably right, since a
-`text` hole is what a text-mode rule almost always wants; the first is what
-somebody will eventually ask for.
-
-## 5 · Two files declaring one word
-
-`@use` two files that both declare `"+"` and the later one wins, silently.
-Proto's README has a section on this and a rule; this has neither. The question
-is not how to detect it — that is easy — but what the right answer is: refuse,
-warn, or let a file say which it meant.
-
-## 6 · Source maps
-
-The output has no way back to the line that produced it, so an error from a
-downstream compiler points into text nobody wrote. Proto emits a `.map` beside
-its output. Nothing here has needed one yet, which is the only reason it is
-this far down.
+has not come up in a real file. Proto's `conventions.md` puts the general form
+as *a surface does not grow without a customer*; this is an idea with no
+customer, filed where such an idea goes.
