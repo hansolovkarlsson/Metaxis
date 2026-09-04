@@ -45,6 +45,7 @@ check: $(BIN)
 	    fi; \
 	done; \
 	sh tests/errors.sh ./$(BIN) || fail=1; \
+	sh tests/hygiene.sh ./$(BIN) || fail=1; \
 	exit $$fail
 
 test: check

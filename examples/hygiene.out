@@ -1,0 +1,22 @@
+int t = 0;
+int u = 0;
+int total = 0;
+int r = 0;
+int caller(void) {
+t = 1;
+u = 2;
+t = t; t = u; u = t;
+return 0;
+};
+int run(void) {
+int total = 100;
+total = total + 5;
+return total;
+};
+int main(void) {
+r = caller();
+printf("%s: %d %d\n", "swap", t, u);
+r = run();
+printf("%s: %d %d\n", "bump", r, total);
+return 0;
+}

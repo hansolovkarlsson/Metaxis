@@ -207,6 +207,14 @@ Proto does not pay this — its templates are trees in a language it knows, and 
 re-prints them with the parentheses they need. Letting a rule declare an output
 level would buy it back and has not been tried.
 
+**The output separator goes between every pair of statements**, including after
+one that ended in a word. The input side knows better — a statement ending in a
+word needs no separator after it, which is what lets C's `}` stand alone — but
+the output side joins unconditionally, so `examples/hygiene.out` carries a `};`
+at file scope where C wants none. `cc` and `gcc` accept it; C11 does not oblige
+them to. Same family as the parentheses, and the same cause: the tool knows the
+input grammar and not the output's.
+
 **A literal is moved, not understood.** `examples/pascal.pt` emits
 `puts('it''s middling')` into C, because a `string` hole splices the source text
 it matched. Translating it is a seventh rule the file does not write, and the
@@ -237,12 +245,33 @@ the other problem and a different one. Today the later one wins, silently.
 ## Not done
 
 **Hygiene, and it is the serious one.** Proto's templates are trees, so a name a
-template introduces can be renamed. A template that is a string cannot be —
-`"{{ | t | t := {a} }}"` captures whatever the caller called `t`, silently,
-which is the failure `Proto/examples/forms.pro` exists to demonstrate. Either
-the template gets a way to ask for a fresh name (`{~t}`) or agnosticism costs
-hygiene. There is no answer here yet, and no example that needs one, which is
-itself a warning: the gap has not been *tested*, only reasoned about.
+template introduces can be renamed. A template that is a string cannot be. This
+was reasoned about here for one revision and is now tested:
+`examples/hygiene.pt` declares two ordinary forms, `tests/hygiene.sh` compiles
+the C that comes out and runs it, and both answers are wrong.
+
+```
+swap: 2 2      hygiene would give  swap: 2 1
+bump: 105 0    hygiene would give  bump: 100 5
+```
+
+**Writing that test found something the reasoning had missed: they are two
+failures and not one, and a fresh-name escape fixes only the first.**
+
+- `swap` *introduces* `t`, and the caller had a `t`. A way for a template to
+  ask for a name nobody else has — `{~t}` — closes this one, and it is
+  self-contained: the expander invents a name and nothing else needs to know.
+- `bump` *reaches out* for `total`, and the caller shadowed it. No naming
+  escape closes this. The template means the binding that was in scope where
+  the rule was declared, and a template that is a string does not know what a
+  scope is, cannot see the caller's, and has no spelling for *the outer one*.
+  Proto closes it because its expander works on trees in a language whose
+  scopes it knows. Closing it here would mean Prototype learning the output
+  language's binding rules, which is the one thing being agnostic gave up.
+
+So the honest statement is narrower than the old one. `{~t}` is worth doing and
+would halve the problem. The other half is not an unimplemented feature; it is
+the price, and `examples/hygiene.pt` is where it is charged.
 
 **Source maps.** The output has no way back to the line that produced it, so an
 error in a downstream compiler points into text nobody wrote. Proto emits a

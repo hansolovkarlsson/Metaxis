@@ -49,6 +49,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [poem.pt](examples/poem.pt) | `@mode text`: prose in, HTML out |
 | [reserved.pt](examples/reserved.pt) | every character Prototype writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator |
+| [hygiene.pt](examples/hygiene.pt) | the defect: two ordinary forms whose expansion captures a caller's names. `tests/hygiene.sh` compiles the C it emits and runs it, so the two wrong answers are numbers |
 
 The headline is `for`, which puts two `;` inside a pattern in a file whose body
 ends statements with `;`:
@@ -59,6 +60,26 @@ ends statements with `;`:
 ```
 
 There is nothing to disambiguate because there was never an ambiguity.
+
+## What it costs
+
+The costs are in [docs/notation.md](docs/notation.md) and are demonstrated
+rather than asserted. `examples/pascal.out` keeps its parenthesis noise, because
+the tool knows the input grammar and nothing about the target's precedence. And
+`make check` runs `tests/hygiene.sh`, which compiles the output of
+`examples/hygiene.pt` and prints:
+
+```
+ok      hygiene.sh: the capture is still here
+            swap: 2 2      hygiene would give  swap: 2 1
+            bump: 105 0    hygiene would give  bump: 100 5
+```
+
+**That test passing means the defect is still here**, which is deliberate: a
+test that merely failed would be turned off, and one that pins the wrong answer
+has to be edited by whoever fixes it. Writing it found that these are two
+failures and not one — a fresh-name escape would close `swap` and cannot close
+`bump`, which wants a scope a string template has no way to see.
 
 ## Layout
 
@@ -71,6 +92,7 @@ cmd/pt.c       pt [-o out] [-g] file.pt
 lib/           files meant to be @use'd
 examples/      .pt beside the .out it must still produce
 tests/errors.sh  what a file gets told when it is wrong
+tests/hygiene.sh what a template that is a string cannot do, compiled and run
 ```
 
 ## Proto is read-only

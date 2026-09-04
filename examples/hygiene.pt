@@ -1,0 +1,79 @@
+; hygiene.pt -- the failure this notation has not fixed, in a form that runs.
+;
+; A Proto template is a tree in a language Proto knows, so a name the template
+; introduces can be renamed before anybody sees it. A Prototype template is a
+; string, and a string has no way to ask for a name nobody else has. Both
+; halves of that are below, and `tests/hygiene.sh` compiles the output and runs
+; it, so the two wrong numbers are numbers rather than an argument.
+;
+; The output is C, minus one line: `tests/hygiene.sh` puts `#include <stdio.h>`
+; in front of it. Everything else here comes out of the tool.
+;
+; Read `hygiene.out` for a third sighting of the cost the other examples show
+; twice. It carries `};` at file scope, where C wants no semicolon at all: the
+; input side knows that a statement ending in a word needs no separator after
+; it, and the output side joins unconditionally with what `@separator` was
+; given. `cc` accepts it. C11 does not oblige it to.
+
+@comment "//" eol
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@token string "\"[^\"]*\""
+
+@separator ";" => ";\n"
+
+@syntax "(" e ")"                        => "({e})"
+@syntax a "(" ")"          95            => "{a}()"
+@syntax a "=" b            10 right      => "{a} = {b}"
+@syntax a "+" b            60            => "({a} + {b})"
+
+@syntax "var" n:name                     => "int {n} = 0"
+@syntax "local" n:name "=" v             => "int {n} = {v}"
+@syntax "give" e                         => "return {e}"
+@syntax "show" "(" s "," a "," b ")"
+    => "printf(\"%s: %d %d\\n\", {s}, {a}, {b})"
+@syntax "fn" f:name "(" ")" "{" b:stmts "}"
+    => "int {f}(void) {{\n{b};\n}}"
+
+; ---------------------------------------------------------------------------
+; The two forms. Neither is unusual and neither is careless: `swap` needs
+; somewhere to put a value, and `bump` means a particular variable. Written as
+; a template that is a string, neither can say which name it means.
+
+; It introduces `t`. It cannot ask for a `t` nobody else has.
+@syntax "swap" "(" a "," b ")"           => "t = {a}; {a} = {b}; {b} = t"
+
+; It reaches out for `total`. It cannot say *the outer one*.
+@syntax "bump" "(" n ")"                 => "total = total + {n}"
+
+@end
+
+var t;
+var u;
+var total;
+var r;
+
+// The caller happens to have a `t`. So does the form.
+fn caller() {
+    t = 1;
+    u = 2;
+    swap(t, u);
+    give 0;
+}
+
+// The caller happens to have a `total`. So does the form, and it meant the
+// other one -- the file-scope `total` three lines above `caller`.
+fn run() {
+    local total = 100;
+    bump(5);
+    give total;
+}
+
+fn main() {
+    r = caller();
+    show("swap", t, u);
+    r = run();
+    show("bump", r, total);
+    give 0;
+}
