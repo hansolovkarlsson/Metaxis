@@ -11,6 +11,49 @@ Newest first.
 
 ---
 
+## 5 · Two changes that looked right because what they broke was silent
+
+**Issue.** Two on the same afternoon, hours apart.
+
+`terminated` was added and appeared to work. It did not work on code templates:
+`code_parse` returned the position after its own lookahead token rather than
+after the closing brace, so in `=> { … } terminated` the word was swallowed by
+the template's lexer and the flag was never set. The two examples converted
+first were string templates, where it was fine.
+
+Then a bound on text-mode holes — *a hole may not span any word still to come* —
+was shipped, and the next commit's own example stopped working. In
+`"![" alt "](" src [ " " title ] ")"` the group's space is a word still to come
+and an alt text may contain spaces, so `![a cat](cat.png)` no longer matched at
+all.
+
+**Root cause.** Different bugs, one shape: **the thing they broke fails
+silently.** A flag that is not set produces output that is merely unchanged. A
+text-mode rule that does not match produces text that is merely copied through,
+because that is what text mode does with anything no rule claims. Neither turns
+red, neither raises anything, and both look exactly like a feature working on
+input it does not apply to.
+
+**Solution.** `code_parse` records the position before its lookahead. The bound
+became *a hole may not span the word that closes the rule* — the one word whose
+arrival means the construct has ended — which fixes the defect it was written
+for without forbidding a space inside an alt text.
+
+**Learnings.** Both were found by probing by hand and reading the output
+closely, and neither could have been found by `make check`, because in both
+cases the recorded output was *plausible*. **Where a feature's failure mode is
+"nothing happens", passing tests are not evidence that it works** — only an
+example whose expected output would visibly differ is. The `terminated` bug in
+particular survived because the feature applies to two template forms and was
+exercised in one; a thing that applies to two shapes needs a case in each, and
+the second case is the one nobody writes.
+
+The second is also a warning about the first fix in a pair. The bound was
+written to fix `POSTMORTEM.md` 4, shipped in its own commit with its own
+regression test, and was still wrong — stricter than the defect required. A fix
+that is broader than the evidence that demanded it is a guess wearing a test.
+
+---
 ## 4 · A rule that was wrong, doing exactly what it said
 
 **Issue.** In text mode a hole stopped at *the first occurrence of the pattern's

@@ -20,3 +20,4 @@ here.
 
 | Day | |
 |---|---|
+| [2026-09-04](2026-09-04.md) | The whole project in one day: the premise, the parser, hygiene split in two, both kinds of template, groups, and four wrong turns — including a rule that was wrong while doing exactly what it said. |
