@@ -89,7 +89,8 @@ each named a file and each is now a recorded output:
   - **translating a literal** — `replace` and `drop`.
 
 The fifth, a rule that says it needs no separator after it, is not a property of
-a template and stayed behind as [ROADMAP.md](ROADMAP.md) 1.
+a template and did not come with the others; it landed as `terminated` in the
+entry above.
 
 `examples/code.pt` is `examples/pascal.pt` with every rule rewritten in the new
 form and the body left character for character alone, so the diff between the
@@ -128,9 +129,10 @@ asks on the first file: `examples/groups.pt` writes one call rule covering every
 arity there is.
 
 Every hole is bound whether or not its group matched, so a template never has to
-ask whether a part was there — and cannot ask, which is why an absent optional
-part still leaves `if (!0) { ; }` in the output. That is
-[ROADMAP.md](ROADMAP.md) 1's plainest customer.
+ask whether a part was there — and, when this was written, could not ask, which
+is why an absent optional part still left `if (!0) { ; }` in the output. That
+was the plainest customer for the code template, which arrived two entries above
+and can ask with `matched(h)`.
 
 *Verified at 8 examples, 20 error cases, `tests/hygiene.sh`; `make check` clean.*
 
