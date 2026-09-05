@@ -67,20 +67,32 @@ template reading back the flag a rule declares about itself — is what decides
 whether a branch needs its semicolon, and `code.pt` now emits idiomatic C
 without bracing single statements. See COMPLETED.md.
 
-**What is left to write, none of which needs new mechanics:** `procedure` and
-`function`, `repeat … until`, `case … of`, and the types past `integer` and
-`boolean`. A repeated group with a `sep` covers a parameter list, a `stmts` hole
-stopping at `end` covers a body, and `case` is a repeated group of labelled
-arms.
+**`procedure` and `function` are in**, with parameter lists, calls, and Free
+Pascal's `Result` for the return. They needed no new mechanics: a repeated group
+with `sep ";"` is the parameter list, a `stmts` hole stopping at `end` is the
+body, and a led `"(" … ")"` at 95 is the call.
 
-**And two that need a decision rather than a rule.** `writeln` takes a variable
-number of arguments of mixed type and C wants a format string per type; there
-are two rules for it now, one for a literal and one for a number, and a third
-argument type means a third rule. Pascal's `real` beside its `integer` is the
-same question one layer down. This tool has no types and is not obviously
-entitled to any: both are honest limits of a rewriter that moves tokens rather
-than understanding them, and both should be *written into the example* rather
-than faked.
+**What is left to write, still needing no new mechanics:** `repeat … until`,
+`case … of`, and the types past `integer` and `boolean`. `case` is a repeated
+group of labelled arms.
+
+**And three that need a decision rather than a rule.**
+
+- `writeln` takes a variable number of arguments of mixed type and C wants a
+  format string per type. There are two rules for it now, one for a literal and
+  one for a number; a third argument type means a third rule.
+- Pascal's `real` beside its `integer` is the same question one layer down, and
+  it reaches the parameter lists too: `join ", int "` writes one type in front of
+  every turn, and a group whose parameters differ needs the loop form.
+- **A parameterless procedure cannot be called.** Pascal writes `Banner;` where C
+  writes `Banner();`, and nothing distinguishes that from reading a variable
+  called `Banner` — the two are the same token in the same position, and telling
+  them apart wants a symbol table. That is why the example declares no
+  parameterless procedure: it could be written and not called.
+
+This tool has no types and is not obviously entitled to any. All three are
+honest limits of a rewriter that moves tokens rather than understanding them,
+and all three should be *written into the example* rather than faked.
 
 **Settled, and staying wrong on purpose.** `pascal.pt` cannot translate
 `'it''s'` into `"it's"`, because a rule cannot match a bare token and so nothing

@@ -10,6 +10,52 @@ argued away.*
 
 Newest first.
 
+## `procedure` and `function`, and a parameter list that is a group
+
+Pascal's subprograms, in both example files and checked by a compiler:
+
+```
+function Double(n: integer): integer;      int Double(int n) {
+begin                                      return n * 2;
+  Result := n * 2                          }
+end;
+```
+
+**Nothing in the tool changed**, which was the prediction the roadmap made about
+this stage and is the reason to record it. A parameter list is a repeated group
+with `sep ";"`; a body is a `stmts` hole stopping at `end`; a call is a led
+`"(" … ")"` at 95, which never has to be told apart from the circumfix `(` rule
+because the two are in different positions. `tests/pascal.sh` now checks four
+values instead of two.
+
+**The return value is Free Pascal's `Result`, and the reason is worth keeping.**
+Standard Pascal returns by assigning to the function's own name, and that is not
+reachable here: the `:=` inside a body is an ordinary rule, and nothing tells it
+which function it is inside. A rule sees its own pattern and no context at all.
+So `Result := e` is a rule of its own — which also demonstrates a nud rule
+claiming a token a led rule would otherwise have taken, and leaves `Result`
+usable as an ordinary name everywhere else.
+
+**The parameter list is the one place the code template bought nothing**, and
+the first draft of both files claimed otherwise. Pascal writes
+`(a: integer; b: integer)` and C wants the type once per parameter;
+`examples/code.pt` loops over the list, and `examples/pascal.pt` gets *identical*
+text from `join ", int "`, because every turn needs the same word in front of
+it. The comment in each file now says so. `join` stops being enough the moment
+two parameters have different types, which is where the loop earns its place and
+where `real` will put it.
+
+**And one thing that cannot be written at all.** A parameterless procedure is
+called in Pascal by writing its bare name — `Banner;` — and nothing distinguishes
+that from reading a variable called `Banner`. Same token, same position; telling
+them apart wants a symbol table, which this tool does not have and has not
+claimed to. So the example declares none: it could be written and never called.
+It is on the roadmap beside `writeln`'s argument types, as a decision rather
+than a rule.
+
+*Verified at 10 examples, 36 error cases, `tests/hygiene.sh` and
+`tests/pascal.sh`; `make check` clean.*
+
 ## `terminated(h)`: a template asks what a rule said about itself
 
 `level(h)` had always been half of a pair. It answers *how tightly did the rule

@@ -35,11 +35,13 @@ trap 'rm -rf "$TMP"' EXIT
 
 # 3+6+12+15+18 = 54 for the multiples of 3 that are not 9, minus 1 for each of
 # the other fifteen, so 39 after the loop. 39 is not over 100, so the first
-# line; it is over 30, so the branch that adds one and prints, and then the
-# same total again. Worked out from the Pascal, not from the C.
+# line; it is over 30, so the branch that adds one and prints 40. Then
+# Show(Double(40)) is 80 through a function that returns, and Pair(40, 2) is 42
+# through a procedure with two parameters. Worked out from the Pascal.
 WANT="it's middling
 40
-40"
+80
+42"
 
 # ---------------------------------------------------------------- code.pt
 if ! "$PT" examples/code.pt > "$TMP/code.c" 2> "$TMP/err"; then
@@ -89,6 +91,6 @@ if ! grep -q "it''s" "$TMP/pascal.c"; then
     exit 1
 fi
 
-echo "ok      pascal.sh: the C compiles, runs, and computes 40"
+echo "ok      pascal.sh: the C compiles, runs, and computes 80 and 42"
 echo "            pascal.pt still cannot spell C's quotes -- as recorded"
 exit 0

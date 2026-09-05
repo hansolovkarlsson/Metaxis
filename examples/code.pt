@@ -34,6 +34,7 @@
 ; A group is an atom whatever is inside it, so nothing below ever needs to
 ; bracket it again.
 @syntax "(" e ")"                              => { emit "(" + e + ")" }
+@syntax a "(" [ x ]* sep "," join ", " ")"  95  => { emit a + "(" + x + ")" }
 
 ; `group(x, n)` is the operand `x`, bracketed when the rule that produced it
 ; binds looser than `n`. The right operand asks for one more than the left, so
@@ -109,6 +110,31 @@
         emit s
     }
 
+; A parameter list, and the one place where the two forms come out the same.
+; `p` is a hole inside a repeated group, so it is a **list**, and a loop writes
+; `int ` in front of each turn. examples/pascal.pt gets identical text out of
+; `join ", int "` -- which is enough because every turn needs the same word in
+; front of it, and would stop being enough the moment two parameters had
+; different types. The loop is the general form; here it is not the shorter one,
+; and saying so is more use than claiming a win it did not get.
+@syntax "procedure" f:name "(" [ p:name ":" "integer" ]* sep ";" ")" ";" b
+    => {
+        emit "void " + f + "("
+        if count(p) == 0 { emit "void" }
+        for x in p sep ", " { emit "int " + x }
+        emit ") " + b
+    } terminated
+@syntax "function" f:name "(" [ p:name ":" "integer" ]* sep ";" ")" ":" "integer" ";" b
+    => {
+        emit "int " + f + "("
+        if count(p) == 0 { emit "void" }
+        for x in p sep ", " { emit "int " + x }
+        emit ") " + b
+    } terminated
+
+; Free Pascal's `Result`, for the reason examples/pascal.pt gives.
+@syntax "Result" ":=" e                        => { emit "return " + e }
+
 @end
 
 { Everything below is Pascal. Nothing below is Prototype's.
@@ -119,6 +145,25 @@ program Fizz;
 var
   total, mod: integer;
   i: integer;
+
+{ A procedure and a function. Pascal separates parameter groups with `;` and
+  C gives every parameter its own type, so one Pascal group becomes several
+  C ones. }
+
+procedure Show(n: integer);
+begin
+  writeln(n)
+end;
+
+procedure Pair(a: integer; b: integer);
+begin
+  writeln(a + b)
+end;
+
+function Double(n: integer): integer;
+begin
+  Result := n * 2
+end;
 
 begin
   total := 0;
@@ -136,5 +181,6 @@ begin
     end
   else
     writeln(total);
-  writeln(total)
+  Show(Double(total));
+  Pair(total, 2)
 end.

@@ -2,6 +2,15 @@
 #include <stdio.h>
 int total, mod;
 int i;
+void Show(int n) {
+printf("%d\n", n);
+}
+void Pair(int a, int b) {
+printf("%d\n", (a + b));
+}
+int Double(int n) {
+return (n * 2);
+}
 int main(void) {
 total = 0;
 mod = 3;
@@ -11,6 +20,7 @@ if ((total > 30)) { {
 total = (total + 1);
 printf("%d\n", total);
 }; } else { printf("%d\n", total); };
-printf("%d\n", total);
+Show(Double(total));
+Pair(total, 2);
 return 0;
 }

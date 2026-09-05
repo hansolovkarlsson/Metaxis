@@ -18,6 +18,11 @@
 
 @syntax "(" e ")"                              => "({e})"
 
+; A call, now that there are things to call. `(` after an expression is this
+; rule; `(` where an expression is expected is the circumfix one above. The
+; parser never has to choose -- the two are in different positions.
+@syntax a "(" [ x ]* sep "," join ", " ")"  95  => "{a}({x})"
+
 @syntax a ":=" b                  10           => "{a} = {b}"
 @syntax a "=" b                   40           => "({a} == {b})"
 @syntax a "<>" b                  40           => "({a} != {b})"
@@ -89,6 +94,28 @@
 @syntax "for" i:name ":=" a "to" b "do" s
     => "for (int {i} = {a}; {i} <= {b}; {i}++) {{ {s}; }}"
 
+; A parameter list. Pascal writes `(a: integer; b: integer)` and C wants
+; `(int a, int b)`, so the type has to appear once per parameter, and the group
+; is where that happens: `join ", int "` puts the word back between the turns
+; and the template writes the first one.
+;
+; It comes out identical to the loop examples/code.pt uses, which is worth
+; knowing rather than glossing: `join` is enough whenever every turn needs the
+; *same* text in front of it, and stops being enough the moment two parameters
+; have different types. This is the one place in these two files where the code
+; template buys nothing.
+@syntax "procedure" f:name "(" [ p:name ":" "integer" ]* sep ";" join ", int " ")" ";" b
+    => "void {f}(int {p}) {b}" terminated
+@syntax "function" f:name "(" [ p:name ":" "integer" ]* sep ";" join ", int " ")" ":" "integer" ";" b
+    => "int {f}(int {p}) {b}" terminated
+
+; Standard Pascal returns by assigning to the function's own name, and that is
+; not reachable here: the `:=` inside a body is an ordinary rule and nothing
+; tells it which function it is inside. A rule sees its own pattern and no
+; context at all. So this reads Free Pascal's `Result`, which is a local answer
+; to a local question and is the only kind this tool gives.
+@syntax "Result" ":=" e                        => "return {e}"
+
 @end
 
 { Everything below is Pascal. Nothing below is Prototype's. }
@@ -98,6 +125,25 @@ program Fizz;
 var
   total, mod: integer;
   i: integer;
+
+{ A procedure and a function. Pascal separates parameter groups with `;` and
+  C gives every parameter its own type, so one Pascal group becomes several
+  C ones. }
+
+procedure Show(n: integer);
+begin
+  writeln(n)
+end;
+
+procedure Pair(a: integer; b: integer);
+begin
+  writeln(a + b)
+end;
+
+function Double(n: integer): integer;
+begin
+  Result := n * 2
+end;
 
 begin
   total := 0;
@@ -115,7 +161,8 @@ begin
     end
   else
     writeln(total);
-  writeln(total)
+  Show(Double(total));
+  Pair(total, 2)
 end.
 
 (* One thing this file does not do, and the omission is now the only thing

@@ -10,6 +10,13 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`procedure` and `function` in the Pascal examples.** With parameter lists,
+calls, and Free Pascal's `Result :=` for the return value. `tests/pascal.sh`
+compiles and runs what comes out and now checks four values rather than two.
+No change to the tool: the parameter list is a repeated group with `sep ";"`,
+the body is a `stmts` hole stopping at `end`, and a call is a led `"(" … ")"`
+at 95.
+
 **`terminated(h)` in a code template.** A new builtin beside `level(h)`: whether
 the rule that filled a hole was declared `terminated`, that is, whether the
 hole's text already ends a statement. For a `stmts` hole it is the last

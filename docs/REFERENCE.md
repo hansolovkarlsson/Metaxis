@@ -710,6 +710,13 @@ asking whether a branch already ends a statement — a string template has to
 brace every branch, because bracing is right either way and it cannot ask. The
 literal comes from `replace(drop(x, 1, 1), "''", "'")`.
 
+**And one place it buys nothing**, which is as much use to know. Both files turn
+Pascal's `(a: integer; b: integer)` into C's `(int a, int b)` and produce the
+same text: the code template loops over the list, and the string one gets there
+with `join ", int "`, because every turn wants the same word in front of it. A
+loop is the general form and `join` is the special case, and the special case is
+common enough to be worth reaching for first.
+
 `tests/pascal.sh` compiles what the second one emits and runs it, and the first
 is expected **not** to compile: that literal is the only thing wrong with it,
 and no `@syntax` can reach it, because a rule cannot match a bare token.
