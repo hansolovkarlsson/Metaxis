@@ -11,6 +11,54 @@ Newest first.
 
 ---
 
+## 11 · One page, three predictions, one afternoon: right about the shape, wrong about every distance
+
+**Issue.** `docs/direction.md` was written on 2026-09-05 to say what Prototype
+could become. Within hours three of its claims met evidence, and it was a good
+day for the page and a bad day for its estimates.
+
+| it said | outcome |
+| --- | --- |
+| stage 2 will show whether the output side generalises past targets shaped like the input | **held** — it does, and nothing in the tool had to change |
+| arithmetic and `num(h)` make this an interpreter generator; the gap is *exactly one roadmap item* | **failed** — it makes a calculator |
+| named fragments may be one mechanic or two | **failed as stated** — two, and building one settled it |
+
+The second is the instructive one. Arithmetic landed and read well, which was
+the risk the item had named. It was not the risk: a hole is expanded before the
+template that uses it runs, so a rule can select between computed values and
+cannot leave one uncomputed. `if 1 then 10 else (1 / 0)` divides by zero.
+Evaluation is eager, and everything an interpreter needs that a calculator does
+not is a thing that must *not* happen.
+
+**Root cause.** The page reasoned correctly about **structure** — that the
+attribute flowing up could be a value, that this is a bottom-up attribute
+grammar, that the missing thing is naming — and then guessed at **distance**
+from the same armchair. Structure is a property of the code and can be reasoned
+about; distance is a property of what you find on the way, and cannot. Every
+distance it named was wrong and every shape it named was right.
+
+**Solution.** Each claim was rewritten in place rather than appended to, which
+is the rule that page opens with, and each rewrite records which risk was
+predicted and which one actually bit. The three artefacts that did the refuting
+are `examples/calc.pt`, `examples/asm.pt` and `@template` itself — files, not
+arguments.
+
+**Learnings.** **A prediction is worth writing down in proportion to how cheaply
+it can be shown wrong, and the way to show it wrong is to build the smallest
+thing that tests it.** Not one of the three was settled by thinking about it
+harder. The arithmetic item spent a paragraph arguing about whether the notation
+would read well, argued the question well, and was arguing about the wrong thing
+— which nothing but running it could have revealed.
+
+The second lesson is narrower and is about the shape of a plan document.
+**Separate the claim about structure from the claim about distance**, because
+they have different epistemic status and the second is nearly always the one
+that is wrong. Had the page said *the gap is deferral or arithmetic, we do not
+know which* instead of *exactly one roadmap item*, it would have been right, and
+it had every fact needed to say so.
+
+---
+
 ## 10 · Two spellings called the same thing, one of which nobody had ever used
 
 **Issue.** `{~t}` in a string template and `fresh("t")` in a code template are

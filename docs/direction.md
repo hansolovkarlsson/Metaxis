@@ -106,50 +106,22 @@ that list would be adding structure to solve a context problem.
 If the attribute is text and flows only upward, there are exactly two ways to
 grow, and they are the two halves of an attribute grammar.
 
-### 1 · Let what flows up be a value, not only text — **done, and it taught something**
+### 1 · Let what flows up be a value — **done, and it stopped short of the name**
 
-Built on 2026-09-05. `-`, `*`, `/`, `%` and `num(h)` are in, `+` adds when both
-sides are numbers and joins when they are not, and `examples/calc.pt` is the
-first file here that does not translate its language but runs it:
+Built 2026-09-05: `-`, `*`, `/`, `%`, `num(h)`, and a `+` that adds when both
+sides are numbers and joins when they are not. `examples/calc.pt` is the first
+file here that runs its notation instead of translating it. It reads well, and
+**it is a calculator and not an interpreter**, because a hole is expanded before
+the template that uses it runs — so a rule can select between computed values and
+cannot leave one uncomputed. `if 1 then 10 else (1 / 0)` divides by zero.
 
-```
-@syntax a "*" b 70 => { emit num(a) * num(b) }
-```
-```
-2 + 3 * 4      ->   14
-100 - 7 - 3    ->   90
-```
-
-**It reads well**, which was the stated question. `num` on every operand is the
-only noise, and it is noise on purpose: a hole holds text, and reading a number
-out of text that merely looks like one is the coercion this tool refuses
-everywhere else.
-
-**And it is not an interpreter generator, which is what the experiment was
-actually worth.** This page said it would be. It is not, and the reason is
-structural rather than a missing feature:
-
-```
-if 1 then 10 else (1 / 0)      →      pt: '/' by zero
-```
-
-A hole is filled by parsing and expanding its subexpression **before** the
-template runs. So a rule can *select* between two values that have already been
-computed, and cannot leave one uncomputed. **Evaluation is eager and cannot be
-otherwise**, which rules out every construct whose meaning is that something does
-*not* happen: a short circuit, a loop, a recursion, a definition used before it
-runs. What arithmetic bought is exact and is worth naming exactly — an
-**evaluator for expressions**, which is a calculator and not an interpreter.
-
-**What the gap actually is, now that it has been measured: deferral.** An
-interpreter needs a hole it can hold without running, and a way to run it later.
-The shape that would fit is a kind that binds the *source* of its subexpression
-rather than the expansion — `text` already does something like this in text mode
-— together with a builtin that re-enters the grammar on demand. That is a much
-larger idea than arithmetic was: it puts the parser back on the stack from
-inside a template, and brings termination questions with it. It is not on
-[ROADMAP.md](ROADMAP.md) yet, because nothing has asked for it and this page has
-already been wrong once about how near it was.
+**What remains is deferral, not an operator**: a hole that can be held
+unexpanded and run on demand. The shape that would fit is a kind binding the
+*source* of its subexpression rather than the expansion, plus a builtin that
+re-enters the grammar. That puts the parser back on the stack from inside a
+template and brings termination with it, so it is a larger idea than this was,
+and it is deliberately not on [ROADMAP.md](ROADMAP.md): nothing has asked, and
+this page has already been wrong once about how near it was.
 
 ### 2 · Let a file declare what flows down
 
@@ -277,23 +249,33 @@ reason.
 
 ## Order, and what would falsify each step
 
-1. ~~**Stage 2, C → assembly.**~~ **Done, 2026-09-05.** The output side
-   generalises: a rule's value became the *code that computes* the phrase rather
-   than the phrase, and nothing in the tool had to change. Emitting labels and an
-   order was not painful; what was painful was writing the same two lines eight
-   times, which is now [ROADMAP.md](ROADMAP.md) 1 and is the same *named
-   fragments* gap this page predicted from the pattern side.
-2. ~~**Arithmetic and `num(h)`.**~~ **Done, 2026-09-05.** It read well, which
-   was the test it was given, and it failed a test nobody had written down:
-   evaluation is eager, so it makes a calculator and not an interpreter. The
-   falsification that mattered was not the one predicted, which is the ordinary
-   case and the reason for building the cheap thing first.
-3. **Named fragments.** Half done: `@template` landed on 2026-09-05 and
-   `examples/asm.pt` uses it. They are **two mechanics, not one** — that was the
-   open question, and building the first answered it. A template fragment is
-   called at expansion, takes arguments, has a scope and can recurse; a pattern
-   fragment is spliced at declaration and has none of those, so one directive
-   covering both would be one word meaning two things. `@kind` is
-   [ROADMAP.md](ROADMAP.md) 1.
-4. **A declared environment.** Falsified if it cannot be made safe across `@use`,
+*Rewritten 2026-09-05, second pass. Three of the four steps below were taken the
+same day this page was written; what is kept here is what each one settled, in
+one line, because a list of struck-through plans is the thing this page opens by
+refusing to become. The full accounts are in
+[COMPLETED.md](COMPLETED.md), and what the three wrong estimates taught is
+[POSTMORTEM.md](POSTMORTEM.md) 11.*
+
+**Taken.** Stage 2 showed the output side generalises and cost nothing in the
+tool. Arithmetic and `num(h)` made an evaluator for expressions and not an
+interpreter. `@template` named a piece of template and, in doing so, settled that
+naming a *pattern* fragment is a second mechanic rather than the same one.
+
+**Next, and what would falsify each:**
+
+1. **`@kind`, named pattern fragments** — [ROADMAP.md](ROADMAP.md) 1. Falsified
+   if the duplication it removes turns out to be rarer than two files writing one
+   parameter list twice; nothing else has asked yet.
+2. **Stage 3, Python's blocks** — [ROADMAP.md](ROADMAP.md) 3. Not falsifiable
+   until a notation is chosen, because it is the first delimiter the *tool* would
+   own rather than one a string declares, and that is a decision before it is a
+   task.
+3. **A declared environment.** Falsified if it cannot be made safe across `@use`,
    because rule locality is worth more than any single feature it would buy.
+   Still last, and still the one that would change what this tool is.
+
+**And the standing lesson from the three that were taken:** this page was right
+about every shape and wrong about every distance. Structure can be reasoned
+about from the code; distance is what you find on the way. Where an entry here
+names a number of steps, read it as a guess and build the cheapest thing that
+tests it.
