@@ -10,6 +10,42 @@ argued away.*
 
 Newest first.
 
+## CI: `make check`, on a machine that is not the author's
+
+`.github/workflows/check.yml`. `make check LIMIT=30` on `ubuntu-latest` and
+`macos-latest`, on push and pull request.
+
+**What it closed.** Until it existed the suite had only ever run on one laptop,
+which is the gap [POSTMORTEM.md](POSTMORTEM.md) 16 and 17 are both about: a
+claim with no instrument behind it drifts. *"Clean rebuild, no warnings"* was
+such a claim, written in every close-out and checked by nobody but the person
+writing it. The repository had also just gone public, so it was making that
+claim to strangers.
+
+**The matrix is two rows because they exercise different halves**, and the first
+run proved both:
+
+```
+ubuntu-latest   ok      asm.sh: skipped, examples/asm.mx emits arm64 and this is x86_64
+macos-latest    ok      asm.sh: it assembles, runs, and prints 14 90 10 20
+```
+
+**The skip branch in `tests/asm.sh` had existed since stage 2 and had never once
+been observed to work**, because the author's machine is arm64 and the branch is
+unreachable there. Its first execution was on this run. The Linux row is also the
+first time this code has been compiled by anything but clang — **gcc 13.3.0,
+`-Wall -Wextra`, no warnings** — and the first time `tests/limit.sh` has run
+under `dash` rather than macOS `sh`, which matters because that file does process
+group management and is the one piece of the suite most likely to be
+shell-specific.
+
+`LIMIT` is raised to 30 for the runners. A shared machine is a loaded machine
+and `tests/limit.sh` reports a timeout as a failure, so the local default of 10s
+is generous there and not here.
+
+Verified at 13 examples, 69 error cases and five check scripts, green on both
+rows, 15s on macOS.
+
 ## The survey: what else does this, and what they have that this does not
 
 [prior-art.md](prior-art.md). Twenty-six commits in, this project had been
