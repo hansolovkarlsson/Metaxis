@@ -10,6 +10,14 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`for i, x in h`, and `at(h, n)`.** A `for` in a code template may name the
+position as well as the turn — first name is the index, counting from 0 — and
+`at(h, n)` takes the turn at a position. Together they walk **two holes of one
+repeated group in step**, which is the only way to write `[ v ":" s ]*` and emit
+the pairs; a position past the end of a list is an error rather than an empty
+string, because two groups of different lengths is the mistake worth catching.
+`examples/code.pt`'s `case` is the customer.
+
 **`repeat … until` and `case … of` in the Pascal examples**, inverting the
 condition for C's `do … while` and giving every `case` arm the `break` Pascal
 does not need. No change to the tool.

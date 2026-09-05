@@ -323,6 +323,18 @@ static Stmt *block(C *c, int *nout)
             }
             s.var = c->text;
             cnext(c);
+            /* `for i, x in l` binds the position as well as the turn, the way
+               Go and Python's enumerate read it: the first name is the index.
+               With one name there is no index and nothing changes. */
+            if (take(c, C_PUNCT, ",")) {
+                if (c->kind != C_NAME || code_is_keyword(c->text)) {
+                    cerr(c, "expected a name after ',' in 'for'");
+                    return NULL;
+                }
+                s.idx = s.var;
+                s.var = c->text;
+                cnext(c);
+            }
             if (!take(c, C_NAME, "in")) { cerr(c, "expected 'in'"); return NULL; }
             s.e = e_or(c);
             if (!s.e) return NULL;
@@ -369,6 +381,7 @@ typedef struct { const char *n[32]; int n_; } Scope;
 static const struct { const char *name; int args; const char *what; } BUILTIN[] = {
     { "matched", 1, "whether a hole's group matched"          },
     { "count",   1, "how many turns a repeated hole took"     },
+    { "at",      2, "the turn at a position, counting from 0"  },
     { "level",   1, "the level of what filled a hole"         },
     { "terminated", 1, "whether what filled a hole ends a statement" },
     { "group",   2, "a hole, bracketed when its level is lower" },
@@ -420,15 +433,32 @@ static int check_block(Rule *r, Stmt *v, int n, Scope *sc, char **err)
                 *err = xfmt("%s:%d: loops nested more than 32 deep", r->file, r->line);
                 return -1;
             }
-            if (rule_has_hole(r, v[i].var)) {
-                *err = xfmt("%s:%d: the loop variable '%s' is also a hole -- one of"
-                            " them has to be called something else",
-                            r->file, r->line, v[i].var);
+            for (int w = 0; w < 2; w++) {
+                const char *nm = w ? v[i].idx : v[i].var;
+                if (!nm) continue;
+                if (rule_has_hole(r, nm)) {
+                    *err = xfmt("%s:%d: the loop variable '%s' is also a hole -- one of"
+                                " them has to be called something else",
+                                r->file, r->line, nm);
+                    return -1;
+                }
+            }
+            if (v[i].idx && !strcmp(v[i].idx, v[i].var)) {
+                *err = xfmt("%s:%d: 'for %s, %s' names the position and the turn the"
+                            " same thing", r->file, r->line, v[i].idx, v[i].var);
                 return -1;
             }
             sc->n[sc->n_++] = v[i].var;
+            if (v[i].idx) {
+                if (sc->n_ >= 32) {
+                    *err = xfmt("%s:%d: loops nested more than 32 deep", r->file, r->line);
+                    return -1;
+                }
+                sc->n[sc->n_++] = v[i].idx;
+            }
             int rc = check_block(r, v[i].body, v[i].nbody, sc, err);
             sc->n_--;
+            if (v[i].idx) sc->n_--;
             if (rc < 0) return -1;
         } else {
             if (check_block(r, v[i].body, v[i].nbody, sc, err) < 0) return -1;
@@ -596,6 +626,21 @@ static int call(Ev *ev, Expr *e, Val *out)
     if (!strcmp(e->s, "matched")) { *out = v_bool(a[0].set);            return 0; }
     if (!strcmp(e->s, "count"))   { *out = v_int(a[0].kind == V_LIST ? a[0].nitems
                                                 : (a[0].set ? 1 : 0)); return 0; }
+    if (!strcmp(e->s, "at")) {
+        long  n = a[1].kind == V_INT ? a[1].num : 0;
+        int   have = a[0].kind == V_LIST ? a[0].nitems : (a[0].set ? 1 : 0);
+        /* Out of range is an error and not an empty string. Two groups walked
+           together is what `at` is for, and two groups of different lengths is
+           the mistake that makes; saying so is the whole value of noticing. */
+        if (n < 0 || n >= have) {
+            ev->err = xfmt("%s:%d: 'at' was given %ld and there %s %d",
+                           ev->r->file, ev->r->line, n,
+                           have == 1 ? "is" : "are", have);
+            return -1;
+        }
+        *out = v_text(a[0].kind == V_LIST ? a[0].items[n] : as_text(a[0]));
+        return 0;
+    }
     if (!strcmp(e->s, "level"))   { *out = v_int(a[0].level);           return 0; }
     if (!strcmp(e->s, "terminated")) { *out = v_bool(a[0].terminated);   return 0; }
     if (!strcmp(e->s, "fresh"))   { *out = v_text(pt_fresh(as_text(a[0]))); return 0; }
@@ -689,12 +734,21 @@ static int run(Ev *ev, Stmt *v, int n)
             int    n2 = c.kind == V_LIST ? c.nitems : (c.set ? 1 : 0);
             for (int k = 0; k < n2; k++) {
                 if (k && sep) buf_str(&ev->out, sep);
-                Frame f;
+                Frame f, fi;
                 f.name = s->var;
                 f.v    = v_text(c.kind == V_LIST ? c.items[k] : as_text(c));
                 f.up   = ev->env;
                 ev->env = &f;
+                if (s->idx) {
+                    fi.name = s->idx;
+                    fi.v    = v_int(k);
+                    fi.up   = ev->env;
+                    ev->env = &fi;
+                }
                 int rc = run(ev, s->body, s->nbody);
+                /* Unwind to what was there before *both* frames. `fi.up` is
+                   `&f`, so restoring to it would leave `f` on the stack and the
+                   next turn would link `f` to itself. */
                 ev->env = f.up;
                 if (rc < 0) return -1;
             }

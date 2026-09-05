@@ -220,6 +220,25 @@ expect "trailing text after @separator" <<'EOF'
 @separator ";" nonsense
 EOF
 
+expect "expected a name after ',' in 'for'" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ a:name ]* sep "," => { for i, in a { emit i } }
+EOF
+
+expect "names the position and the turn the same thing" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ a:name ]* sep "," => { for i, i in a { emit i } }
+EOF
+
+# Out of range is an error and not an empty string: `at` is for walking two
+# groups together, and two groups of different lengths is what that gets wrong.
+expect "'at' was given 9 and there are 2" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" [ a:name ]* sep "," => { for i, x in a { emit at(a, 9) } }
+@end
+f x, y
+EOF
+
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"
 fi

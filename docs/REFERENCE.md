@@ -649,7 +649,7 @@ scope. `examples/hygiene.pt` demonstrates both and `tests/hygiene.sh` runs them.
 code   = "{" { stmt } "}" .
 stmt   = "emit" expr
        | "if" expr code [ "else" code ]
-       | "for" name "in" expr [ "sep" expr ] code .
+       | "for" [ name "," ] name "in" expr [ "sep" expr ] code .
 expr   = expr ( "and" | "or" ) expr
        | expr ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) expr
        | expr "+" expr                        (* text, joined      *)
@@ -668,6 +668,23 @@ outside the strings and the foreign text it emits lives inside them.
 **Its own words are `emit`, `if`, `else`, `for`, `in`, `sep`, `not`, `and` and
 `or`.** A hole may not be one of them.
 
+**`for i, x in h`** binds the position as well as the turn — the first name is
+the index, counting from 0, the way Go and Python's `enumerate` read it. With
+one name there is no index. It exists because **two holes in one repeated group
+are two parallel lists** and nothing else pairs them:
+
+```
+@syntax "case" e "of" [ v ":" s ]* sep ";" "end"
+    => {
+        emit "switch (" + e + ") {"
+        for i, x in v sep "\n" { emit "case " + x + ": " + at(s, i) + "; break;" }
+        emit "}"
+    }
+```
+
+`examples/code.pt` is that rule; `examples/pascal.pt` cannot write it and folds
+the pair into one hole with an infix rule instead.
+
 **What is in scope**: every hole the pattern declares, and the loop variables
 around the statement. A hole inside a repeated group is a **list**; every other
 hole is text. That list is the one thing `join` throws away, and having it is the
@@ -680,6 +697,7 @@ text when it is not empty.
 | --- | --- |
 | `matched(h)` | whether `h`'s group matched at all |
 | `count(h)` | how many turns a repeated hole took |
+| `at(h, n)` | the turn at position `n`, counting from 0. Out of range is an error, not an empty string — two groups of different lengths is the mistake `at` exists to catch |
 | `level(h)` | the level of the rule that filled `h`; 1000 for an atom |
 | `terminated(h)` | whether the rule that filled `h` was declared `terminated` (§3.4) — that is, whether `h`'s text already ends a statement. For a `stmts` hole it is the **last** statement that answers; for a bare token, and for a hole nothing filled, it is false |
 | `group(h, n)` | `h`, bracketed in `(` `)` when `level(h) < n` |
@@ -810,6 +828,9 @@ Every message the tool can produce, and what it means.
 | `no such thing as 'x'` | a builtin nobody has — §8.3 |
 | `'group' takes 2 and was given 1 — it gives …` | wrong arity for a builtin |
 | `the loop variable 'a' is also a hole — one of them has to be called something else` | §8.3 |
+| `expected a name after ',' in 'for'` | `for i, in h` — §8.3 |
+| `'for i, i' names the position and the turn the same thing` | §8.3 |
+| `'at' was given 9 and there are 2` | a position past the end of a list — §8.3 |
 | `loops nested more than 32 deep` | §11 |
 | `cannot open path` | `@use` |
 | `a used file holds directives and nothing else` | §3.5 |

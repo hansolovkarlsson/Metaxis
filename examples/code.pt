@@ -60,18 +60,6 @@
 @syntax a "," b                   20           => { emit a + ", " + b }
 @syntax a ":" "integer"           15           => { emit "int " + a }
 
-; A case arm, and the one rule here that had to be shaped around what a
-; template cannot do. `case n of 1: a; 2: b end` wants to be a repeated group of
-; `[ v ":" s ]`, and it cannot be: two holes in one group are two parallel
-; lists, and nothing pairs them -- a code template's `for` walks one list and
-; has no index, and a string template splices each of them joined. So the arm
-; is a *rule* instead, which turns the pair into one hole before the group ever
-; sees it.
-;
-; It is safe only because the type rule above is declared first: both patterns
-; are three elements long, so declaration order is what tries `: integer`
-; before `: anything`. Add a second type and it goes above this line too.
-@syntax a ":" s                   15           => { emit "case " + a + ": " + s + "; break;" }
 @syntax a ":" "boolean"           15           => { emit "int " + a }
 @syntax "var" d                                => { emit d }
 
@@ -97,18 +85,26 @@
     }
 
 ; Pascal's arms do not fall through and C's do, so every one ends in a `break`
-; the source never wrote. The arms are a list, so a loop writes them; the rule
-; above is what made each one a single value to loop over.
-@syntax "case" e "of" [ arm ]* sep ";" "end"
+; the source never wrote.
+;
+; The arm is `[ v ":" s ]` -- **two** holes in one repeated group, which is two
+; parallel lists. `for i, x in v` walks the labels with their position and
+; `at(s, i)` takes the matching body. examples/pascal.pt cannot do this: a
+; string template splices each list joined and has no way to interleave them,
+; so it declares an infix `a ":" s` rule to fold the pair into one value before
+; the group sees it, and that rule then means *case arm* everywhere a colon is
+; not already claimed. This is the difference the two files exist to show, and
+; it is the sharpest one on the page.
+@syntax "case" e "of" [ v ":" s ]* sep ";" "end"
     => {
         emit "switch (" + e + ") {\n"
-        for x in arm sep "\n" { emit x }
+        for i, x in v sep "\n" { emit "case " + x + ": " + at(s, i) + "; break;" }
         emit "\n}"
     } terminated
-@syntax "case" e "of" [ arm ]* sep ";" "else" d "end"
+@syntax "case" e "of" [ v ":" s ]* sep ";" "else" d "end"
     => {
         emit "switch (" + e + ") {\n"
-        for x in arm sep "\n" { emit x }
+        for i, x in v sep "\n" { emit "case " + x + ": " + at(s, i) + "; break;" }
         emit "\ndefault: " + d + "; break;\n}"
     } terminated
 @syntax "begin" body:stmts "end" "."

@@ -305,7 +305,9 @@ after one that ended in a word, so `examples/hygiene.out` used to carry a `};`
 at file scope where C wants none. **This is settled**: a rule may be declared
 `terminated`, and then nothing is joined after it. A code template can read the
 same flag back off a hole with `terminated(h)`, which is what lets one rule
-punctuate another rule's output without either of them knowing the other.
+punctuate another rule's output without either of them knowing the other, and
+`for i, x in h` with `at(g, i)` walks two of a group's holes together, which is
+what a repeated group with more than one hole in it otherwise cannot say.
 
 What settled it is worth more than the fix. The obvious cheap answer — look at
 the last character emitted, and skip the separator after a `}` — would have been

@@ -10,6 +10,53 @@ argued away.*
 
 Newest first.
 
+## `for i, x in h` and `at(h, n)`: two holes of one group, walked together
+
+A repeated group may hold more than one hole, and until now that was a shape
+nothing could use: `[ v ":" s ]*` gives two **parallel lists**, and neither kind
+of template could put them back together. A string one splices each of them
+joined; a code one's `for` walked a single list with no way to say *where* it
+was. So the pair had to be folded into one value by an infix rule before the
+group ever saw it — which is what `examples/pascal.pt` still does for its `case`
+arms, and what it now says it is doing.
+
+```
+@syntax "case" e "of" [ v ":" s ]* sep ";" "end"
+    => {
+        emit "switch (" + e + ") {"
+        for i, x in v sep "\n" { emit "case " + x + ": " + at(s, i) + "; break;" }
+        emit "}"
+    }
+```
+
+**The index is the first name**, the way Go and Python's `enumerate` read it,
+counting from 0. One name is the old form and means what it always did.
+
+**`at` out of range is an error, not an empty string**, and that is the part
+worth arguing about. Two groups of different lengths is exactly the mistake this
+feature invites — it is the failure mode of walking two lists in step — so the
+one place that can notice it says so, rather than emitting nothing and letting a
+short arm list read as a translation that worked.
+
+**The bug in it was mine and it hung.** Two frames go on the environment for a
+loop with an index, and the restore said `ev->env = fi.up` — which is the *first*
+frame, not what was there before both. The second turn then linked a frame to
+itself, and `lookup` walked a cycle forever. It surfaced as the first test
+hanging rather than as a wrong answer, which is the one kind of failure this
+tree's recorded outputs cannot express: there is no `.out` for *did not
+terminate*.
+
+**What it cost the two example files is a fifth difference**, and the sharpest
+one on the page. `examples/code.pt` writes the arms as the grammar describes
+them; `examples/pascal.pt` declares an infix `a ":" s` meaning *case arm*, which
+then applies to every colon not already claimed by a longer pattern, and is
+correct only because `a ":" "integer"` happens to be declared above it. That is
+a rule whose correctness depends on the order of the file, and it is what the
+absence of one builtin was costing.
+
+*Verified at 10 examples, 39 error cases, `tests/hygiene.sh` and
+`tests/pascal.sh`; `make check` clean.*
+
 ## `repeat` and `case`, and the prediction that `case` would be free
 
 ```

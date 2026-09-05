@@ -72,9 +72,11 @@ Pascal's `Result` for the return. They needed no new mechanics: a repeated group
 with `sep ";"` is the parameter list, a `stmts` hole stopping at `end` is the
 body, and a led `"(" … ")"` at 95 is the call.
 
-**`repeat … until` and `case … of` are in.** `repeat` needed nothing. `case`
-needed a workaround, and the roadmap had said it would not — see item 2, which
-is the mechanic it actually asked for.
+**`repeat … until` and `case … of` are in**, and the mechanic `case` turned out
+to need — `for i, x in h` with `at(h, n)` — is built. `examples/code.pt` writes
+its arms as `[ v ":" s ]*` and walks the two lists in step;
+`examples/pascal.pt` still folds the pair into one hole with an infix rule,
+because a string template cannot interleave two lists at all.
 
 **What is left to write:** the types past `integer` and `boolean`, which is one
 of the decisions below rather than a rule.
@@ -104,34 +106,7 @@ a word in it, which is what `code.pt` does inside `writeln`. That is the one
 thing between `pascal.out` and a program that runs, it is recorded in the file's
 own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
 
-## 2 · Two holes in one repeated group cannot be paired
-
-`case n of 1: a; 2: b end` wants its arms to be a repeated group of
-`[ v ":" s ]`. It cannot be. Two holes in one group come out as **two parallel
-lists**, and nothing puts them back together: a code template's `for` walks one
-list and has no index, and a string template splices each of them joined. There
-is no `zip`, no `v[i]`, and no way to write one from the pieces that exist.
-
-**`examples/pascal.pt` works around it** by making the arm a *rule* —
-`a ":" s` — so the pair becomes one value before the group ever sees it. That is
-a good trick and it is not a general answer: it needs the two parts to be
-joinable by an operator rule, and it only parses because `a ":" "integer"` is
-declared first and both patterns are three elements long, so declaration order
-is what tries the type before the arm. Adding a second Pascal type means
-remembering to declare it above that line, and nothing enforces it.
-
-**What it wants is an index, or a second loop variable.** Either
-`for x in arm` gaining the position, or `for v, s in ...` walking two lists at
-once. The second reads better and is the smaller idea; the first is more general
-and would also answer *is this the last turn*, which is a question `sep` answers
-only for text. Both are additions to `for` in the code template and neither
-touches the pattern side.
-
-**Its customer is real and already here**, which is why this is item 2 rather
-than a note: a `var` section whose declarations have different types is the same
-shape, and Pascal's `real` beside its `integer` walks straight into it.
-
-## 3 · Stage 3 — a block that is an indentation
+## 2 · Stage 3 — a block that is an indentation
 
 Python ends a block by out-denting, and there is no way to say that here. Three
 things stand in the way, and only the first is obvious:
@@ -160,7 +135,7 @@ y`, calls, subscripts — need none of this and read correctly today. That is wo
 knowing but is not worth an example on its own: a file that says Python and
 cannot write an `if` claims more than it does.
 
-## 4 · A class named after a kind
+## 3 · A class named after a kind
 
 `@token expr "…"` declares a class that can never be used, because `x:expr` is
 resolved as the *kind* `expr` and the class is never consulted — silently, and
@@ -172,7 +147,7 @@ Refusing the three names at `@token` is about two lines and the message writes
 itself. Found while writing a Python example whose string class was called
 `text`.
 
-## 5 · A budget for expression-mode backtracking
+## 4 · A budget for expression-mode backtracking
 
 Candidates under one leading word are retried with the cursor restored, and the
 only thing that stops it is a recursion depth of 400. Text mode was in the same
@@ -187,7 +162,7 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
-## 6 · `@mode` declared twice
+## 5 · `@mode` declared twice
 
 `@token`, `@separator` and a rule's pattern are all refused when declared twice
 without `override` (REFERENCE.md §3.8). `@mode` is the one global that is not:
@@ -201,7 +176,7 @@ question is whether `@mode expression` after `@mode text` is a thing a file
 could ever mean, or whether a second `@mode` should simply be an error with no
 `override` at all.
 
-## 7 · Source maps
+## 6 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -210,7 +185,7 @@ this far down.
 
 ---
 
-## 8 · Alternation inside a pattern — explored, not wanted yet
+## 7 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

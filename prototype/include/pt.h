@@ -74,7 +74,8 @@ struct Expr {
 struct Stmt {
     int   kind;
     Expr *e;          /* S_EMIT value, S_IF condition, S_FOR list  */
-    char *var;        /* S_FOR                                      */
+    char *var;        /* S_FOR, the element                         */
+    char *idx;        /* S_FOR, the position, or NULL               */
     Expr *sep;        /* S_FOR, the text between turns              */
     Stmt *body; int nbody;
     Stmt *alt;  int nalt;

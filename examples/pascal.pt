@@ -55,17 +55,19 @@
 @syntax a "," b                   20           => "{a}, {b}"
 @syntax a ":" "integer"           15           => "int {a}"
 
-; A case arm, and the one rule here that had to be shaped around what a
-; template cannot do. `case n of 1: a; 2: b end` wants to be a repeated group of
-; `[ v ":" s ]`, and it cannot be: two holes in one group are two parallel
-; lists, and nothing pairs them -- a code template's `for` walks one list and
-; has no index, and a string template splices each of them joined. So the arm
-; is a *rule* instead, which turns the pair into one hole before the group ever
-; sees it.
+; A case arm, and the price of a string template paid in the pattern rather
+; than in the output. `case n of 1: a; 2: b end` wants its arms to be a repeated
+; group of `[ v ":" s ]`, which is two holes and therefore two parallel lists;
+; a string template splices each of them joined and has no way to interleave
+; them. So the arm is a *rule* instead, folding the pair into one value before
+; the group ever sees it. examples/code.pt keeps the two holes and walks them
+; with `for i, x in v` and `at(s, i)`, which is what that pair of additions was
+; built for.
 ;
-; It is safe only because the type rule above is declared first: both patterns
-; are three elements long, so declaration order is what tries `: integer`
-; before `: anything`. Add a second type and it goes above this line too.
+; This is safe only because the type rule above is declared first: both patterns
+; are three elements long, so declaration order is what tries `: integer` before
+; `: anything`. Add a second type and it goes above this line too -- and nothing
+; enforces that, which is the other half of what the workaround costs.
 @syntax a ":" s                   15           => "case {a}: {s}; break;"
 @syntax a ":" "boolean"           15           => "int {a}"
 
