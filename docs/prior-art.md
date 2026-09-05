@@ -79,7 +79,9 @@ different and smaller problem.
 Occupancy on **crates.io**, **npm** and **PyPI**, and what each name already
 returns when searched. Registry occupancy is the weaker signal of the two —
 `prototype` is "taken" on npm and PyPI by two stubs — so the last column is the
-one that decides.
+one that decides. **Three separate candidates were free on all three registries
+and killed by the search**: `foretext`, `genlex` and the whole `-lingua` branch.
+A clean registry sweep is not evidence of anything.
 
 | name | crates.io | npm | PyPI | what it already returns |
 | --- | --- | --- | --- | --- |
@@ -94,6 +96,32 @@ one that decides.
 | **`incip`** | **free** | **free** | **free** | nothing |
 | **`ostracon`** | **free** | taken | **free** | nothing |
 | `uncial` | free | taken | free | nothing prominent |
+
+**Three further branches were tried and all three closed**, and the reason each
+one closed is worth more than the names were. Registry occupancy did not catch a
+single one of them — every name in this table was free where it mattered, and
+each was killed by what it *returns*.
+
+| branch | candidates | crates / npm / PyPI | what closed it |
+| --- | --- | --- | --- |
+| **`-lingua`** | `prolingua`, `protolingua`, `synlingua` | free · free · free | [**Lingua Franca**](https://www.lf-lang.org/), an active reactor-oriented coordination language from Berkeley and TU Dresden whose tagline is *"intuitive concurrent programming in any language"* — **a published language project whose pitch is polyglot**, which is next door in meaning to *language-agnostic* |
+| **`proto-`** | `protoglot`, `protax`, `protogenesis` | free except `protoglot` on npm | not a collision but a **claim**: `proto-` keeps the assertion that this makes the model *before* the real thing, which is the deep objection to the current name and survives renaming |
+| **`genesis`** | `genesis`, `genesys` | taken · taken · taken | four active software meanings — a financial-markets low-code platform, the WordPress parent-theme framework, the Genesys contact-centre company, and the console. **More contested than `prototype`, which has one** |
+| | `genlex` | free · free · free | **OCaml's `Genlex` stdlib module**: *"a generic lexical analyzer… parameterized by the set of keywords of your language."* Not merely the same domain — **nearly the same function** as `prototype/src/lex.c` |
+| | `gensyn` | free · free · taken | Gensyn, a funded ML-compute company |
+| | `genera` | free · taken · taken | **Symbolics Genera**, the Lisp Machine OS |
+| **survivor** | **`protaxis`** | **free · free · free** | nothing in software. A real dictionary word — New Latin `prot-` + `axis`, a geology term from 1890 for *the line of initial uplift in a mountain range*. **Its apparent etymology is wrong and worth recording as wrong**: it is not `pro-` + `taxis`, though it scans that way to anyone who knows `syntax` is `syn-` + `taxis`, which is why it sounds native to this field while asserting nothing in it |
+
+**And the conclusion the four rounds actually produced**, which is worth more
+than any candidate on this page:
+
+> **A name with meaning has to come from outside software entirely, or it has to
+> be effectively invented. There is no third option.**
+
+Four rounds reached for a meaningful word — the current name, then the
+`pro`/`syn`/`lingua` morphemes, then `genesis` — and every meaning-bearing word
+in or near this domain came back occupied. That is the same statement as the one
+below, arrived at from the other side.
 
 **What the table says, more than any row does: every real word in this semantic
 field is already occupied.** That is the mechanism behind the habit above rather

@@ -315,7 +315,18 @@ they are worth more than the list itself:
    It sits one letter from `pretext`, a JavaScript text-layout library, and from
    **PreTeXt**, an authoring language for textbooks. A name misheard as an
    existing tool **in the same domain** is worse than one nobody knows yet.
-3. **A descriptive name has to be scored, and this page has already shown what
+3. **A name with meaning has to come from outside software entirely, or it has
+   to be effectively invented — there is no third option.** Four rounds of
+   candidates produced this and it is the most useful thing on the page. The
+   current name, then the `pro`/`syn`/`lingua` morphemes, then `genesis`: every
+   meaning-bearing word in or near this domain came back occupied, and the three
+   that were free on every registry were killed by what they *return* —
+   `foretext` by PreTeXt, `genlex` by **OCaml's `Genlex` module**, a generic
+   lexer parameterised by your language's keywords, and the whole `-lingua`
+   branch by **Lingua Franca**, a published coordination language whose pitch is
+   *polyglot*. [prior-art.md](prior-art.md) § 1 has all three branches with what
+   closed each. **A clean registry sweep is not evidence of anything.**
+4. **A descriptive name has to be scored, and this page has already shown what
    that costs.** The description above was written and refuted inside a day. A
    name that encodes the current stage inherits exactly that. **Which is the real
    case against `Prototype`, and it has nothing to do with searchability:** it
@@ -326,12 +337,18 @@ they are worth more than the list itself:
 | | | why | against it |
 | --- | --- | --- | --- |
 | **Ostracon** — `ost`, `.ost` | **recommended** | A potsherd: the cheap, throwaway surface drafts were written on because papyrus was expensive. Literally *the thing you write a draft on* — the honest half of the description, without the word, and without its defect: **the surface is cheap, not the result**. Outside the software domain entirely, so it is searchable, and it asserts nothing about rewriting, evaluating or interpreting, so it survives every row of the table above including the one that has not landed | eight letters, and nobody knows it (*OS-truh-kon*) — the same cost Spoofax, Katahdin and Coccinelle pay deliberately. `npm` is taken; crates.io and PyPI are free |
-| **Incip** — `incip`, `.incip` | runner-up | An *incipit* is the opening words by which a manuscript is identified: the header saying how to read what follows, which is exactly true here. **Free on all three registries**, and five letters | reads as a truncation, looks like a typo for *incipient*, and nobody will say it with confidence |
+| **Protaxis** — `ptx`, `.ptx` | **recommended** | Free on all three registries and returning nothing in software. A real word — New Latin `prot-` + `axis`, a geology term from 1890 for the line of initial uplift in a mountain range — which **scans** as `pro-` + `taxis` to anyone who knows `syntax` is `syn-` + `taxis`, so it sounds native to this field while asserting nothing in it. The `pro-` reads as Greek rather than as *prototype*, so it escapes the door above | the apparent etymology is **wrong**, and anyone who looks it up finds a mountain range. Eight letters. It means nothing here, which is the price of never going stale |
+| **Incip** — `incip`, `.incip` | third | An *incipit* is the opening words by which a manuscript is identified: the header saying how to read what follows, which is exactly true here. **Free on all three registries**, and five letters | reads as a truncation, looks like a typo for *incipient*, and nobody will say it with confidence |
 | **Maquette** | **declined** | the best pure synonym for *prototype* | and that is the objection. It hard-codes *preliminary*, so it closes the same door `Prototype` does, only more elegantly. Also a virtual DOM library |
 
-The registry checks and what each name collides with are in
-[prior-art.md](prior-art.md) § 1, dated, so the next person to open this does not
-re-run them.
+**Two survivors, and the choice between them is one question.** *Ostracon* takes
+its meaning from outside software and needs a sentence of explanation; *Protaxis*
+sounds native to language tooling and needs none, because it means nothing here.
+Both are eight letters. `Protaxis` is free on all three registries where
+`Ostracon` is taken on npm. **Everything else tried in four rounds lands on
+somebody**, and the branches that closed — `-lingua`, `proto-`, `genesis` — are
+recorded with their reasons in [prior-art.md](prior-art.md) § 1, dated, so that
+reopening this decision is choosing rather than searching.
 
 **And `.pt` should change whichever way this goes.** It is PyTorch's checkpoint
 extension, it is the collision a reader meets before they meet the name, and it
