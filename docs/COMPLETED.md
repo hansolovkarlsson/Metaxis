@@ -10,6 +10,32 @@ argued away.*
 
 Newest first.
 
+## A class named after a kind is refused
+
+```
+@token expr "…"    ->    'expr' is a kind, so a class called that could never
+                         be used -- 'x:expr' is read as the kind and this class
+                         would never be consulted
+```
+
+`expr`, `stmts` and `text` are the built-in kinds, and a hole's kind is resolved
+against those names first. So a class called one of them was declared, accepted,
+and never consulted: `@token expr` produced no complaint at all and a rule using
+`x:expr` quietly read an expression, and `@token text` surfaced as `a 'text'
+hole belongs to @mode text` — an error about the wrong thing, naming a mode the
+file may never have mentioned.
+
+**Refusing the name at `@token` is the whole fix**, because those are the only
+two namespaces that meet. A `@fragment` is spliced with `@name` and shares a
+namespace with neither, which is why this item stayed three names and two lines
+rather than growing when fragments arrived — see the entry below for why that
+was the right side to put it on.
+
+Found while writing a Python example whose string class was called `text`.
+
+Verified at 12 examples byte-identical, 62 error cases, `tests/hygiene.sh`,
+`tests/pascal.sh` and `tests/asm.sh`, clean build with no warnings.
+
 ## `@fragment`: the other half of naming a fragment
 
 ```

@@ -351,6 +351,18 @@ expect "two holes called 'a'" <<'EOF'
 @syntax "f" a:name "," a:name => "{a}"
 EOF
 
+expect "'expr' is a kind, so a class called that could never be used" <<'EOF'
+@token expr "[a-z]+"
+EOF
+
+expect "'stmts' is a kind, so a class called that could never be used" <<'EOF'
+@token stmts "[a-z]+"
+EOF
+
+expect "'text' is a kind, so a class called that could never be used" <<'EOF'
+@token text "[a-z]+"
+EOF
+
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"
 fi

@@ -534,6 +534,20 @@ static int directive(Grammar *g, D *d, const char *file, int line,
     if (!strcmp(name, "token")) {
         char *n = dident(d);
         if (!n) { derr(d, "expected a class name"); goto fail; }
+        /* A class named after a kind could never be used. `x:expr` is resolved
+           as the *kind* and a class of that name is never consulted, so the
+           rule parsed and ran and read something other than what it said --
+           `@token text` reached `a 'text' hole belongs to @mode text`, which is
+           an error about the wrong thing, and `@token expr` said nothing at all.
+           Refusing the name is the whole fix, because the two namespaces meet
+           only here: `@fragment` is spliced with `@name` and shares neither. */
+        for (int i = 0; KINDS[i]; i++) {
+            if (strcmp(n, KINDS[i])) continue;
+            derr(d, xfmt("'%s' is a kind, so a class called that could never be"
+                         " used -- 'x:%s' is read as the kind and this class"
+                         " would never be consulted", n, n));
+            goto fail;
+        }
         char *re = dstring(d);
         if (!re) goto fail;
         int over = dtake(d, "override");

@@ -24,6 +24,12 @@ what they did before. `examples/code.pt` also shares the body the two rules had
 in common through a `@template`, so the two ways of naming a fragment now meet
 in one file.
 
+**`@token expr`, `@token stmts` and `@token text` are now refused** —
+`'expr' is a kind, so a class called that could never be used`. A hole written
+`x:expr` resolves as the *kind*, so a class of that name was never consulted:
+`expr` said nothing at all, and `text` reached `a 'text' hole belongs to @mode
+text`, an error about the wrong thing.
+
 **A `for` inside a `@template` body no longer crashes.** It read through a null
 rule at seal and segfaulted, so no template that looped had ever run; the check
 it crashed in — a loop variable shadowing a hole — does not apply to a template,

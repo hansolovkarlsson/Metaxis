@@ -143,7 +143,12 @@ applies — so `"0x[0-9a-fA-F]+|[0-9]+"` takes all of `0x0c` and not just the `0
 - **Redeclaring a name is refused** unless the second declaration says
   `override`, which replaces the pattern; rules already written against the
   class keep working. §3.10.
-- A class name may be used as a hole's kind (§4.3).
+- A class name may be used as a hole's kind (§4.3), which is why it **may not be
+  `expr`, `stmts` or `text`**: those three are the built-in kinds, `x:expr`
+  resolves as the kind, and a class of that name would never be consulted.
+  Writing one is `'expr' is a kind, so a class called that could never be used`.
+  A `@fragment` name is unaffected — it is spliced with `@name` and shares no
+  namespace with either (§3.9).
 - A bad pattern is `bad pattern for 'name': …` with the regex library's own
   words after it.
 - **Nothing may follow but `override`.** Anything else is `trailing text after
@@ -929,6 +934,7 @@ Every message the tool can produce, and what it means.
 | `groups nested more than 16 deep` | §11 |
 | `a rule is found by its first word, so it cannot begin with a group` | §4.2 |
 | `a repeated group that ends in a greedy hole and begins with a hole needs a 'sep' to know where one turn stops` | §4.4 |
+| `'expr' is a kind, so a class called that could never be used` | §3.1 — likewise `stmts` and `text` |
 | `expected a kind after ':'` | a hole wrote `:` and stopped |
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
 | `'x:name' asks for one token of a class, and text mode has no tokens` | §7 |

@@ -146,25 +146,7 @@ y`, calls, subscripts — need none of this and read correctly today. That is wo
 knowing but is not worth an example on its own: a file that says Python and
 cannot write an `if` claims more than it does.
 
-## 3 · A class named after a kind
-
-`@token expr "…"` declares a class that can never be used, because `x:expr` is
-resolved as the *kind* `expr` and the class is never consulted — silently, and
-the rule parses and runs. `@token text` is the same shadowing but happens to
-produce `a 'text' hole belongs to @mode text`, which is an error about the wrong
-thing. `stmts` is the third.
-
-Refusing the three names at `@token` is about two lines and the message writes
-itself. Found while writing a Python example whose string class was called
-`text`.
-
-**`@fragment` deliberately stayed out of this namespace**, which is why it is
-still only these three names and still about two lines. A fragment is spliced
-with `@name` rather than written after a `:`, so a `@fragment` and a `@token`
-class may share a name and neither shadows the other. See
-[COMPLETED.md](COMPLETED.md) for why that was the right side to put it on.
-
-## 4 · A budget for expression-mode backtracking
+## 3 · A budget for expression-mode backtracking
 
 Candidates under one leading word are retried with the cursor restored, and the
 only thing that stops it is a recursion depth of 400. Text mode was in the same
@@ -179,7 +161,7 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
-## 5 · `@mode` declared twice
+## 4 · `@mode` declared twice
 
 A rule's pattern, `@token`, `@separator`, `@template` and `@fragment` are all
 refused when declared twice without `override` (REFERENCE.md §3.10). `@mode` is
@@ -194,7 +176,7 @@ question is whether `@mode expression` after `@mode text` is a thing a file
 could ever mean, or whether a second `@mode` should simply be an error with no
 `override` at all.
 
-## 6 · Source maps
+## 5 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -203,7 +185,7 @@ this far down.
 
 ---
 
-## 7 · Alternation inside a pattern — explored, not wanted yet
+## 6 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason
