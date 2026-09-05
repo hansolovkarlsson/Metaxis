@@ -191,7 +191,14 @@ first projection*. Not by performing projections, which Futamura already does,
 but by producing the artefact they need from a notation that did not exist that
 morning.
 
-## What to call it — scored 2026-09-05, and the answer moved
+## What to call it — the description scored, the name still open
+
+*This section is about two things that were run together for a day and are
+better kept apart: **the description** — what sentence introduces the tool — and
+**the name**. The description is below and was scored. The name is at the foot,
+was surveyed on the same day, and is **open**.*
+
+### The description
 
 **Hans, 2026-09-05:** *a generic interpreter generator, meant to prototype a new
 language.* This section was written the same day to record that phrase before it
@@ -239,6 +246,62 @@ day — and the useful correction was not the one it predicted. It had named
 ordinary case rather than a surprise, and it is the argument for building the
 cheap thing rather than reasoning about it, which is the same argument
 [POSTMORTEM.md](POSTMORTEM.md) 9 makes about the staging.
+
+### The name — surveyed 2026-09-05, and open
+
+**Hans, 2026-09-05:** *so how about the name? Is it used as a programming tool
+already?*
+
+`README.md` has said **Working name** since the first commit, so nothing has to
+be undone here — only chosen. The evidence is
+[prior-art.md](prior-art.md) § 1; this is what it costs and what it buys.
+
+**What is genuinely wrong with it is searchability, and nothing else.** There is
+**no language tool, compiler, parser generator or transformation system named
+Prototype** — the survey looked and found none, so this tool would not be
+confused for a peer. What it collides with is a dormant JavaScript framework
+that still holds the domain and the org, and — the larger problem — a word that
+in a programming context already means five other things: C's function
+prototypes, JavaScript's `Object.prototype`, the object model of Self and Io,
+the GoF pattern, and Spring's bean scope. *Prototype parser* and *prototype
+grammar* return the paradigm. And `.pt` is PyTorch's checkpoint extension, which
+a reader meets before they meet the name at all.
+
+**The field's own habit says the same thing from the other side.** Stratego,
+Spoofax, Rascal, Ohm, Comby, Katahdin, Coccinelle, Seed7, Nanopass; TXL, ANTLR,
+SDF, DMS, META II. Almost nothing here is named after a common word from its own
+domain, and the exceptions carry a qualifier that does the work — ast-grep,
+Semgrep, OpenRewrite, tree-sitter. A tool in this field is found by its name and
+by nothing else, because there is no catalogue to browse.
+
+**What the name buys, and it is not nothing.** It states the purpose, and the
+purpose is the half of the description above that **held** when the other half
+was scored and failed. *Meant to prototype a notation* is the strongest true
+sentence about this tool, and a name that says it is worth more than a name that
+merely indexes well. The section above spent a day learning that the honest half
+is the half to keep; renaming to something opaque would be trading the one word
+that is already honest for one that has to be explained.
+
+**So the decision is genuinely balanced, and it is not being taken here.** What
+is written down instead is the shape of it, so that whoever takes it is not
+re-deriving the evidence:
+
+- **Keeping it costs discoverability and nothing else.** Nothing is
+  functionally blocked: crates.io is free, and npm and PyPI hold stubs rather
+  than live projects. A qualified form — the way the field's own exceptions are
+  built — recovers most of the search profile while keeping the word that is
+  true.
+- **Changing it costs the one honest word**, and the replacement has to earn
+  back what *prototype* says for free. An opaque name is a promise to explain
+  the tool every time it is mentioned.
+- **`.pt` is separable from the name** and may be the cheaper half to change,
+  since the PyTorch collision is the one a reader actually hits and the
+  extension is spelled in every example, test and document here.
+
+**And there is nothing to build either way, which is why this is not on
+[ROADMAP.md](ROADMAP.md).** A name is settled by deciding, not by working, and
+the page that holds it should be this one. When it is decided, this subsection
+is rewritten rather than added to, as the rest of the page is.
 
 ## What it should not become
 

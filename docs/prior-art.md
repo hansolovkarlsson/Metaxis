@@ -38,6 +38,45 @@ Prototype is C's placement with B's agnosticism: **the declaration is in the
 file, and neither the input language nor the output language is the tool's.**
 That combination is what did not turn up anywhere in this survey.
 
+### And what they are called
+
+Worth noticing while the list is in front of us, because this project's name is
+recorded as a working one and the field has an unmistakable habit.
+
+**Almost none of these tools is named after a common word from its own domain.**
+The invented or borrowed-from-elsewhere names — **Stratego**, **Spoofax**,
+**Rascal**, **Ohm**, **Comby**, **Katahdin**, **Coccinelle**, **Silver**,
+**Seed7**, **Nanopass** — and the acronyms — **TXL**, **ANTLR**, **SDF**,
+**SmPL**, **DMS**, **META II** — cover the whole survey between them. The
+handful of exceptions are compounds that carry a qualifier doing the
+disambiguating: **ast-grep**, **Semgrep**, **GritQL**, **OpenRewrite**,
+**JastAdd**, **SugarJ**, **tree-sitter**.
+
+The habit is not fashion. A tool in this field is found by its name and by
+nothing else — there is no category listing to browse — so the name has to be
+a term that returns the tool when typed into a search box. Coccinelle means
+*ladybird*; that is exactly why it works.
+
+**Against that, `Prototype` scores poorly, and it is worth being specific about
+how.**
+
+| | |
+| --- | --- |
+| **the framework** | [Prototype.js](http://prototypejs.org/), Rails' default through 2007. Last stable 1.7.3, September 2015; roughly 0.6% of websites in 2021. Dormant, and it holds `prototypejs.org`, the `prototypejs/prototype` GitHub org, and the mindshare |
+| **the word, in this field** | C's function prototypes; JavaScript's `Object.prototype`; the prototype-based object model of Self and Io; the GoF Prototype pattern; Spring's `prototype` bean scope. **In a programming context the word almost never denotes a tool**, so *prototype parser*, *prototype grammar* and *prototype compiler* each return the paradigm |
+| **the registries** | `prototype` is taken on **npm** (v0.0.5, *"Implementation of Prototypejs in Node.js"*) and on **PyPI** (v0.2, *"Javascript's Prototyping OO for Python"*) — both stubs rather than live projects. **On crates.io it is free**, checked 2026-09-05 |
+| **the extension** | `.pt` is PyTorch's checkpoint extension, which `torch.save` writes. That is the more common meaning today by a wide margin, and it is the collision a reader meets before they meet the name |
+
+**And the thing that is *not* wrong with it, which the first pass got backwards.**
+There is **no language tool, compiler, parser generator or transformation
+system named Prototype**. The collision is with a dormant JavaScript library and
+with an overloaded English word — not with a peer. Nothing here would be
+confused for another tool in this survey; it would be hard to *find*, which is a
+different and smaller problem.
+
+[direction.md](direction.md)'s "What to call it" carries what that costs and what
+the name buys in exchange. This page holds only the evidence.
+
 ## 2 · The uniqueness claim, scored
 
 [direction.md](direction.md) closes with:
