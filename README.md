@@ -54,6 +54,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | --- | --- |
 | [first.pt](examples/first.pt) | the smallest file that shows the shape, and what [REFERENCE.md](docs/REFERENCE.md) § 1 opens with |
 | [calc.pt](examples/calc.pt) | the one file here with no target language: it **runs** its notation instead of translating it, and its header records where that stops |
+| [asm.pt](examples/asm.pt) | C in, arm64 assembly out — a target that is a sequence rather than a tree, with labels and an order the input never mentions |
 | [tour.pt](examples/tour.pt) | the idea in one file: infix, prefix, circumfix, mixfix, and `then` used as a word and as a name four lines apart |
 | [clike.pt](examples/clike.pt) | the six things Proto's `lib/clike.pro` lists as impossible — `;` between statements, `x++`, `a[i]`, `p->f`, a lone `|`, `for`, and `42` without a sigil |
 | [pascal.pt](examples/pascal.pt) | Pascal in, C out — stage 1. `program`, `var`, `procedure`, `function`, `begin`/`end`, `if`, `while`, `for`, `repeat`, `case`, calls, and the operator words. `pascal.out` keeps its parenthesis noise, which is the cost of agnosticism showing itself, and is the one output here that is expected not to compile |
@@ -136,6 +137,7 @@ examples/                .pt beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong
 tests/hygiene.sh         what a template that is a string cannot do, run
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
+tests/asm.sh             C in, arm64 out, assembled and run on a CPU
 docs/REFERENCE.md        every part of a .pt file, exhaustively
 docs/notation.md         the one rule, what falls out of it, and what it costs
 docs/direction.md        what this could become, and which futures are declined

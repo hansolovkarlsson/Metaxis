@@ -25,9 +25,15 @@ on introducing new mechanics and test them out properly.*
 
 | | reads | writes | what it is for |
 | --- | --- | --- | --- |
-| **1 · now** | Pascal | C | the mechanics that exist, finished and made testable |
-| **2 · next** | C | assembly | output that is not an expression tree — labels, order, a machine |
-| **3 · later** | Python | C | a language whose blocks are indentation |
+| **1 · done** | Pascal | C | the mechanics that exist, finished and made testable |
+| **2 · done** | C | arm64 | output that is not an expression tree — labels, order, a machine |
+| **3 · next** | Python | C | a language whose blocks are indentation |
+
+Stage 2 landed on 2026-09-05 as `examples/asm.pt` and `tests/asm.sh`. **The
+output side generalises**, which was the question: a rule's value became *the
+code that computes the phrase* rather than the phrase, and nothing in the tool
+had to change for that. What it cost is item 1 below, and what it found is
+[POSTMORTEM.md](POSTMORTEM.md) 10.
 
 [direction.md](direction.md) says what the stages are ultimately *for*, and why
 stage 2 is assembly rather than another expression language.
@@ -57,7 +63,45 @@ we find out which.
 
 ---
 
-## 1 · Stage 1 — what Pascal→C still owes
+## 1 · A name for a piece of template
+
+`examples/asm.pt` writes this eight times:
+
+```
+if level(x) == 1000 { emit "\tmov x0, #" + x + "\n\tstr x0, [sp, #-16]!\n" } else { emit x }
+```
+
+once per operand of every rule. It is the whole of *load this operand's value
+onto the stack*, it is identical every time, and there is no way to name it. The
+example is longer than the language it compiles, and almost all of the excess is
+that line.
+
+**What it wants is a template that can be called:**
+
+```
+@template load(x) { if level(x) == 1000 { emit … } else { emit x } }
+@syntax a "+" b 60 => { load(a) load(b) emit "\tadd x0, x0, x1\n" }
+```
+
+**This is the second half of a prediction [direction.md](direction.md) already
+made.** That page says the structural gap is *named, reusable fragments*, and
+gives the pattern-side example — `[ p:name ":" "integer" ]*` written twice in
+`examples/pascal.pt` because there is no `@kind`. Stage 2 arrived at the same
+gap from the template side without looking for it, which is the strongest
+evidence either has. Both are one idea: **this tool cannot name anything except
+a rule.**
+
+Whether they are one mechanic or two is the open question. A pattern fragment is
+spliced at declaration; a template fragment is called at expansion and needs
+arguments, a scope and a recursion story. They may share a directive and they
+may not, and building one will say which.
+
+**What would settle it against:** if the repetition turns out to be a property of
+code generation rather than of the tool — if the next non-trivial target does not
+repeat itself — then one example wanting it is not enough, and `@kind` is the
+half worth having.
+
+## 2 · Stage 1 — what Pascal→C still owes
 
 **Where it got to.** `examples/pascal.pt` and `examples/code.pt` read `program`,
 a `var` section with comma-separated declarations, `integer` and `boolean`, and
@@ -111,7 +155,7 @@ a word in it, which is what `code.pt` does inside `writeln`. That is the one
 thing between `pascal.out` and a program that runs, it is recorded in the file's
 own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
 
-## 2 · Stage 3 — a block that is an indentation
+## 3 · Stage 3 — a block that is an indentation
 
 Python ends a block by out-denting, and there is no way to say that here. Three
 things stand in the way, and only the first is obvious:
@@ -140,7 +184,7 @@ y`, calls, subscripts — need none of this and read correctly today. That is wo
 knowing but is not worth an example on its own: a file that says Python and
 cannot write an `if` claims more than it does.
 
-## 3 · A class named after a kind
+## 4 · A class named after a kind
 
 `@token expr "…"` declares a class that can never be used, because `x:expr` is
 resolved as the *kind* `expr` and the class is never consulted — silently, and
@@ -152,7 +196,7 @@ Refusing the three names at `@token` is about two lines and the message writes
 itself. Found while writing a Python example whose string class was called
 `text`.
 
-## 4 · A budget for expression-mode backtracking
+## 5 · A budget for expression-mode backtracking
 
 Candidates under one leading word are retried with the cursor restored, and the
 only thing that stops it is a recursion depth of 400. Text mode was in the same
@@ -167,7 +211,7 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
-## 5 · `@mode` declared twice
+## 6 · `@mode` declared twice
 
 `@token`, `@separator` and a rule's pattern are all refused when declared twice
 without `override` (REFERENCE.md §3.8). `@mode` is the one global that is not:
@@ -181,7 +225,7 @@ question is whether `@mode expression` after `@mode text` is a thing a file
 could ever mean, or whether a second `@mode` should simply be an error with no
 `override` at all.
 
-## 6 · Source maps
+## 7 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -190,7 +234,7 @@ this far down.
 
 ---
 
-## 7 · Alternation inside a pattern — explored, not wanted yet
+## 8 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

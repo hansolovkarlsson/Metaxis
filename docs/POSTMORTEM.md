@@ -11,6 +11,57 @@ Newest first.
 
 ---
 
+## 10 · Two spellings called the same thing, one of which nobody had ever used
+
+**Issue.** `{~t}` in a string template and `fresh("t")` in a code template are
+documented as the same feature: *a name nobody else has*, one name per label per
+application. REFERENCE.md § 8.2 said so in as many words — *`fresh("t")` is the
+same thing in a code template*. It was not. `{~t}` was memoised per application,
+as documented; `fresh("t")` called the generator afresh every time, so two calls
+in one template gave two names.
+
+That makes a whole class of template unwritable, and it is not an obscure one:
+anything needing a **label at a branch and at the place the branch jumps to**.
+Writing `examples/asm.pt` walked straight into it on the first conditional.
+
+**Root cause.** `fresh()` had **never been used**. `git grep 'fresh('` across
+`examples/`, `lib/` and `tests/` at the commit before this one returns nothing;
+`{~t}` returns two examples, one of which `tests/hygiene.sh` compiles and runs.
+So the exercised half was right and the unexercised half had drifted, and the
+sentence claiming they were the same is what stopped anybody looking. It reads
+as a fact about the implementation and is in fact a promise about two code paths
+that never met.
+
+There was a second, worse thing in the same three lines: `pt_fresh` can return
+NULL when the name space is exhausted, `subst` checks it, and the code template
+did not — it passed NULL to `v_text`, which dereferences it. Unreachable in
+practice, and only because the feature had no users.
+
+**Solution.** `Ev` keeps the same per-application memo `subst` keeps, so the two
+spellings now genuinely are one behaviour; exhaustion is an error rather than a
+crash; and `examples/asm.pt` uses `fresh` in anger, twice per conditional, with
+`tests/asm.sh` checking that two conditionals produce four label lines under two
+distinct names.
+
+**Learnings.** **An equivalence claim is a test that has not been written.**
+"X is the same as Y" asserts that two implementations agree, and unless something
+exercises both, it is exactly as reliable as the one nobody ran. The tell here was
+available and cheap: a feature named in the reference and used in no `.pt` file
+in the repository is a feature whose documented behaviour is a guess.
+
+The general form is worth more than this instance. This tree's examples are its
+test suite, so **a builtin with no example is untested by construction** — the
+builtin table in REFERENCE.md § 8.3 is the list to audit against `git grep`, and
+doing that is minutes. What made this one findable at all was writing a program
+that needed it; what would have found it a day earlier is asking which entries in
+that table no file uses.
+
+That audit has now been run: every builtin in § 8.3 is used by at least one
+example, `fresh` by `examples/asm.pt`. It took a minute and it is the kind of
+thing that should be re-run whenever the table grows.
+
+---
+
 ## 9 · A method proposed in the morning and scored the same evening
 
 **Issue.** Hans introduced staging on 2026-09-05: one translator at a time,

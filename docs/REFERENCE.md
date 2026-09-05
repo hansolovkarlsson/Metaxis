@@ -635,8 +635,12 @@ occurs anywhere in the source being expanded or in any template any rule
 declared, `@use` included; the test is a substring test, so it is conservative
 in the safe direction — `t__1` is refused while `t__12` is in the file.
 
-`fresh("t")` is the same thing in a code template, and draws from the same
-counter.
+`fresh("t")` is the same thing in a code template: **one name per label per
+application**, so two `fresh("L")` in one template are one name and
+`fresh("Lelse")` beside it is another. It draws from the same counter, so a
+string template and a code template in one file never collide. Until 2026-09-05
+it returned a new name on every call, which is [POSTMORTEM.md](POSTMORTEM.md) 10;
+`examples/asm.pt` is what needed a label in two places and found it.
 
 This closes the half of hygiene where a template **introduces** a name. It does
 not touch the half where a template **reaches out** for one the caller shadowed:

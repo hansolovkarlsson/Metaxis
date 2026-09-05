@@ -1,0 +1,81 @@
+.text
+.globl _main
+.align 2
+_main:
+	stp x29, x30, [sp, #-16]!
+	mov x29, sp
+	mov x0, #2
+	str x0, [sp, #-16]!
+	mov x0, #3
+	str x0, [sp, #-16]!
+	mov x0, #4
+	str x0, [sp, #-16]!
+	ldr x1, [sp], #16
+	ldr x0, [sp], #16
+	mul x0, x0, x1
+	str x0, [sp, #-16]!
+	ldr x1, [sp], #16
+	ldr x0, [sp], #16
+	add x0, x0, x1
+	str x0, [sp, #-16]!
+	ldr x0, [sp], #16
+	bl _putn
+	mov x0, #100
+	str x0, [sp, #-16]!
+	mov x0, #7
+	str x0, [sp, #-16]!
+	ldr x1, [sp], #16
+	ldr x0, [sp], #16
+	sub x0, x0, x1
+	str x0, [sp, #-16]!
+	mov x0, #3
+	str x0, [sp, #-16]!
+	ldr x1, [sp], #16
+	ldr x0, [sp], #16
+	sub x0, x0, x1
+	str x0, [sp, #-16]!
+	ldr x0, [sp], #16
+	bl _putn
+	mov x0, #1
+	str x0, [sp, #-16]!
+	mov x0, #2
+	str x0, [sp, #-16]!
+	ldr x1, [sp], #16
+	ldr x0, [sp], #16
+	cmp x0, x1
+	cset x0, lt
+	str x0, [sp, #-16]!
+	ldr x0, [sp], #16
+	cbz x0, Lelse__1
+	mov x0, #10
+	str x0, [sp, #-16]!
+	b Lend__2
+Lelse__1:
+	mov x0, #20
+	str x0, [sp, #-16]!
+Lend__2:
+	ldr x0, [sp], #16
+	bl _putn
+	mov x0, #2
+	str x0, [sp, #-16]!
+	mov x0, #1
+	str x0, [sp, #-16]!
+	ldr x1, [sp], #16
+	ldr x0, [sp], #16
+	cmp x0, x1
+	cset x0, lt
+	str x0, [sp, #-16]!
+	ldr x0, [sp], #16
+	cbz x0, Lelse__3
+	mov x0, #10
+	str x0, [sp, #-16]!
+	b Lend__4
+Lelse__3:
+	mov x0, #20
+	str x0, [sp, #-16]!
+Lend__4:
+	ldr x0, [sp], #16
+	bl _putn
+	mov w0, #0
+	ldp x29, x30, [sp], #16
+	ret

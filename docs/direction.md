@@ -21,6 +21,10 @@ and combines them into its own**, and that value is text.
 Which is to say: Prototype is a **bottom-up attribute grammar in which the
 attribute type is fixed at text**.
 
+`examples/asm.pt` is the sharpest demonstration of that, because there the text
+is not the output language at all — it is *the code that computes the
+subexpression*, accumulated upward, and the tool needed no change to carry it.
+
 That sentence is worth keeping, because everything below follows from it. The
 attribute is synthesised — it flows up, from the leaves, as the parser reduces.
 
@@ -267,16 +271,23 @@ reason.
 
 ## Order, and what would falsify each step
 
-1. **Stage 2, C → assembly** ([ROADMAP.md](ROADMAP.md) Stages). Before any of
-   this, because it is the honest test of whether the *output* side generalises
-   past targets shaped like the input. If emitting labels and an order is
-   painful, that is worth learning before deciding what Prototype is.
+1. ~~**Stage 2, C → assembly.**~~ **Done, 2026-09-05.** The output side
+   generalises: a rule's value became the *code that computes* the phrase rather
+   than the phrase, and nothing in the tool had to change. Emitting labels and an
+   order was not painful; what was painful was writing the same two lines eight
+   times, which is now [ROADMAP.md](ROADMAP.md) 1 and is the same *named
+   fragments* gap this page predicted from the pattern side.
 2. ~~**Arithmetic and `num(h)`.**~~ **Done, 2026-09-05.** It read well, which
    was the test it was given, and it failed a test nobody had written down:
    evaluation is eager, so it makes a calculator and not an interpreter. The
    falsification that mattered was not the one predicted, which is the ordinary
    case and the reason for building the cheap thing first.
-3. **`@kind`, named pattern fragments.** Falsified if the duplication it removes
-   turns out to be rarer than stage 1 suggested.
+3. **Named fragments, of a pattern and of a template.** No longer a prediction:
+   stage 1 wanted the first and stage 2 wanted the second, independently, and
+   [ROADMAP.md](ROADMAP.md) 1 holds the case. The open question is whether they
+   are one mechanic or two — a pattern fragment is spliced at declaration, a
+   template fragment is called at expansion and needs arguments and a scope.
+   Falsified if the next non-trivial target does not repeat itself, which would
+   make the template half a property of code generation rather than of the tool.
 4. **A declared environment.** Falsified if it cannot be made safe across `@use`,
    because rule locality is worth more than any single feature it would buy.

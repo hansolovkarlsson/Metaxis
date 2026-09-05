@@ -1,0 +1,104 @@
+; asm.pt -- C in, arm64 assembly out. Stage 2, and the first target here that
+; is not shaped like its input.
+;
+; A Pascal expression becomes a C expression one node at a time: the output
+; nests the way the input nested. Assembly does not nest. It is a **sequence**,
+; and an expression becomes a run of instructions that leave a value somewhere
+; agreed. So the value a rule passes up is no longer a phrase -- it is the code
+; that computes the phrase, and the rule's job is to put its children's code in
+; front of its own.
+;
+; The discipline is a stack machine: **every rule's output is code that leaves
+; exactly one value pushed.** A binary operator emits its left operand's code,
+; then its right operand's, then pops two and pushes one. Nothing is allocated
+; and no register survives a rule, which is what makes the rules composable at
+; all -- the same reason the notation quotes everything.
+;
+; **Two things this file had to work around, and both are findings.**
+;
+; A **literal is not code**. `3` is a bare token, and a rule cannot match a bare
+; token (the limitation examples/pascal.pt meets from the other side, where it
+; cannot translate a string), so nothing turns `3` into `mov x0, #3`. What tells
+; a literal from a subexpression is `level(h)`: every rule below declares a
+; level, so `level(h) == 1000` means *nothing here produced this, it is a token
+; standing for itself*. Each operand is therefore loaded by hand, and that
+; two-line idiom repeated eight times is the cost. What would remove it is a way
+; to name a piece of template and call it -- see docs/ROADMAP.md.
+;
+; A **label is needed twice**, at the branch and at the place it jumps to, and
+; `fresh("L")` used to return a different name each call. It now returns one name
+; per label per application, exactly as `{~t}` always has in a string template.
+; That was a defect this file found: the reference had said the two spellings
+; were the same thing and they were not.
+;
+; tests/asm.sh assembles what comes out, links it against a four-line runtime
+; and runs it, so the numbers below are checked by a CPU.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@comment "//" eol
+@separator ";" => "\n"
+
+@syntax "(" e ")"  95
+    => {
+        if level(e) == 1000 { emit "\tmov x0, #" + e + "\n\tstr x0, [sp, #-16]!\n" } else { emit e }
+    }
+
+@syntax a "*" b  70
+    => {
+        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
+        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tmul x0, x0, x1\n\tstr x0, [sp, #-16]!\n"
+    }
+
+@syntax a "+" b  60
+    => {
+        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
+        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tadd x0, x0, x1\n\tstr x0, [sp, #-16]!\n"
+    }
+
+@syntax a "-" b  60
+    => {
+        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
+        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tsub x0, x0, x1\n\tstr x0, [sp, #-16]!\n"
+    }
+
+@syntax a "<" b  40
+    => {
+        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
+        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tcmp x0, x1\n\tcset x0, lt\n\tstr x0, [sp, #-16]!\n"
+    }
+
+; The one rule whose output is not in the order its input was written. The
+; condition's code comes first, then a branch to a label that does not exist
+; yet, then the two arms with a label between them. Nothing about the input says
+; "jump"; the target does.
+@syntax c "?" t ":" f  30 right
+    => {
+        if level(c) == 1000 { emit "\tmov x0, #" + c + "\n\tstr x0, [sp, #-16]!\n" } else { emit c }
+        emit "\tldr x0, [sp], #16\n\tcbz x0, " + fresh("Lelse") + "\n"
+        if level(t) == 1000 { emit "\tmov x0, #" + t + "\n\tstr x0, [sp, #-16]!\n" } else { emit t }
+        emit "\tb " + fresh("Lend") + "\n" + fresh("Lelse") + ":\n"
+        if level(f) == 1000 { emit "\tmov x0, #" + f + "\n\tstr x0, [sp, #-16]!\n" } else { emit f }
+        emit fresh("Lend") + ":\n"
+    }
+
+@syntax "putn" "(" e ")"  95
+    => {
+        if level(e) == 1000 { emit "\tmov x0, #" + e + "\n\tstr x0, [sp, #-16]!\n" } else { emit e }
+        emit "\tldr x0, [sp], #16\n\tbl _putn"
+    }
+
+@syntax "int" "main" "(" "void" ")" "{" body:stmts "}"
+    => ".text\n.globl _main\n.align 2\n_main:\n\tstp x29, x30, [sp, #-16]!\n\tmov x29, sp\n{body}\n\tmov w0, #0\n\tldp x29, x30, [sp], #16\n\tret" terminated
+@end
+// C in. Assembly out. Neither language the tool's.
+int main(void) {
+  putn(2 + 3 * 4);
+  putn(100 - 7 - 3);
+  putn(1 < 2 ? 10 : 20);
+  putn(2 < 1 ? 10 : 20)
+}

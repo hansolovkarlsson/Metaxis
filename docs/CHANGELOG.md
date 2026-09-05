@@ -10,6 +10,15 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`fresh(label)` in a code template now gives one name per label per
+application**, which is what `{~label}` in a string template has always done and
+what this page and the reference had both said it did. It returned a new name on
+every call, so a template could not put a label at a branch and at the place the
+branch jumps to. Exhausting the name space is now an error rather than a crash.
+
+**`examples/asm.pt`** — C in, arm64 assembly out, assembled and run by
+`tests/asm.sh`.
+
 **Arithmetic in a code template, and `num(h)`.** `-`, `*`, `/` and `%` are new;
 `*` `/` `%` bind tighter than `+` `-`. They want two numbers and are an error
 otherwise, and `num(h)` reads a hole's text as one — the whole text or none of

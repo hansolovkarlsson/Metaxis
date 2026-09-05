@@ -560,6 +560,13 @@ typedef struct {
     Frame *env;
     Buf    out;
     char  *err;
+    /* One application, one set of fresh names, exactly as `subst` keeps for
+       `{~t}`: two `fresh("L")` in one template are the same name and the next
+       use of the rule gets a different one. Without this a template that needs
+       a label in two places -- a branch and the label it jumps to -- could not
+       have one, which is what writing a code generator found. */
+    struct { char *label, *name; } fr[32];
+    int    nfr;
 } Ev;
 
 static Val v_text(char *t)
@@ -688,7 +695,27 @@ static int call(Ev *ev, Expr *e, Val *out)
     }
     if (!strcmp(e->s, "level"))   { *out = v_int(a[0].level);           return 0; }
     if (!strcmp(e->s, "terminated")) { *out = v_bool(a[0].terminated);   return 0; }
-    if (!strcmp(e->s, "fresh"))   { *out = v_text(pt_fresh(as_text(a[0]))); return 0; }
+    if (!strcmp(e->s, "fresh")) {
+        char *label = as_text(a[0]);
+        for (int i = 0; i < ev->nfr; i++)
+            if (!strcmp(ev->fr[i].label, label)) { *out = v_text(ev->fr[i].name); return 0; }
+        char *n = pt_fresh(label);
+        if (!n) {
+            ev->err = xfmt("%s:%d: no fresh name for 'fresh(\"%s\")' is free",
+                           ev->r->file, ev->r->line, label);
+            return -1;
+        }
+        if (ev->nfr >= 32) {
+            ev->err = xfmt("%s:%d: more than 32 fresh labels in one template",
+                           ev->r->file, ev->r->line);
+            return -1;
+        }
+        ev->fr[ev->nfr].label = label;
+        ev->fr[ev->nfr].name  = n;
+        ev->nfr++;
+        *out = v_text(n);
+        return 0;
+    }
     if (!strcmp(e->s, "replace")) {
         *out = v_text(replace_all(as_text(a[0]), as_text(a[1]), as_text(a[2])));
         return 0;

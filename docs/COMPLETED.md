@@ -10,6 +10,55 @@ argued away.*
 
 Newest first.
 
+## Stage 2: C in, arm64 assembly out, assembled and run
+
+`examples/asm.pt` reads a C subset and emits arm64 that `tests/asm.sh`
+assembles, links against a four-line runtime and runs on the CPU it is written
+for. `2 + 3 * 4` prints 14, `1 < 2 ? 10 : 20` prints 10, and the conditional
+jumps to labels the input never mentions.
+
+**The question stage 2 existed to answer was whether the output side
+generalises past targets shaped like the input, and it does.** A Pascal
+expression becomes a C expression one node at a time — the output nests where
+the input nested. Assembly does not nest: it is a sequence, and an expression is
+a run of instructions leaving a value somewhere agreed. So the value a rule
+passes up stopped being *the phrase* and became *the code that computes the
+phrase*, and **nothing in the tool had to change for that**. It is the same
+bottom-up combining it always was, which is the strongest confirmation
+[direction.md](direction.md)'s framing has had.
+
+The discipline is a stack machine: every rule's output is code that leaves
+exactly one value pushed, so a binary operator emits its left operand's code,
+then its right operand's, then pops two and pushes one. No register survives a
+rule, which is what keeps the rules composable at all.
+
+**Two things had to be worked around, and both are findings.**
+
+**A literal is not code.** `3` is a bare token, a rule cannot match a bare token,
+so nothing turns it into `mov x0, #3`. What distinguishes a literal from a
+subexpression is `level(h)`: every rule in the file declares a level, so
+`level(h) == 1000` means *nothing here produced this*. That works, and it is the
+same limitation `examples/pascal.pt` meets when it cannot translate a string
+literal — met from the opposite direction, at the leaves of a code generator
+instead of inside a call.
+
+**A label is needed twice**, at the branch and at the place it jumps to, and
+`fresh("L")` returned a different name on every call. That is
+[POSTMORTEM.md](POSTMORTEM.md) 10: the reference had said `fresh` and `{~t}` were
+the same thing, `{~t}` was exercised by two examples and a compile-and-run test,
+`fresh` had never been used by any file in the repository, and the unexercised
+half had drifted. It now keeps the same per-application memo `subst` keeps.
+
+**And it cost one repetition eight times over**, which is [ROADMAP.md](ROADMAP.md)
+1: the two lines that load an operand are written once per operand of every rule,
+identically, because nothing here can name a piece of template. direction.md had
+already predicted that *named reusable fragments* was the structural gap, giving
+the pattern-side example; stage 2 arrived at the same gap from the template side
+without looking for it.
+
+*Verified at 12 examples, 42 error cases, `tests/hygiene.sh`, `tests/pascal.sh`
+and `tests/asm.sh`; `make check` clean.*
+
 ## Arithmetic, `num(h)`, and a file that runs its language instead of writing it
 
 `-`, `*`, `/` and `%` in a code template, binding tighter than `+` `-`, which
