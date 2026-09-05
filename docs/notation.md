@@ -97,7 +97,7 @@ directive   = "@use"       string
             | "@mode"      ( "expression" | "text" )
             | "@token"     name string [ "override" ]
             | "@comment"   string ( string | "eol" )
-            | "@separator" string [ "=>" string ] [ "override" ]
+            | "@separator" string [ "=>" string ] [ "indent" ] [ "override" ]
             | "@syntax"    pattern [ level ] "=>" template
                                       { "terminated" | "override" }
             | "@template"  name "(" [ name { "," name } ] ")" code [ "override" ]
@@ -107,7 +107,8 @@ directive   = "@use"       string
 pattern     = element { element } .
 element     = string | hole | group | splice .
 hole        = name [ ":" kind ] .
-kind        = "expr" | "stmts" | "text" | a class named by @token .
+kind        = "expr" | "stmts" | "text" | "block"
+            | a class named by @token .
 group       = "[" element { element } "]" [ rep ] .
 rep         = ( "*" | "+" ) [ "sep" string ] [ "join" string ] .
 splice      = "@" a name declared by @fragment .
@@ -130,7 +131,10 @@ it. Below the body, only the declared ones are left.
 **`@separator`** gives the input separator and, after `=>`, what to join the
 output with. Without the second half the input text is reused. A separator of
 `"\n"` makes newline a token instead of whitespace — `examples/reserved.pt`
-uses it.
+uses it. With `indent` after that, indentation nests as well: the lexer keeps a
+stack of columns and a `block` hole reads what it emits — `examples/python.pt`
+uses it, and the section above argues for why that hole is a bare word rather
+than a pair of strings.
 
 **`@use`** reads another file's directives into this header. It is looked for
 beside the file that used it, holds directives and nothing else, is read once
@@ -292,6 +296,52 @@ bin/pt -g examples/pascal.pt      # the grammar the header declared, and stop
 C11 and `make`, plus POSIX `<regex.h>` for `@token` — which is in libc and is
 the only thing here Proto does not also need.
 
+## The one exception, and what buying it cost
+
+Everything a pattern matches is a quoted word, and that is the rule. There is
+exactly one thing it does not match: an **indentation**, which Python ends its
+blocks with, and which is not text somebody wrote.
+
+There was a spelling that kept the rule's letter. Have the lexer synthesise two
+tokens and give them a text — `"⇥"` and `"⇤"`, say — and a pattern writes
+`"⇥" b:stmts "⇤"` with no new vocabulary at all. It needs nothing in the tool;
+it is how the whole feature was rehearsed before any of it was built.
+
+**It was declined, and the reason is the rule itself.** The premise is not
+*a delimiter is quoted*. It is that **a quoted thing is foreign text you can
+find in the file** — which is what makes quoting able to tell a mention from a
+declaration, and the reason a directive can never be read as the thing it
+declares. A synthetic marker is a string quoting text the source does not
+contain. The file has to pick a spelling its own language never uses, and
+nothing checks that it did; the day one collides, a program's own character is
+read as the tool's structure and there is nothing in the notation that could
+have caught it. That is the rule kept in letter and spent in meaning, and it
+cannot be taken back: once a quoted word may name a token nobody wrote, quoting
+has stopped being the thing that tells the two apart.
+
+So the block is spelled the other way, outside the quotes, where Prototype's own
+vocabulary lives:
+
+```
+@separator "\n" => ";\n" indent
+@syntax "if" c ":" b:block "else" ":" e:block
+```
+
+**The cost is that the tool now owns a delimiter, and one is more than none.**
+`block` means nothing a file can redefine; a language whose blocks nest some
+other way cannot say so, and the next such wish will arrive as a request for a
+second kind. Against that: the rule that made the notation worth having is
+intact, and it is intact *because* the exception was spelled as one. A bare word
+outside the quotes is how this notation has always said *this one is
+Prototype's* — the same way `stmts` and `expr` and `[ … ]` say it. Reading it,
+you cannot mistake what it is.
+
+And it is a smaller exception than it looks. The rule that reads a block still
+sees nothing but its own pattern: the state that makes the two tokens lives in
+the lexer, below the rules, where nothing composes with anything.
+[direction.md](direction.md) says why that matters and why the other six
+entries in its table are not like this one.
+
 ## What it costs
 
 **Output parenthesisation is the author's problem, in a string template.**
@@ -434,6 +484,14 @@ position — its matcher became a search on 2026-09-04 and was given a budget of
 markdown, 2000 lines, 60ms, with the `**` and `[[…]]` rules of
 `examples/poem.pt`. The expression side has had no such measurement and no such
 budget. See [ROADMAP.md](ROADMAP.md).
+
+**A line that continues inside brackets is not read.** `f(a,` newline `b)` is a
+parse error under a newline separator: Python's lexer suppresses the newline
+between an opening bracket and its match and this one does not. It wants a
+bracket depth beside the indent stack, and the thing that makes it more than a
+copy of that work is that **the lexer cannot know what a bracket is** —
+everything else it knows came out of a directive, and no directive says *these
+two words nest*. [ROADMAP.md](ROADMAP.md) 2 has the three spellings that would.
 
 **`left` is accepted and does nothing**, since left is the default. It stays
 because writing it is sometimes clearer than leaving it out. (The other half of

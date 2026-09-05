@@ -29,7 +29,7 @@ char *buf_take(Buf *b);
 
 enum { MODE_EXPR, MODE_TEXT };
 enum { EL_WORD, EL_HOLE, EL_GROUP };
-enum { K_EXPR, K_CLASS, K_STMTS, K_TEXT };
+enum { K_EXPR, K_CLASS, K_STMTS, K_TEXT, K_BLOCK };
 enum { REP_ONE, REP_STAR, REP_PLUS };
 
 typedef struct { char *name, *src; regex_t re; char *file; int line; } Class;
@@ -156,6 +156,7 @@ typedef struct {
     Frag    *frag;  int nfrag;
     char *sep_in, *sep_out;
     int   sep_nl;                 /* the separator is a newline     */
+    int   sep_indent;             /* and indentation opens a block  */
     char *sep_file; int sep_line; /* where it was declared          */
     int   mode;
     int   nfiles;                 /* @use depth guard               */
@@ -176,7 +177,12 @@ int header_read(Grammar *g, const char *src, const char *file,
 
 /* ------------------------------------------------------------------ tokens */
 
-enum { T_EOF, T_PUNCT, T_CLASS };
+/* T_INDENT and T_DEDENT are the two tokens no file spells. Every other token
+   is text somebody wrote; these two are the shape of the whitespace around it,
+   and they exist only under `@separator "\n" indent`. They carry no text, so
+   `tok_is` can never match one and a quoted word can never name one -- which is
+   the whole reason `block` is a kind and not a pair of strings. */
+enum { T_EOF, T_PUNCT, T_CLASS, T_INDENT, T_DEDENT };
 
 typedef struct {
     int         kind, cls;

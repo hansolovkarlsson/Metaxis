@@ -75,7 +75,9 @@ static Tok *cur(P *p) { return &p->tk->t[p->i]; }
 static int tok_is(P *p, const char *w)
 {
     Tok *t = cur(p);
-    if (t->kind == T_EOF) return 0;
+    /* Only text can be quoted. T_INDENT and T_DEDENT carry none, so no word a
+       file writes can name one -- which is what makes `block` a kind. */
+    if (t->kind != T_PUNCT && t->kind != T_CLASS) return 0;
     size_t n = strlen(w);
     return t->n == n && !memcmp(t->p, w, n);
 }
@@ -157,7 +159,7 @@ static char *subst(P *p, Rule *r, Bind *b, int nb)
 /* ------------------------------------------------------------------- parser */
 
 static char *p_expr(P *p, int minbp, Out *o);
-static char *p_stmts(P *p, const char *term, int *terminated);
+static char *p_stmts(P *p, const char *term, int dedent, int *terminated);
 
 /* Every hole the pattern declares, groups included, starts bound to nothing.
    A group that matched no turns leaves its holes empty rather than unbound, so
@@ -308,8 +310,20 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
             /* A run of statements is terminated when its *last* one was: that
                is the statement a word after the hole would follow. */
             const char *stop = k + 1 < nel ? el[k + 1].word : NULL;
-            v = p_stmts(p, stop, &term);
+            v = p_stmts(p, stop, 0, &term);
             if (!v) return 0;
+            break;
+        }
+        case K_BLOCK: {
+            /* The hole owns both delimiters, because nothing else can name
+               them. Like a `stmts` hole it answers for its last statement --
+               the one the `}` a template writes would close over. */
+            if (cur(p)->kind != T_INDENT) return 0;
+            adv(p);
+            v = p_stmts(p, NULL, 1, &term);
+            if (!v) return 0;
+            if (cur(p)->kind != T_DEDENT) return 0;
+            adv(p);
             break;
         }
         default:
@@ -421,7 +435,7 @@ static char *p_expr(P *p, int minbp, Out *o)
     return left;
 }
 
-static char *p_stmts(P *p, const char *term, int *terminated)
+static char *p_stmts(P *p, const char *term, int dedent, int *terminated)
 {
     Grammar *g = p->g;
     Buf b = {0};
@@ -440,6 +454,7 @@ static char *p_stmts(P *p, const char *term, int *terminated)
         while (tok_is(p, g->sep_in)) adv(p);
         if (cur(p)->kind == T_EOF) break;
         if (term && tok_is(p, term)) break;
+        if (dedent && cur(p)->kind == T_DEDENT) break;
         Out o = { LEVEL_ATOM, 0 };
         char *s = p_expr(p, 0, &o);
         if (!s) return NULL;
@@ -458,6 +473,10 @@ static char *p_stmts(P *p, const char *term, int *terminated)
            ended in a word. That is what lets `}` stand on its own, in C and in
            Pascal alike, without a rule having to declare itself terminating. */
         if (p->i > 0 && p->tk->t[p->i - 1].kind == T_PUNCT) continue;
+        /* A block that just closed is the same case as a `}` or an `end`: the
+           statement before it ended in something that was not a statement, and
+           what follows starts a new one without a separator saying so. */
+        if (p->i > 0 && p->tk->t[p->i - 1].kind == T_DEDENT) continue;
         break;
     }
     if (!b.p) buf_str(&b, "");
@@ -468,13 +487,23 @@ char *expand_expr(Grammar *g, Toks *tk, char **err)
 {
     fresh_src = tk->src; fresh_g = g; fresh_n = 0;
     P p = { g, tk, 0, 0, 0, NULL };
-    char *out = p_stmts(&p, NULL, NULL);
+    char *out = p_stmts(&p, NULL, 0, NULL);
     if (out && cur(&p)->kind != T_EOF) out = NULL;
     if (!out) {
         if (p.err) { *err = p.err; return NULL; }
         Tok *t = &tk->t[p.far];
         if (t->kind == T_EOF)
             *err = xfmt("%s:%d: the file ends in the middle of something", tk->file, t->line);
+        else if (t->kind == T_INDENT)
+            *err = xfmt("%s:%d: this line is indented and no rule opened a block here",
+                        tk->file, t->line);
+        /* Reachable only if a block hole ever stops consuming the dedent that
+           closes it, which is the one invariant holding these two tokens in
+           pairs. It is here so that breaking that invariant says a sentence
+           rather than quoting the empty text a synthetic token carries. */
+        else if (t->kind == T_DEDENT)
+            *err = xfmt("%s:%d: this line closes a block no rule here is inside",
+                        tk->file, t->line);
         else
             *err = xfmt("%s:%d: no rule reads '%.*s' here",
                         tk->file, t->line, (int)t->n, t->p);

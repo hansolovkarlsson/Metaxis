@@ -103,9 +103,18 @@ story.**
 | Pascal's `real` beside its `integer` | types |
 | the reach-out half of hygiene ([POSTMORTEM.md](POSTMORTEM.md) 3) | seeing a scope |
 | C's `typedef` name against an ordinary identifier | a symbol table |
-| Python's blocks | lexer state that survives between tokens |
+| ~~Python's blocks~~ — **built 2026-09-05** | lexer state that survives between tokens |
 
 Seven entries, one sentence: **a rule sees its own pattern and nothing else.**
+
+**The last one has been struck, and how it was struck is the interesting part.**
+Python's blocks were built, and the rule that reads one still sees nothing but
+its own pattern. The state went *below* the rules, into the lexer, where
+`@separator … indent` put it: the lexer already survives between tokens, so
+giving it a stack of columns asked nothing of the property this page is about.
+That is the shape of the exception, and it is narrow — **the six that remain all
+want state that flows between rules, and no amount of lexer will produce it.**
+It is worth knowing which side of that line a wish falls on before costing it.
 
 This is not a defect. It is the property that makes a rule composable, `@use`-able
 and language-agnostic, and it is downstream of the premise — a directive
@@ -240,6 +249,14 @@ part is not its grammar; it is that `x * y` cannot be parsed without knowing
 whether `x` is a typedef. Python's hard part is not its grammar either; it is
 the lexer. Both are context, and both are the wall.
 
+**Stage 3 walked up to that wall from the Python side and stopped where it
+should.** The lexer *was* the hard part and the lexer is what got the state, so
+blocks read. What did not follow, and was not made to: `elif` is a rule per arm
+count, a wrapped call is not read at all, and the C types come off Python's own
+annotations because nothing here can infer one. `examples/python.pt` says all
+three in its own closing note. That is what "a subset, and it says so" looks
+like in practice, and it is the difference between reaching and claiming.
+
 Reading a *subset* of either, to demonstrate that the notation reaches, is
 worth doing and is what the stages in [ROADMAP.md](ROADMAP.md) are for. Claiming
 the whole language is not.
@@ -278,13 +295,15 @@ naming a *pattern* fragment is a second mechanic rather than the same one.
 `@fragment` then built that second mechanic, and refuted this page's spelling
 for it on the way.
 
+**Taken since.** Stage 3 was the first delimiter the *tool* owns rather than one
+a string declares, and the notation it wanted was the decision. It went to a
+`block` kind over two synthetic quoted words, on the ground that a string
+naming an indent would be quoting text the source does not contain — the
+premise kept in letter and spent in meaning. The three stages are done.
+
 **Next, and what would falsify each:**
 
-1. **Stage 3, Python's blocks** — [ROADMAP.md](ROADMAP.md) 2. Not falsifiable
-   until a notation is chosen, because it is the first delimiter the *tool* would
-   own rather than one a string declares, and that is a decision before it is a
-   task.
-2. **A declared environment.** Falsified if it cannot be made safe across `@use`,
+1. **A declared environment.** Falsified if it cannot be made safe across `@use`,
    because rule locality is worth more than any single feature it would buy.
    Still last, and still the one that would change what this tool is.
 
@@ -293,3 +312,10 @@ about every shape and wrong about every distance. Structure can be reasoned
 about from the code; distance is what you find on the way. Where an entry here
 names a number of steps, read it as a guess and build the cheapest thing that
 tests it.
+
+**Stage 3 is the one estimate on this page that came in right, and it is not a
+counter-example — it is the method.** Its distances were not reasoned about
+either; they were *measured*, by rehearsing the whole feature by hand before a
+line of it was written. [POSTMORTEM.md](POSTMORTEM.md) 15 has the account. The
+sentence above stands, with one clause added: **build the cheapest thing that
+tests it, and then write the plan.**

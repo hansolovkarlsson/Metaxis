@@ -61,8 +61,8 @@ expect "the pattern has no such hole" <<'EOF'
 f x
 EOF
 
-expect "no kind or token class called 'block'" <<'EOF'
-@syntax "f" a:block => "{a}"
+expect "no kind or token class called 'phrase'" <<'EOF'
+@syntax "f" a:phrase => "{a}"
 EOF
 
 expect "needs a word after it to stop at" <<'EOF'
@@ -370,6 +370,65 @@ EOF
 
 expect "'text' is a kind, so a class called that could never be used" <<'EOF'
 @token text "[a-z]+"
+EOF
+
+expect "'block' is a kind, so a class called that could never be used" <<'EOF'
+@token block "[a-z]+"
+EOF
+
+# ------------------------------------------------------- indentation, and the
+# ------------------------------------------------------- block kind it opens.
+
+expect "'indent' needs a separator with a newline in it" <<'EOF'
+@token name "[a-z]+"
+@separator ";" indent
+@end
+a
+EOF
+
+expect "'b:block' wants a block, and nothing here opens one" <<'EOF'
+@token name "[a-z]+"
+@separator "\n"
+@syntax "if" c ":" b:block => "{c}{b}"
+@end
+a
+EOF
+
+# The separator may be declared after the rule that depends on it, or in a file
+# that `@use` pulled in, so the check is at seal and not where it is written.
+expect "'b:block' wants a block, and nothing here opens one" <<'EOF'
+@token name "[a-z]+"
+@syntax "if" c ":" b:block => "{c}{b}"
+@separator "\n"
+@end
+a
+EOF
+
+expect "asks for an indented run of statements" <<'EOF'
+@mode text
+@separator "\n" indent
+@syntax "if" c ":" b:block => "{c}{b}"
+@end
+x
+EOF
+
+expect "this line ends a block but lines up with nothing that opened one" <<'EOF'
+@token name "[a-z]+"
+@separator "\n" indent
+@syntax "if" c ":" b:block => "{c}{b}"
+@end
+if a:
+    b
+  c
+EOF
+
+expect "this line is indented and no rule opened a block here" <<'EOF'
+@token name "[a-z]+"
+@separator "\n" indent
+@syntax "if" c => "{c}"
+@end
+if a
+    b
 EOF
 
 if [ $fail -eq 0 ]; then

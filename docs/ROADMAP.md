@@ -27,7 +27,7 @@ on introducing new mechanics and test them out properly.*
 | --- | --- | --- | --- |
 | **1 · done** | Pascal | C | the mechanics that exist, finished and made testable |
 | **2 · done** | C | arm64 | output that is not an expression tree — labels, order, a machine |
-| **3 · next** | Python | C | a language whose blocks are indentation |
+| **3 · done** | Python | C | a language whose blocks are indentation |
 
 Stage 2 landed on 2026-09-05 as `examples/asm.pt` and `tests/asm.sh`. **The
 output side generalises**, which was the question: a rule's value became *the
@@ -35,8 +35,31 @@ code that computes the phrase* rather than the phrase, and nothing in the tool
 had to change for that. What it cost was `@template`, which is built, and what
 it found is [POSTMORTEM.md](POSTMORTEM.md) 10.
 
+Stage 3 landed on 2026-09-05 as `examples/python.pt` and `tests/python.sh`.
+**The tool took its first delimiter**, which was the question:
+`@separator "\n" indent` gives the lexer an indent stack and the `block` kind
+reads what it emits. The premise held — a `block` hole is spelled outside the
+quotes precisely *because* an indent is not text somebody wrote — and the rest
+fell out untaught: nesting, a word after a block, and blank lines closing
+nothing. What it cost is in [COMPLETED.md](COMPLETED.md); what the estimate
+taught is [POSTMORTEM.md](POSTMORTEM.md) 15.
+
+Its test does something no other one here does: **the body of
+`examples/python.pt` is run by `python3` as well as compiled as C**, and the two
+answers compared. A translation that is wrong the same way on both sides of an
+operator passes a diff and passes `tests/pascal.sh`, and fails that.
+
 [direction.md](direction.md) says what the stages are ultimately *for*, and why
 stage 2 is assembly rather than another expression language.
+
+**All three stages are done, and that is now an open question rather than a
+result.** The staging existed to say where the *pressure* comes from — one
+translator at a time, taken far enough to be compiled and run, so that no
+feature is built without a customer that asked for it first. There is no stage 4
+on this page, and one should not be invented to have one. What remains below is
+what the three stages left owing, and every item on it has a customer or says
+plainly that it does not. **When the next mechanic is wanted, the thing to pick
+first is the translator that would ask for it** — not the mechanic.
 
 **This is a rule about where new mechanics come from, not a restriction on the
 tool.** A `.pt` file still declares any language in and writes any language out;
@@ -134,34 +157,36 @@ a word in it, which is what `code.pt` does inside `writeln`. That is the one
 thing between `pascal.out` and a program that runs, it is recorded in the file's
 own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
 
-## 2 · Stage 3 — a block that is an indentation
+## 2 · A line that continues inside brackets
 
-Python ends a block by out-denting, and there is no way to say that here. Three
-things stand in the way, and only the first is obvious:
+`f(a,` newline `b)` is `no rule reads '\n' here` under a newline separator.
+Python's lexer suppresses the newline between an opening bracket and its match,
+and this one does not.
 
-- **A `stmts` hole is refused unless a literal word follows it to stop at** —
-  `a 'stmts' hole needs a word after it to stop at`, checked at declaration.
-  Python has no such word: no `}`, no `end`.
-- **The lexer has no notion of indentation.** Leading whitespace is skipped, and
-  the only way a newline becomes significant is `@separator "\n"`, which
-  collapses a *run* of newlines into one separator — flattening exactly the
-  structure Python needs.
-- **The obvious way round it does not work.** A `@token` class whose regex
-  matches an indented run is expressible, since `.` matches a newline. But a
-  class-kind hole splices the source text it matched *verbatim* and never
-  expands it, so the block would be copied through untranslated, which is the
-  whole point of translating it.
+**This is the piece stage 3 left out, and it was left out named.** The item it
+came from listed three obstacles to reading Python and this was a fourth, found
+by running the thing rather than by reading it — which is why it is here and not
+in a comment somewhere. `examples/python.pt` says so in its own closing note and
+avoids wrapped calls; nothing in the suite would otherwise mention it.
 
-So it wants block-open and block-close tokens out of the lexer, and a way for a
-rule to say *a block goes here*. **And it is the first thing that would put a
-delimiter inside the tool rather than inside a string**, which is the premise
-everything else rests on. Whether that is a new kind, a form of `@separator`, or
-a directive of its own is the interesting question and it is not answered here.
+It wants a second piece of lexer state beside the indent stack — a bracket
+depth — and **that is the interesting part**: the lexer cannot know what a
+bracket is. Every other thing it knows came out of a directive, and there is no
+directive that says *these two words nest*. So this is not the same size as the
+indent stack even though it is the same kind of state, and the shape of the
+declaration is the decision:
 
-Python's *expressions* — arithmetic, comparison, `and`/`or`/`not`, `x if c else
-y`, calls, subscripts — need none of this and read correctly today. That is worth
-knowing but is not worth an example on its own: a file that says Python and
-cannot write an `if` claims more than it does.
+- a suffix naming the pairs, `@separator "\n" indent joining "(" ")" "[" "]"`,
+  which is honest and gets long;
+- a directive of its own, `@bracket "(" ")"`, which is a second global that has
+  to agree with the first;
+- or reading it off the rules — any rule whose pattern is a word, then holes,
+  then a word — which is free, silent, and wrong the moment a rule is shaped
+  like that and is not a bracket.
+
+Nothing has asked yet: the example does not need it, and Python without wrapped
+calls is still Python. It is here so that the next file that wants one finds the
+question already asked.
 
 ## 3 · A budget for expression-mode backtracking
 

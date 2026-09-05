@@ -10,6 +10,27 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`@separator "…" indent`, and the `block` kind** — a language whose blocks are
+an indentation can now be read. `indent` makes the lexer keep a stack of columns
+and emit two tokens no file spells, an *indent* where a line is deeper than the
+one before it and one *dedent* per level closed where it is shallower; a hole
+written `b:block` reads them, taking the indented run of statements and both of
+its delimiters. It needs a separator with a newline in it. Blank lines and
+comment-only lines close nothing, a tab is 8 columns, and a `dedent` counts as
+ending a statement in a word, so nothing has to separate a block from the line
+after it. Unlike a `stmts` hole a `block` needs no word to stop at and may be
+followed by one, which is what lets `"if" c ":" b:block "else" ":" e:block` be a
+rule. `examples/python.pt` reads Python into C, and `tests/python.sh` compiles
+that C, runs it, and **also runs the same text under `python3`** and compares
+the two answers.
+
+New messages: `'indent' needs a separator with a newline in it`,
+`'b:block' wants a block, and nothing here opens one`,
+`this line is indented and no rule opened a block here`,
+`this line ends a block but lines up with nothing that opened one`, and a
+`block` hole is refused in text mode. `@token block` joins `expr`, `stmts` and
+`text` as a class name that could never be used.
+
 **`@fragment name = pattern`** — a piece of *pattern* with a name, spliced into
 a rule with `@name`. It brings its own holes, so a rule that splices it can
 write `{p}` without declaring `p`; it takes no arguments and has no scope,

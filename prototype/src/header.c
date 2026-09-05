@@ -158,7 +158,8 @@ static int dnumber(D *d, int *out)
 
 /* ------------------------------------------------------------------- @syntax */
 
-static const char *KINDS[] = { "expr", "stmts", "text", NULL };
+static const char *KINDS[]  = { "expr", "stmts", "text", "block", NULL };
+static const int   KINDKS[] = { K_EXPR,  K_STMTS, K_TEXT, K_BLOCK };
 
 /* A pattern element, and a group of them. `[ … ]` is Prototype's vocabulary and
    lives outside the strings, so it can never be mistaken for the body's own
@@ -288,7 +289,7 @@ static Elem *parse_elems(Grammar *g, D *d, Rule *r, int *nout, int depth)
                 if (!k) { derr(d, "expected a kind after ':'"); return NULL; }
                 int found = 0;
                 for (int i = 0; KINDS[i]; i++)
-                    if (!strcmp(k, KINDS[i])) { e.hk = i == 0 ? K_EXPR : (i == 1 ? K_STMTS : K_TEXT); found = 1; }
+                    if (!strcmp(k, KINDS[i])) { e.hk = KINDKS[i]; found = 1; }
                 if (!found) {
                     int ci = class_index(g, k);
                     if (ci < 0) { derr(d, xfmt("no kind or token class called '%s'", k)); return NULL; }
@@ -602,8 +603,16 @@ static int directive(Grammar *g, D *d, const char *file, int line,
         if (!in) goto fail;
         char *out = NULL;
         if (dtake(d, "=>")) { out = dstring(d); if (!out) goto fail; }
+        /* `indent` is read before `override` because it belongs to what is
+           being declared and `override` belongs to the declaring. */
+        int ind  = dtake(d, "indent");
         int over = dtake(d, "override");
         if (dend(d, "@separator") < 0) goto fail;
+        if (ind && !strchr(in, '\n')) {
+            derr(d, "'indent' needs a separator with a newline in it:"
+                    " indentation is what a line break leads to");
+            goto fail;
+        }
         if (g->sep_in && !over) {
             derr(d, xfmt("the separator is already declared at %s:%d"
                          " -- write 'override' to mean it",
@@ -619,6 +628,7 @@ static int directive(Grammar *g, D *d, const char *file, int line,
         g->sep_in  = in;
         g->sep_out = out ? out : xstrdup(in);
         g->sep_nl  = strchr(in, '\n') != NULL;
+        g->sep_indent = ind;
         return 0;
     }
     if (!strcmp(name, "template")) {
@@ -933,10 +943,39 @@ static int seal_check(Grammar *g, Rule *r, Elem *el, int nel, char **err)
             if (seal_check(g, r, el[i].sub, el[i].nsub, err) < 0) return -1;
             continue;
         }
-        if (el[i].kind != EL_HOLE || el[i].hk != K_CLASS) continue;
+        if (el[i].kind != EL_HOLE) continue;
+        if (el[i].hk == K_BLOCK) {
+            *err = xfmt("%s:%d: '%s:block' asks for an indented run of statements,"
+                        " and text mode has no tokens to measure the indentation of",
+                        r->file, r->line, el[i].hole);
+            return -1;
+        }
+        if (el[i].hk != K_CLASS) continue;
         *err = xfmt("%s:%d: '%s:%s' asks for one token of a class, and text mode"
                     " has no tokens -- every hole there is text",
                     r->file, r->line, el[i].hole, g->cls[el[i].cls].name);
+        return -1;
+    }
+    return 0;
+}
+
+/* A `block` hole is the one hole whose delimiters no file spells, so the thing
+   that makes them -- a separator that nests -- has to have been declared. The
+   check is here for `seal_check`'s reason, one directive over: a rule may be
+   written above the `@separator` it depends on, or in a file that `@use` pulled
+   in and that declares no separator at all. */
+static int seal_block(Grammar *g, Rule *r, Elem *el, int nel, char **err)
+{
+    for (int i = 0; i < nel; i++) {
+        if (el[i].kind == EL_GROUP) {
+            if (seal_block(g, r, el[i].sub, el[i].nsub, err) < 0) return -1;
+            continue;
+        }
+        if (el[i].kind != EL_HOLE || el[i].hk != K_BLOCK) continue;
+        if (g->sep_indent) continue;
+        *err = xfmt("%s:%d: '%s:block' wants a block, and nothing here opens one"
+                    " -- write '@separator \"\\n\" indent'",
+                    r->file, r->line, el[i].hole);
         return -1;
     }
     return 0;
@@ -1036,5 +1075,8 @@ int grammar_seal(Grammar *g, char **err)
         for (int r = 0; r < g->nrule; r++)
             if (seal_check(g, &g->rule[r], g->rule[r].el, g->rule[r].nel, err) < 0)
                 return -1;
+    for (int r = 0; r < g->nrule; r++)
+        if (seal_block(g, &g->rule[r], g->rule[r].el, g->rule[r].nel, err) < 0)
+            return -1;
     return 0;
 }

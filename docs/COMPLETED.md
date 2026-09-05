@@ -10,6 +10,120 @@ argued away.*
 
 Newest first.
 
+## Stage 3: a block that is an indentation
+
+```
+@separator "\n" => ";\n" indent
+@syntax "if" c ":" b:block "else" ":" e:block => { … }
+```
+
+Python ends a block by out-denting. Nothing in this tool could say that: a
+`stmts` hole is refused unless a word follows it to stop at, and Python has no
+such word — no `}`, no `end`. **This is the first delimiter the tool owns rather
+than one a string declares**, which is why it was a decision before it was a
+task, and the decision is the entry.
+
+**Two halves, and they are independent.** `indent` on `@separator` gives the
+lexer a stack of columns and two tokens no file spells; the `block` kind is how
+a pattern reads them. The lexer half is the bulk of the work — and it is the
+same bulk under every notation that was considered, which is what freed the
+notation to be chosen on how it reads.
+
+**Why `block` is a kind and not a pair of quoted words.** A synthetic marker —
+`"⇥" b:stmts "⇤"`, with the lexer emitting tokens spelled that way — needs
+*nothing* in the tool and was how the whole thing was rehearsed before any code
+was written. It was declined. The premise is that a quoted thing is foreign text
+**you can find in the file**; an indent has no spelling, so such a string quotes
+text the source does not contain, and the file must pick a marker its language
+never uses with nothing checking that it did. That keeps the letter of the one
+rule and spends its meaning, and it cannot be taken back: once a quoted word can
+name a token nobody wrote, quoting has stopped being the thing that tells a
+mention from a declaration. A bare word outside the quotes is how this notation
+already says *this one is Prototype's*, and it says it here.
+
+A third spelling — letting a `stmts` hole with no stop word mean *to the dedent*
+under a nesting separator — was declined for costing an error: a rule ending in
+`b:stmts` because its author forgot the word would be **silently accepted**.
+That is the silence `override` was built to remove, one directive over.
+
+**Both declines are recorded here rather than on the roadmap**, because the item
+they belong to is settled and has moved. [notation.md](notation.md)'s "The one
+exception, and what buying it cost" argues the first at length and is the page
+to read before anyone proposes it again.
+
+And here is the rehearsal, whole, because an argument against something is worth
+nothing without the version that **works**. This ran before any of the above was
+built, on the tool exactly as it then stood, and produced correct nested C on its
+first go — the markers standing where an indent-aware lexer would later put the
+two tokens it emits:
+
+```
+@comment "#" eol
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+
+@separator "\n" => ";\n"
+
+@syntax a "<" b   40 left      => "{a} < {b}"
+@syntax a "+" b   50 left      => "{a} + {b}"
+@syntax n:name "=" v  5 right  => "{n} = {v}"
+@syntax f "(" [ x ]* sep "," join ", " ")"  95 => "{f}({x})"
+
+@syntax "if" c ":" "⇥" b:stmts "⇤"
+    => "if ({c}) {{\n{b}\n}}"  terminated
+@syntax "while" c ":" "⇥" b:stmts "⇤"
+    => "while ({c}) {{\n{b}\n}}"  terminated
+@end
+x = 0
+while x < 10: ⇥ y = x + 1
+print(y)
+if y < 5: ⇥ print(0)
+⇤
+⇤
+x = 99
+```
+
+Nesting, `terminated`, and a dedent standing alone are all already correct
+there, on a tool that knew nothing about indentation. **That is what makes it an
+argument rather than an assertion**, and it is why it is checked in here instead
+of in a scratch directory that no clone has.
+
+**Four things fell out and none had to be built.**
+
+- **Nesting.** An inner block consumes its own `dedent` before an enclosing hole
+  can see it, because the hole owns both delimiters.
+- **A word after a block.** `b:block "else"` works, and a `block` hole is
+  therefore not greedy — it ends itself, so `two holes in a row` does not apply
+  to what follows it. This is the shape a `stmts` hole could never have had.
+- **A blank or comment-only line closes nothing**, because every newline
+  restarts the column count and the indentation measured is always that of the
+  line carrying the next token.
+- **A statement after a block needs no separator**, because *a separator is not
+  wanted after one that ended in a word* already covers it — `}` and `end` and a
+  `dedent` are one case. The output side needed nothing invented at all:
+  `terminated(b)` answers for a block's last statement exactly as it does for
+  `begin … end`, which is what stops the `}` closing over an unterminated one.
+
+**And a test that does something no other one here does.** The body of
+`examples/python.pt` is Python — not Python-shaped, Python, which `python3`
+runs. So `tests/python.sh` compiles the C *and* runs the source, and compares
+the two answers. A translation that is wrong the same way on both sides of an
+operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
+print `40 80 50`.
+
+**What the example does not do, in its own closing note.** `elif` is one rule
+per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 6 declines to build
+for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
+thing rather than reading it. C's types come off Python's annotations or nowhere,
+which is the stage-1 wall in its honest form. And the example says `twice`
+because a Python function called `double` translates to a C function called
+`double`: **a rewriter that moves tokens cannot see that the word it just copied
+is a keyword in the language it is writing**, and the only honest response was
+not to do it.
+
+*Verified at 13 examples, 69 error cases, `tests/hygiene.sh`, `tests/pascal.sh`,
+`tests/asm.sh` and `tests/python.sh`; `make check` clean in 3.4s, no warnings.*
+
 ## A suite that can report a hang
 
 ```

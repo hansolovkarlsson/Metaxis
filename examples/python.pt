@@ -1,0 +1,185 @@
+; python.pt -- stage 3. A language whose blocks are an indentation, into C.
+;
+; Everything below the header is Python. It runs under python3 and prints the
+; same three numbers this file's C prints, which is what tests/python.sh checks
+; both halves of.
+;
+; **The one new thing is `@separator "\n" indent` and the `block` kind.** A
+; block has no closing word to stop a `stmts` hole at -- no `}`, no `end` -- so
+; the lexer keeps an indent stack and emits two tokens no file spells, and a
+; `block` hole owns them both. They carry no text, so no quoted word can name
+; one, which is why this is a kind and not a pair of strings: a string here
+; would be quoting text the source does not contain, and the one rule this
+; notation rests on is that a quoted thing is text you can find in the file.
+;
+; What that bought, and did not have to be taught: `b:block "else"` works,
+; because a block ends itself and so is not greedy the way a `stmts` hole is.
+; Nesting works, because an inner block consumes its own dedent before the
+; outer hole sees it. And a blank or comment-only line closes nothing, because
+; indentation is only ever measured on the line that carries the next token.
+
+@comment "#" eol
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@token string "\"[^\"]*\""
+
+; `indent` is a word on the directive that already owns what separates
+; statements, and it needs a separator with a newline in it -- indentation is
+; what a line break leads to. Out: C's `;` between two statements.
+@separator "\n" => ";\n" indent
+
+@syntax "(" e ")"                              => { emit "(" + e + ")" }
+; A code template is handed the group's turns as a *list* and joins them
+; itself, which is what `for … sep` is for; `join` is the string template's
+; half of the same job and is left off here because nothing would read it.
+; examples/code.pt writes `emit a + "(" + x + ")"` for the same pattern and
+; gets its commas from an infix `,` rule that Pascal's declarations needed
+; anyway -- Python has no such rule, so this one does the joining in the open.
+@syntax f "(" [ x ]* sep "," ")"               95
+    => {
+        emit f + "("
+        for a in x sep ", " { emit a }
+        emit ")"
+    }
+
+@syntax a "==" b                  40           => { emit group(a, 40) + " == " + group(b, 41) }
+@syntax a "!=" b                  40           => { emit group(a, 40) + " != " + group(b, 41) }
+@syntax a "<"  b                  40           => { emit group(a, 40) + " < "  + group(b, 41) }
+@syntax a ">"  b                  40           => { emit group(a, 40) + " > "  + group(b, 41) }
+@syntax a "+"  b                  60           => { emit group(a, 60) + " + "  + group(b, 61) }
+@syntax a "-"  b                  60           => { emit group(a, 60) + " - "  + group(b, 61) }
+@syntax a "*"  b                  70           => { emit group(a, 70) + " * "  + group(b, 71) }
+@syntax a "//" b                  70           => { emit group(a, 70) + " / "  + group(b, 71) }
+@syntax a "%"  b                  70           => { emit group(a, 70) + " % "  + group(b, 71) }
+@syntax "not" a                   80           => { emit "!" + group(a, 80) }
+@syntax a "and" b                 30           => { emit group(a, 30) + " && " + group(b, 31) }
+@syntax a "or"  b                 25           => { emit group(a, 25) + " || " + group(b, 26) }
+
+; A module maps to a header, one quoted rule per module, for the reason
+; examples/code.pt gives about a Pascal type: a hole would splice the module's
+; own name and C's header is not called that. Python's `print` writes to
+; `sys.stdout`, so this mapping is the honest one rather than a stand-in.
+@syntax "import" "sys"                         => { emit "#include <stdio.h>" } terminated
+
+; Assignment and declaration are two rules, and Python is what tells them
+; apart. C needs `int x = 0` the first time and `x = 0` after, and nothing here
+; knows which time it is -- that wants a symbol table, the same wall
+; `writeln` and a parameterless call sit against in stage 1. Python's own
+; annotated assignment says it, so the example writes it and nothing is faked.
+@syntax n:name "=" v              5 right      => { emit n + " = " + v }
+@syntax n:name ":" "int" "=" v    5 right      => { emit "int " + n + " = " + v }
+
+@syntax "return" e                             => { emit "return " + e }
+@syntax "print" "(" x ")"                      => { emit "printf(\"%d\\n\", " + x + ")" }
+
+; The three block rules. `terminated(b)` is the same question examples/code.pt
+; asks of `begin … end`: @separator puts a `;` *between* two statements and
+; never after the last, so the `}` would otherwise close over an unterminated
+; one. A block answers for its last statement, exactly as a `stmts` hole does.
+@syntax "while" c ":" b:block
+    => {
+        emit "while (" + c + ") {\n" + b
+        if not terminated(b) { emit ";" }
+        emit "\n}"
+    } terminated
+
+@syntax "if" c ":" b:block
+    => {
+        emit "if (" + c + ") {\n" + b
+        if not terminated(b) { emit ";" }
+        emit "\n}"
+    } terminated
+
+; A block followed by a word. This is the shape a `stmts` hole could never have
+; had without a closing word to stop at, and it needs no new machinery: the
+; block stops itself, so `"else"` is an ordinary next element.
+@syntax "if" c ":" b:block "else" ":" e:block
+    => {
+        emit "if (" + c + ") {\n" + b
+        if not terminated(b) { emit ";" }
+        emit "\n} else {\n" + e
+        if not terminated(e) { emit ";" }
+        emit "\n}"
+    } terminated
+
+; Python's annotations are what give C its types, which is the same trade the
+; declaration above makes: the type is in the source or it is nowhere.
+@syntax "def" f:name "(" [ p:name ":" "int" ]* sep "," ")" "->" "int" ":" b:block
+    => {
+        emit "int " + f + "("
+        for x in p sep ", " { emit "int " + x }
+        emit ") {\n" + b
+        if not terminated(b) { emit ";" }
+        emit "\n}"
+    } terminated
+
+; Python's own way of saying where the program starts, so C's `main` is read
+; off the source rather than assumed. Tried before the plain `if` because it is
+; the longer pattern, which is the same rule that settles the dangling else.
+@syntax "if" "__name__" "==" m:string ":" b:block
+    => {
+        emit "int main(void) {\n" + b
+        if not terminated(b) { emit ";" }
+        emit "\nreturn 0;\n}"
+    } terminated
+@end
+import sys
+
+
+def twice(n: int) -> int:
+    return n * 2
+
+
+def clamp(n: int, hi: int) -> int:
+    if n > hi:
+        return hi
+    return n
+
+
+if __name__ == "__main__":
+    total: int = 0
+    i: int = 1
+    while i < 20:
+        # a comment-only line inside a block closes nothing, and neither does
+        # the blank one below it
+
+        if i % 3 == 0 and i != 9:
+            total = total + i
+        else:
+            total = total - 1
+        i = i + 1
+    print(total)
+    print(twice(total))
+    print(clamp(twice(total), 50))
+
+# ------------------------------------------------------------------ the note
+#
+# What this file gets right, and what it does not. Four things, and the first
+# two are the point of the exercise.
+#
+#   The blocks.  Nesting, `else`, blank and comment-only lines inside a block,
+#                and a dedent that closes two blocks at once. None of it needed
+#                a rule to be told about it: an inner block consumes its own
+#                dedent, so the outer hole never sees it.
+#
+#   The types.   C's are read off Python's annotations -- `n: int`, `-> int`,
+#                `total: int = 0` -- so a declaration and a reassignment are two
+#                rules that the *source* tells apart. Nothing is guessed. Take
+#                the annotations away and this file cannot be written, which is
+#                the honest form of the wall stage 1 met from three directions.
+#
+#   `elif`.      Not read. Python spells it as its own word, so each arm count
+#                is a rule of its own, and that is the shape docs/ROADMAP.md 6
+#                describes and declines to build for.
+#
+#   A wrapped call.  `f(a,` newline `b)` is not read either: Python's lexer
+#                suppresses the newline inside brackets and this one does not,
+#                which wants a bracket depth beside the indent stack. It is
+#                left out **named** rather than missed -- ROADMAP 2.
+#
+# And one the compiler found. This file's Python says `twice` because a
+# function called `double` translates to a C function called `double`, and a
+# rewriter that moves tokens has no idea that the word it just copied is a
+# keyword in the language it is writing. Nothing here can see that, and the
+# only honest response is that the example does not do it.

@@ -118,7 +118,7 @@ directive   = "@use"       string
             | "@mode"      ( "expression" | "text" )
             | "@token"     name string [ "override" ]
             | "@comment"   string ( string | "eol" )
-            | "@separator" string [ "=>" string ] [ "override" ]
+            | "@separator" string [ "=>" string ] [ "indent" ] [ "override" ]
             | "@syntax"    pattern [ level ] "=>" template { "terminated" | "override" }
             | "@template"  name "(" [ name { "," name } ] ")" code [ "override" ]
             | "@fragment"  name [ "override" ] "=" pattern
@@ -170,7 +170,7 @@ An unclosed block comment runs to the end of the file and is not an error.
 **Comments are looked for before words** (§6.1), so a file whose comment opener
 is also an operator gets the comment.
 
-### 3.3 `@separator "in"` · `@separator "in" => "out"`
+### 3.3 `@separator "in"` · `@separator "in" => "out"` · `… indent`
 
 Declares what separates statements in the body, and what to join them with in
 the output. Without the second half the input text is reused.
@@ -184,9 +184,20 @@ A separator that contains a newline makes **newline a token** instead of
 whitespace: a run of blank lines is one separator, and no separator is produced
 before the first token or after the last.
 
+**`indent` makes indentation nest.** The lexer then keeps a stack of columns
+and emits an `indent` where a line is deeper than the one before it and a
+`dedent` — one per level closed — where it is shallower. Those two tokens are
+the only ones no file spells: they carry no text, so no quoted word can name
+one, and a `block` hole (§4.3) is the only thing that reads them. §6.1 says how
+the column is measured; without `indent` nothing changes and nothing is emitted.
+
+`indent` needs a separator with a newline in it — `@separator ";" indent` is
+`'indent' needs a separator with a newline in it` — because indentation is what
+a line break leads to.
+
 **Declaring it twice is refused** unless the second says `override`. §3.10.
-Nothing may follow but `override`; anything else is `trailing text after
-@separator`.
+Nothing may follow but `indent` and `override`, in that order; anything else is
+`trailing text after @separator`.
 
 Without `@separator` the body is a single expression and a `stmts` hole takes
 one expression.
@@ -463,7 +474,31 @@ block*.
 | `expr` | one expression, at a binding power set by §5. **The default.** |
 | `stmts` | statements separated by the declared separator, up to the pattern's next word. Expanded, and joined with the separator's output form. |
 | `text` | raw source text up to the pattern's next word. Text mode only (§7); in expression mode it is `a 'text' hole belongs to @mode text`. |
+| `block` | the indented run of statements that follows, expanded and joined the way `stmts` is. Requires `@separator "…\n…" indent` (§3.3); without one it is `'b:block' wants a block, and nothing here opens one`. Expression mode only. |
 | *a class name* | exactly one token of that class, spliced as its source text. Expression mode only (§7); in text mode it is `'x:name' asks for one token of a class, and text mode has no tokens`. |
+
+**A `block` hole owns both of its delimiters**, which is what makes it the one
+hole that needs no word after it to stop at:
+
+```
+@syntax "if" c ":" b:block
+@syntax "if" c ":" b:block "else" ":" e:block
+```
+
+It reads the `indent`, the statements, and the `dedent` that closes them, so a
+nested block consumes its own `dedent` before an enclosing hole can see it, and
+a word may follow — which a `stmts` hole makes *necessary* and this makes merely
+possible. It is for that reason not greedy: `two holes in a row` does not apply
+to what follows one.
+
+**This is the only delimiter in the notation that is not a string**, and it is
+deliberate. Every other thing a pattern matches is text somebody wrote, so
+quoting is what tells a mention from a declaration. An indent is not text; a
+string naming one would be quoting something the source does not contain, and
+the rule this notation rests on would be kept in letter and spent in meaning.
+So it is spelled the way Prototype spells its own vocabulary: outside the
+quotes. [notation.md](notation.md) argues it; [COMPLETED.md](COMPLETED.md)
+records the two spellings that were declined and why.
 
 **A fragment is not a kind, and does not appear here.** A kind says what *one
 hole* holds; a fragment (§3.9) says what *sequence of elements* goes here and
@@ -573,6 +608,9 @@ At each position, in this order:
 
 1. **Whitespace** is skipped. A newline is skipped too, unless the separator is
    a newline, in which case one separator token is produced for a run.
+   Under `@separator … indent` (§3.3) the whitespace is also *counted*, and
+   what it comes to decides whether an `indent` or a run of `dedent`s is
+   produced first. See below.
 2. **Comments** are looked for, and win. This is the only precedence in the
    lexer that the file did not set.
 3. **The longest match from every declared token class**, and **the longest
@@ -590,6 +628,27 @@ Nothing else is a token. A character that matches no class and begins no word is
 `nothing here is anything this file declared: '…'`.
 
 The word set is every word any rule quoted, plus the separator.
+
+**Indentation, when `@separator … indent` asked for it.** A column count runs
+from each newline and stops at the first thing that is not whitespace; a space
+is one column and a **tab advances to the next multiple of 8**, a number this
+tool picks because nothing can derive it. The count is compared against a stack
+whose bottom is column 0:
+
+- **deeper** — an `indent` is produced *instead of* the separator, and the
+  column is pushed. A line break that leads to a deeper line is that indent and
+  does not also separate two statements.
+- **shallower** — the separator is produced, then one `dedent` per column
+  popped. The statement the block closes over did end, so it is separated
+  first. If the count lands between two columns rather than on one, that is
+  `this line ends a block but lines up with nothing that opened one`.
+- **the same** — nothing but the ordinary separator.
+- **end of file** — a `dedent` for every column still open.
+
+Because every newline restarts the count, the indentation that is measured is
+always that of the line carrying the next real token: **a blank line, and a line
+holding nothing but a comment, close no block.** An `indent` no `block` hole
+reads is `this line is indented and no rule opened a block here`.
 
 ### 6.2 The parser
 
@@ -617,7 +676,9 @@ closes it.
 - Leading and repeated separators are skipped, so an empty statement is nothing.
 - **On the way in, a separator is wanted between two statements, and not after
   one that ended in a word.** That is what lets `}` and `end` stand on their
-  own, so C's `for (…) { … }` needs no `;` after it.
+  own, so C's `for (…) { … }` needs no `;` after it. A statement that ended in a
+  `dedent` is the same case, which is why nothing has to separate a Python block
+  from the line after it.
 - **On the way out, a separator is joined between two statements unless the rule
   that produced the first was declared `terminated`** (§3.4), in which case a
   newline is joined instead.
@@ -661,6 +722,11 @@ else is copied through unchanged.
 - **Every hole is text** and takes the shortest run that lets the rest of the
   pattern match. A hole with nothing after it takes the rest of the enclosing
   text.
+- **A `block` kind is refused here, and for the same reason as a class.** A
+  block is delimited by two tokens the lexer makes out of the whitespace between
+  the others, and text mode has no tokens to measure the indentation of. It is
+  `'b:block' asks for an indented run of statements, and text mode has no tokens
+  to measure the indentation of`.
 - **A class kind is refused here.** `expr` and `stmts` both mean *read up to the
   word that stops you*, which is what a text-mode hole does anyway, so those
   degrade honestly and are left alone. A class says something else — *one token,
@@ -994,6 +1060,9 @@ Every message the tool can produce, and what it means.
 | `the fragment 'p' is already declared at f:n — write 'override' to mean it` | §3.10 |
 | `'override', but no fragment 'p' was declared before it` | §3.10 |
 | `two holes called 'p': …` | §4.2 |
+| `'indent' needs a separator with a newline in it` | §3.3 |
+| `'b:block' wants a block, and nothing here opens one` | a `block` hole and no `@separator … indent` — §4.3 |
+| `'b:block' asks for an indented run of statements, and text mode has no tokens…` | §7 |
 | `trailing text after @token` · `trailing text after @separator` · `trailing text after @fragment` | a word after the directive that is not one of its own |
 
 ### In the body
@@ -1004,6 +1073,8 @@ Every message the tool can produce, and what it means.
 | `no rule reads 'x' here` | the parser stopped; `x` is the furthest token it reached |
 | `the file ends in the middle of something` | as above, at end of file |
 | `a 'text' hole belongs to @mode text` | §4.3 |
+| `this line is indented and no rule opened a block here` | an `indent` no `block` hole reads — §6.1 |
+| `this line ends a block but lines up with nothing that opened one` | a column between two open ones — §6.1 |
 | `the grammar recurses without consuming anything` | 400 deep — §6.2 |
 | `a text rule expands into itself` | 64 deep — §7 |
 | `this rule has too many ways to match` | a text rule's search ran past its budget — §7 |
@@ -1022,6 +1093,7 @@ Every message the tool can produce, and what it means.
 | parameters of one template | 8 |
 | text-mode match attempts per rule | 200000 |
 | expression recursion | 400 |
+| a tab, in columns | 8 |
 | text-mode expansion depth | 64 |
 | fresh-name attempts | 100000 |
 | everything else | memory |
@@ -1044,6 +1116,7 @@ Both take a file that declares its own grammar. Where they part:
 | literals | the lexer's, fixed | `@token` |
 | comments | `;`, fixed | `@comment` |
 | statement separator | `.`, fixed | `@separator` |
+| a block | braces or an `end`, written as ordinary syntax | those, or an indentation — `@separator … indent` and the `block` kind, §4.3 |
 | the template | an expression in the target language | a string, or an interpreted block — §8 |
 | output precedence | Proto re-prints and parenthesises | `group(h, n)` in a code template; the author's own parentheses in a string one |
 | hygiene | the expander renames | `{~t}` for half of it, §8.1 |

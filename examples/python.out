@@ -1,0 +1,26 @@
+#include <stdio.h>
+int twice(int n) {
+return n * 2;
+}
+int clamp(int n, int hi) {
+if (n > hi) {
+return hi;
+}
+return n;
+}
+int main(void) {
+int total = 0;
+int i = 1;
+while (i < 20) {
+if (i % 3 == 0 && i != 9) {
+total = total + i;
+} else {
+total = total - 1;
+}
+i = i + 1;
+}
+printf("%d\n", total);
+printf("%d\n", twice(total));
+printf("%d\n", clamp(twice(total), 50));
+return 0;
+}

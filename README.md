@@ -58,6 +58,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [tour.pt](examples/tour.pt) | the idea in one file: infix, prefix, circumfix, mixfix, and `then` used as a word and as a name four lines apart |
 | [clike.pt](examples/clike.pt) | the six things Proto's `lib/clike.pro` lists as impossible — `;` between statements, `x++`, `a[i]`, `p->f`, a lone `|`, `for`, and `42` without a sigil |
 | [pascal.pt](examples/pascal.pt) | Pascal in, C out — stage 1. `program`, `var`, `procedure`, `function`, `begin`/`end`, `if`, `while`, `for`, `repeat`, `case`, calls, and the operator words. `pascal.out` keeps its parenthesis noise, which is the cost of agnosticism showing itself, and is the one output here that is expected not to compile |
+| [python.pt](examples/python.pt) | Python in, C out — stage 3, and a block that is an **indentation**. `@separator "\n" indent` gives the lexer a stack of columns and a `block` hole reads what it emits: the one delimiter in the notation that is not a string, because an indent is not text anybody wrote. Its body is real Python, and `tests/python.sh` runs it under `python3` as well as compiling the C, so the two answers can be compared |
 | [poem.pt](examples/poem.pt) | `@mode text`: prose in, HTML out |
 | [reserved.pt](examples/reserved.pt) | every character Prototype writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator — a diamond through [lib/vector.pt](lib/vector.pt), and an `override` of one of arith's rules |
@@ -138,6 +139,8 @@ tests/errors.sh          what a file gets told when it is wrong
 tests/hygiene.sh         what a template that is a string cannot do, run
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
 tests/asm.sh             C in, arm64 out, assembled and run on a CPU
+tests/python.sh          Python in, C out -- and the same text run as Python too
+tests/limit.sh           a wall-clock limit, so a hang is reported and not waited on
 docs/REFERENCE.md        every part of a .pt file, exhaustively
 docs/notation.md         the one rule, what falls out of it, and what it costs
 docs/direction.md        what this could become, and which futures are declined

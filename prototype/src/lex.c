@@ -44,6 +44,39 @@ static int comment_at(Grammar *g, const char *s, size_t i, size_t *out)
     return 0;
 }
 
+/* The indent stack, and the two tokens no file spells.
+ *
+ * A column is counted only while nothing but whitespace has been seen since the
+ * last newline, which is what makes a **blank or comment-only line produce no
+ * dedent**: every newline resets the count, so the indentation that is measured
+ * is always that of the line carrying the next real token. A tab advances to
+ * the next multiple of 8 -- a number this file picks, because nobody can derive
+ * it, and stated here rather than left to be discovered.
+ *
+ * An indent is emitted *instead of* the separator: a line break that leads to a
+ * deeper line is that indent and does not also separate two statements. A
+ * dedent is emitted *after* one, because the statement it closes over did end. */
+#define TABSTOP 8
+
+typedef struct { int *v; int n, cap; } Stack;
+
+static void col_push(Stack *s, int c)
+{
+    if (s->n == s->cap) {
+        int cap = s->cap ? s->cap * 2 : 16;
+        int *v  = xmalloc(sizeof *v * (size_t)cap);
+        if (s->v) memcpy(v, s->v, sizeof *v * (size_t)s->n);
+        s->v = v; s->cap = cap;
+    }
+    s->v[s->n++] = c;
+}
+
+static void mark(Toks *out, const char *src, size_t i, int kind)
+{
+    Tok t = { kind, -1, src + i, 0, i, line_at(src, i) };
+    push(out, t);
+}
+
 int lex(Grammar *g, const char *src, size_t from, const char *file,
         Toks *out, char **err)
 {
@@ -53,14 +86,41 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
 
     size_t i = from;
     int    pending_nl = 0;
+    int    col = 0, only_ws = 1;
+    Stack  st = { NULL, 0, 0 };
+    if (g->sep_indent) col_push(&st, 0);
 
     for (;;) {
         for (;;) {
-            if (src[i] == ' ' || src[i] == '\t' || src[i] == '\r') { i++; continue; }
-            if (src[i] == '\n') { pending_nl = 1; i++; continue; }
+            if (src[i] == ' ')  { if (only_ws) col++; i++; continue; }
+            if (src[i] == '\t') { if (only_ws) col += TABSTOP - col % TABSTOP; i++; continue; }
+            if (src[i] == '\r') { i++; continue; }
+            if (src[i] == '\n') { pending_nl = 1; col = 0; only_ws = 1; i++; continue; }
             size_t after;
-            if (comment_at(g, src, i, &after)) { i = after; continue; }
+            /* A comment ends the run of whitespace this line opened with, so
+               what was counted before it is the line's indentation and nothing
+               after it adds to that. An end-of-line comment then meets its own
+               newline and the count starts over, which is why a comment-only
+               line is invisible here. */
+            if (comment_at(g, src, i, &after)) { i = after; only_ws = 0; continue; }
             break;
+        }
+
+        if (g->sep_indent && pending_nl && src[i]) {
+            if (col > st.v[st.n - 1]) {
+                mark(out, src, i, T_INDENT);
+                col_push(&st, col);
+                pending_nl = 0;
+            } else if (col < st.v[st.n - 1]) {
+                if (out->n) { Tok t = { T_PUNCT, -1, "\n", 1, i, line_at(src, i) }; push(out, t); }
+                while (col < st.v[st.n - 1]) { st.n--; mark(out, src, i, T_DEDENT); }
+                if (col != st.v[st.n - 1]) {
+                    *err = xfmt("%s:%d: this line ends a block but lines up with"
+                                " nothing that opened one", file, line_at(src, i));
+                    return -1;
+                }
+                pending_nl = 0;
+            }
         }
 
         if (g->sep_nl && pending_nl && out->n && src[i]) {
@@ -69,7 +129,11 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
         }
         pending_nl = 0;
 
-        if (!src[i]) break;
+        if (!src[i]) {
+            /* Whatever is still open closes at the end of the file. */
+            while (st.n > 1) { st.n--; mark(out, src, i, T_DEDENT); }
+            break;
+        }
 
         size_t best_cls = 0;
         int    which    = -1;
@@ -101,6 +165,7 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
         }
         push(out, t);
         i += t.n;
+        only_ws = 0;
     }
 
     Tok eof = { T_EOF, -1, src + i, 0, i, line_at(src, i) };

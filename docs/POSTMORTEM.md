@@ -11,6 +11,72 @@ Newest first.
 
 ---
 
+## 15 · A prediction that held in every part, and the one measurement that is why
+
+**Issue.** [direction.md](direction.md) closes with a standing lesson from three
+estimates taken the same day: *this page was right about every shape and wrong
+about every distance. Structure can be reasoned about from the code; distance is
+what you find on the way.* Stage 3 was laid out as options before it was built,
+and the layout made four claims that were not distance claims at all:
+
+- the pattern side is small and the **lexer side is the whole cost**, and is the
+  same cost under every notation considered;
+- nesting would fall out, because an inner block consumes its own dedent;
+- `b:block "else"` would work, because a block ends itself and so is not greedy;
+- a blank or comment-only line would close nothing.
+
+All four held, and the build came in at roughly the size the layout said: about
+sixty lines of lexer, thirty of header, twenty of parser.
+
+**Root cause — of the accuracy, which is the part worth explaining.** The layout
+was not written from reading. Before it, two files were run: one showing that
+Python's expressions already read with no tool change, and one **rehearsing the
+whole feature by hand** — a `.pt` whose blocks were marked by two ordinary
+quoted words, placed where an indent-aware lexer would later synthesise them.
+That file produced correct nested C on its first run. Every claim above except
+the blank-line one was *observed in that rehearsal*, not predicted: nesting,
+`terminated` after a block, a word following a block, and the separator rule
+that lets a dedent stand alone were all already true of the tool as it stood.
+
+So the layout was not a forecast that happened to be right. It was a report on
+something that had been run, written in the future tense.
+
+**And what the same rehearsal found that no amount of reading would have.** The
+item being planned listed three obstacles to reading Python. There was a fourth
+— a call wrapped across two lines is `no rule reads '\n' here` — and it turned
+up by typing one into a test file. It is now [ROADMAP.md](ROADMAP.md) 2. Two
+more of the same kind arrived later and from the same direction: a code
+template's `emit` hands back a repeated group's turns **concatenated with no
+joiner**, where a string template splices them with the group's `join`; and a
+Python function called `double` becomes a C function called `double`, which a
+compiler said and nothing here could have.
+
+**Learnings.**
+
+**Reading the code predicts structure. Running it produces the list.** Both
+halves of that showed up within an hour of each other, in the same task, and
+neither substitutes for the other. The four structural claims came off the code
+and held; all four things the plan was *missing* came off running it, and every
+one was cheap to find and would have been expensive to reason toward.
+
+**A plan is worth what was run before it.** The rule this suggests is small and
+mechanical: before laying out options for a feature, spend the cheapest thing
+that can be executed on the question — a hand-written rehearsal, a file that
+fakes the missing half — and write the options *afterwards*. The cost here was
+two scratch files and about ten minutes, and it is the entire difference between
+this entry and the three that direction.md is still apologising for.
+
+**And keep the rehearsal where a clone can find it.** The first draft of this
+entry cited both files in `scratch/` — which is gitignored, so the evidence for
+the day's main decision would have been readable by exactly one machine. The one
+that fakes the block markers is now inlined in [COMPLETED.md](COMPLETED.md),
+beside the decline it argues against, because it is the version that *works* and
+that is the only honest way to file an argument against something. **Evidence
+cited from outside the repository is a citation, not a record** — the same shape
+as entry 14, one directory over.
+
+---
+
 ## 14 · The suite could not report the one failure it could not express, and that sat in a commit message for a day
 
 **Issue.** `make check` had no time limit anywhere — not in the Makefile, not in
