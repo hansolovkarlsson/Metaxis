@@ -1,0 +1,20 @@
+; first.pt -- the smallest file that shows the whole shape, and the one
+; REFERENCE.md § 1 opens with.
+;
+; A header of directives, then a body of foreign text. Nothing is built in:
+; the comment, the separator, the two literal classes and every rule are
+; declared here, and the body is read with what they say and with nothing else.
+;
+; It reads a small C-shaped language and writes C.
+
+@token  name   "[A-Za-z_][A-Za-z0-9_]*"
+@token  number "[0-9]+"
+@comment "#" eol
+@separator ";" => ";\n"
+
+@syntax a "=" b   10 right  => "{a} = {b}"
+@syntax a "+" b   60        => "add({a}, {b})"
+@syntax "twice" e           => "({e} * 2)"
+@end
+x = 1;              # nothing here is built in
+twice x + 2;

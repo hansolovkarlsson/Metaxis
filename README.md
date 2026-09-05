@@ -52,6 +52,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 
 | | |
 | --- | --- |
+| [first.pt](examples/first.pt) | the smallest file that shows the shape, and what [REFERENCE.md](docs/REFERENCE.md) § 1 opens with |
 | [tour.pt](examples/tour.pt) | the idea in one file: infix, prefix, circumfix, mixfix, and `then` used as a word and as a name four lines apart |
 | [clike.pt](examples/clike.pt) | the six things Proto's `lib/clike.pro` lists as impossible — `;` between statements, `x++`, `a[i]`, `p->f`, a lone `|`, `for`, and `42` without a sigil |
 | [pascal.pt](examples/pascal.pt) | Pascal in, C out; neither language the tool's. `pascal.out` keeps its parenthesis noise, which is the cost of agnosticism showing itself |

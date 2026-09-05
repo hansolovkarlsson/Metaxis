@@ -11,6 +11,47 @@ Newest first.
 
 ---
 
+## 7 · A page that said it was checked, opening with an example that never ran
+
+**Issue.** REFERENCE.md began *Everything here is checked by `make check`*, and
+its § 1 — the first thing anybody reads — was a complete `.pt` file with its
+output printed under it. Typed out and run, it fails on its second line:
+nothing in it declares `=`, so `x = 1` is `nothing here is anything this file
+declared`. It also declared `;` as both a comment opener and the statement
+separator, and comments are looked for first, so the separator could never have
+fired either. The printed output was what the file would have produced if it had
+worked, which is why it looked right.
+
+**Root cause.** The sentence was true of the *behaviour* the page describes —
+every rule and message in it is exercised by `examples/` and `tests/` — and read
+as if it were true of the *examples* in it, which nothing ran. § 1 was the only
+whole file on the page and the only one that could have been run, and it was
+written by hand rather than lifted from `examples/`, so it was the one snippet
+with no file behind it and the one that rotted.
+
+**Solution.** § 1 is now `examples/first.pt`, a real file with a recorded
+output, so `make check` runs it and the block on the page is that file. The
+promise was rewritten to say what is actually checked and what is a fragment.
+The rest of the page's snippets are fragments that could not be run as they
+stand; a harness for one file would have been machinery around a single case.
+
+**Learnings.** **A claim that something is verified is itself a claim, and it is
+the one nobody thinks to verify.** It reads as provenance rather than as an
+assertion, so it is trusted in exactly the place where the reader would
+otherwise have been sceptical — and it made this defect *less* likely to be
+found than if the page had promised nothing.
+
+The general form is that documentation is checkable only where it is
+**executed**, not where it is careful. Every other example on the page is a
+fragment and stays unchecked, which is now written down rather than papered
+over; the one that can be run is the one that is run. Where a document wants to
+be trusted about behaviour, the way to earn it is to make the artifact the
+document quotes *be* the artifact the suite runs — which is what
+`examples/*.out` already does everywhere else in this tree, and what § 1 was the
+single exception to.
+
+---
+
 ## 6 · A roadmap item that described its own defect backwards
 
 **Issue.** The roadmap said: *`@use` two files that both declare `"+"` and the

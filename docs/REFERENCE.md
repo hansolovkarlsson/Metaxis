@@ -6,28 +6,34 @@ file states behaviour and does not argue for it — the reasons and the costs ar
 [ROADMAP.md](ROADMAP.md)'s, and where any of the three disagrees with the code
 the code is right and the page is wrong.*
 
-Everything here is checked by `make check`. Section headings are stable; the
-examples in them are lifted from `examples/`.
+Section headings are stable. **Every example here emits C or Pascal**, so that
+reading one asks nothing of the reader beyond the language they came here
+knowing. §1 is a whole file and is `examples/first.pt`, run by `make check`
+against the output printed beside it; the rest are fragments written for this
+page, and where one names a file it is lifted from that file.
 
 ---
 
 ## 1 · A first file
 
+`examples/first.pt`, whole:
+
 ```
 @token  name   "[A-Za-z_][A-Za-z0-9_]*"
 @token  number "[0-9]+"
-@comment ";" eol
+@comment "#" eol
 @separator ";" => ";\n"
 
-@syntax a "+" b   60   => "add({a}, {b})"
-@syntax "twice" e      => "({e} * 2)"
+@syntax a "=" b   10 right  => "{a} = {b}"
+@syntax a "+" b   60        => "add({a}, {b})"
+@syntax "twice" e           => "({e} * 2)"
 @end
-x = 1;
+x = 1;              # nothing here is built in
 twice x + 2;
 ```
 
 ```
-$ pt first.pt
+$ pt examples/first.pt
 x = 1;
 (add(x, 2) * 2)
 ```
@@ -52,8 +58,10 @@ line**, continuing onto any following line that begins with a space or a tab:
 
 ```
 @syntax "for" "(" init ";" c ";" step ")" "{" b:stmts "}"
-    => "{init}.\n{{ {c} }}:whileTrue({{ {b}. {step} }})"
+    => "{init};\nwhile {c} do begin {b}; {step} end"
 ```
+
+That reads C's `for` and writes Pascal's `while`.
 
 Blank lines between directives are ignored.
 
@@ -83,7 +91,7 @@ it looks like:
 `;` also ends a **directive's own text**, so a note may follow one on its line:
 
 ```
-@syntax a "@" b  50  => "{a}:at({b})"    ; the directive sigil
+@syntax a "@" b  50  => "{a}[{b}]"    ; the directive sigil
 ```
 
 It can afford to, because everything a directive says about foreign text is
@@ -156,7 +164,7 @@ Declares what separates statements in the body, and what to join them with in
 the output. Without the second half the input text is reused.
 
 ```
-@separator ";" => ".\n"
+@separator ";" => ";\n"
 @separator "\n"
 ```
 
@@ -177,7 +185,7 @@ The only rule-making directive. §4, §5 and §6 are about the pattern; §8 abou
 the template, of which there are two kinds.
 
 ```
-@syntax a "+" b            60           => "{a}:add({b})"
+@syntax a "+" b            60           => "({a} + {b})"
 @syntax "if" c "then" t                 => "if ({c}) {t}"
 @syntax "swap" "(" a "," b ")"
     => "{{ int {~t} = {a}; {a} = {b}; {b} = {~t}; }}"
@@ -246,9 +254,11 @@ Three things can be declared twice: a rule's pattern, a `@token` class name, and
 source.
 
 ```
-@use "../lib/arith.pt"
-@syntax a "/" b 70 => "{a}:idiv({b})" override
+@use "ops.pt"                             ; which declares  a "/" b  70
+@syntax a "/" b 70 => "idiv({a}, {b})" override
 ```
+
+`examples/use.pt` does exactly this to the `/` it took from `lib/arith.pt`.
 
 ```
 b.pt:1: this pattern is already declared at a.pt:3
@@ -499,12 +509,17 @@ closes it.
 
 **These are two rules and not one, deliberately.** The first is about the
 language being read and the second about the language being written, and this
-tool is not entitled to assume they agree. `examples/clike.pt` and
-`examples/groups.pt` both read C's braces; the first emits Solveig, where a `.`
-is wanted between two statements however the one before ended, and declares
-nothing; the second emits JavaScript, where a `}` ends a statement, and declares
-`terminated`. Working it out from the last character emitted would get one of
-them wrong, and would get C's `struct { … };` wrong in the other direction.
+tool is not entitled to assume they agree.
+
+`examples/clike.pt` and `examples/groups.pt` both read C's braces and disagree
+about the output. The first writes a language that wants a separator between two
+statements *however the one before ended* — so it declares nothing, and a
+separator is joined after a `}` like anywhere else. The second writes
+JavaScript, where a `}` has already ended the statement, so its brace rules say
+`terminated` and nothing is joined after them.
+
+Working it out from the last character emitted would get one of them wrong, and
+would get C's own `struct { … };` wrong in the other direction.
 
 If the body does not parse, the error names the furthest token reached:
 `no rule reads 'x' here`, or `the file ends in the middle of something`.
@@ -709,13 +724,19 @@ separator  declared
 token      number   [0-9]+
 token      name     [A-Za-z_][A-Za-z0-9_]*
 comment    # eol
-words      '(' ')' '*' '+' '-' '/' ':' ';' '=' '^'
+words      '(' ')' '*' '+' ',' '-' '/' ':' ';' '<' '=' '>' '^'
 prefix    "(" e ")"
 infix     a ":" m [95]
 infix     a "^" b [80 right]
 prefix    "-" a [90]
 …
+prefix    "<" x "," y ">"
+infix     a "/" b [70]
 ```
+
+The last two lines are the point of that file: `<x, y>` came in through
+`lib/vector.pt`, and `/` is the rule the file declared `override` for, so only
+one `/` is listed.
 
 ---
 
@@ -746,10 +767,9 @@ Every message the tool can produce, and what it means.
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
 | `'x:name' asks for one token of a class, and text mode has no tokens` | §7 |
 | `a rule needs a pattern` | `@syntax => "…"` |
-| `trailing text after the template` | something after the template that is not `terminated` |
+| `trailing text after the template` | something after the template that is not `terminated` or `override` |
 | `an empty word matches nothing` | `""` as a pattern element |
 | `expected '=>'` | a rule with no template |
-| `trailing text after the template` | something after the closing `"` |
 | `a rule that begins with a hole is infix or postfix and needs a level` | §4.2 |
 | `a rule that begins with a hole must have a word after it` | §4.2 |
 | `two holes in a row: …` | §4.2 |
@@ -829,7 +849,7 @@ Both take a file that declares its own grammar. Where they part:
 | output precedence | Proto re-prints and parenthesises | `group(h, n)` in a code template; the author's own parentheses in a string one |
 | hygiene | the expander renames | `{~t}` for half of it, §8.1 |
 | source maps | a `.map` beside the output | none |
-| the target | Solveig | anything |
+| the target | Solveig, one language it was built to write | anything; the examples here write C and Pascal |
 
 `docs/notation.md` argues about which of those are gains and which are the
 price. This page only says which are which.
