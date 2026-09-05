@@ -161,20 +161,22 @@
 ; say a fragment was ever involved.
 @fragment params = "(" [ p:name ":" "integer" ]* sep ";" ")"
 
+; And the body once, which is where the two mechanics meet: the pattern is
+; shared by `@params` and the template by `subprogram`, and the only thing left
+; that differs between a procedure and a function is C's return type. A list
+; goes through a template parameter unchanged -- `p` arrives as a list and the
+; loop below walks it -- which nothing had asked for until this call site.
+@template subprogram(ret, f, p, b) {
+    emit ret + " " + f + "("
+    if count(p) == 0 { emit "void" }
+    for x in p sep ", " { emit "int " + x }
+    emit ") " + b
+}
+
 @syntax "procedure" f:name @params ";" b
-    => {
-        emit "void " + f + "("
-        if count(p) == 0 { emit "void" }
-        for x in p sep ", " { emit "int " + x }
-        emit ") " + b
-    } terminated
+    => { subprogram("void", f, p, b) } terminated
 @syntax "function" f:name @params ":" "integer" ";" b
-    => {
-        emit "int " + f + "("
-        if count(p) == 0 { emit "void" }
-        for x in p sep ", " { emit "int " + x }
-        emit ") " + b
-    } terminated
+    => { subprogram("int", f, p, b) } terminated
 
 ; Free Pascal's `Result`, for the reason examples/pascal.pt gives.
 @syntax "Result" ":=" e                        => { emit "return " + e }

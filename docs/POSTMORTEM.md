@@ -11,6 +11,49 @@ Newest first.
 
 ---
 
+## 12 · A `for` inside a template read through a null rule and crashed
+
+**Issue.** `@template` landed on 2026-09-05 with `for` legal in a template body,
+and any template that actually wrote one segfaulted — at seal, before a line of
+input was read. `examples/asm.pt`, the customer the feature was built for, has
+no loop in any of its templates, so nothing found it for a day.
+
+```
+@template sub(p) { for x in p sep ", " { emit x } }     ->     SIGSEGV
+```
+
+**Root cause.** `check_block` is called with the rule a body belongs to, and
+with `NULL` for a template — a template has no rule, which is the whole point:
+it sees its parameters and nothing else. `check_expr` was written for that and
+guards every use with `r &&`. The `for` branch, added in the same commit, calls
+`rule_has_hole(r, nm)` unguarded to refuse a loop variable that shadows a hole.
+For a template there are no holes to shadow, so the call is not merely unsafe,
+it is asking a question that does not apply.
+
+**Solution.** The same `r &&` guard the neighbouring branch already had, and a
+comment saying why a template has nothing to collide with. The check still
+applies in full to a rule's own code template, which is where it was earned.
+
+**What found it.** Deduplicating `examples/code.pt`: `procedure` and `function`
+had the same four-line body differing only in C's return type, so one
+`@template` should take the difference as a parameter — and its body has a loop
+over the parameter list. The example now compiles and runs under
+`tests/pascal.sh`, so a CPU checks the fix rather than a diff.
+
+**Learnings.** **A feature is only tested to the depth of the one file that
+asked for it.** `@template` was built because `asm.pt` wrote two lines eight
+times, so the customer exercised calls, parameters, `if`, `emit` and `fresh` —
+and never `for`, because the eight sites had nothing to loop over. Every branch
+of the new code that the customer did not walk shipped unexecuted, and one of
+them was a crash. The tree's habit of building only what a customer asked for is
+still right; what it does not do by itself is *cover* what was built.
+
+The narrow version is worth stating separately, because it is mechanical and
+will recur: **when a parameter can be `NULL` for one caller, every use in that
+function is a site, not just the ones written first.** Two branches of one
+function were added in one commit; the older one guarded and the newer one did
+not.
+
 ## 11 · One page, three predictions, one afternoon: right about the shape, wrong about every distance
 
 **Issue.** `docs/direction.md` was written on 2026-09-05 to say what Prototype

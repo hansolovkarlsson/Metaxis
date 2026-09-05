@@ -505,10 +505,16 @@ static int check_block(Rule *r, const char *where, Stmt *v, int n, Scope *sc, ch
                 *err = xfmt("%s: loops nested more than 32 deep", where);
                 return -1;
             }
+            /* `r` is NULL when this is a template's body, which has no rule
+               and no holes to collide with -- a template sees its parameters
+               and nothing else. The guard is the same one `check_expr` has;
+               without it a `for` inside a template read through a null rule and
+               crashed, which is what happens to a branch nothing had written
+               yet. See POSTMORTEM.md 12. */
             for (int w = 0; w < 2; w++) {
                 const char *nm = w ? v[i].idx : v[i].var;
                 if (!nm) continue;
-                if (rule_has_hole(r, nm)) {
+                if (r && rule_has_hole(r, nm)) {
                     *err = xfmt("%s: the loop variable '%s' is also a hole -- one of"
                                 " them has to be called something else", where, nm);
                     return -1;

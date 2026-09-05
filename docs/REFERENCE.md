@@ -284,9 +284,14 @@ only things besides a rule that can be named.
 - **Fresh names are shared with the caller.** `fresh("L")` inside a template is
   the same name as `fresh("L")` in the rule that called it, which is what lets a
   template finish a construct the rule started (§8.2).
+- **A list passes through a parameter unchanged.** A hole inside a repeated
+  group is a list (§4.4), and handing it to a template gives a parameter that
+  `count` and `for` see as one — `examples/code.pt` shares one `subprogram`
+  between `procedure` and `function` that way.
 - At most **8 parameters**. Declaring the same name twice is refused unless the
   second says `override`, as everything else is (§3.10).
-- `examples/asm.pt` is the customer: one `load` against eight call sites.
+- `examples/asm.pt` is the customer: one `load` against eight call sites, and
+  `examples/code.pt` is the second: one `subprogram` against two.
 
 ### 3.9 `@fragment name = pattern`
 

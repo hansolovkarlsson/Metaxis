@@ -20,7 +20,14 @@ which is the opposite of every other directive and is forced — a fragment's
 pattern runs to the end of the directive, so a trailing `override` would be read
 as a hole of that name. `examples/pascal.pt` and `examples/code.pt` each wrote
 one parameter list twice and now write it once; both expand byte-identically to
-what they did before.
+what they did before. `examples/code.pt` also shares the body the two rules had
+in common through a `@template`, so the two ways of naming a fragment now meet
+in one file.
+
+**A `for` inside a `@template` body no longer crashes.** It read through a null
+rule at seal and segfaulted, so no template that looped had ever run; the check
+it crashed in — a loop variable shadowing a hole — does not apply to a template,
+which has no holes to shadow. [POSTMORTEM.md](POSTMORTEM.md) 12.
 
 **A pattern that declares one hole name twice is now refused** —
 `two holes called 'p': a template splices a hole by name, so only one of them
