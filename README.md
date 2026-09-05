@@ -55,11 +55,11 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [first.pt](examples/first.pt) | the smallest file that shows the shape, and what [REFERENCE.md](docs/REFERENCE.md) § 1 opens with |
 | [tour.pt](examples/tour.pt) | the idea in one file: infix, prefix, circumfix, mixfix, and `then` used as a word and as a name four lines apart |
 | [clike.pt](examples/clike.pt) | the six things Proto's `lib/clike.pro` lists as impossible — `;` between statements, `x++`, `a[i]`, `p->f`, a lone `|`, `for`, and `42` without a sigil |
-| [pascal.pt](examples/pascal.pt) | Pascal in, C out; neither language the tool's. `pascal.out` keeps its parenthesis noise, which is the cost of agnosticism showing itself |
+| [pascal.pt](examples/pascal.pt) | Pascal in, C out — stage 1. `program`, `var`, `begin`/`end`, `if`, `while`, `for`, and the operator words. `pascal.out` keeps its parenthesis noise, which is the cost of agnosticism showing itself, and is the one output here that is expected not to compile |
 | [poem.pt](examples/poem.pt) | `@mode text`: prose in, HTML out |
 | [reserved.pt](examples/reserved.pt) | every character Prototype writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator — a diamond through [lib/vector.pt](lib/vector.pt), and an `override` of one of arith's rules |
-| [code.pt](examples/code.pt) | `=> { … }` — `examples/pascal.pt` rule for rule, with the parenthesis noise gone and the literal translated. `diff examples/pascal.out examples/code.out` is the point |
+| [code.pt](examples/code.pt) | `=> { … }` — `examples/pascal.pt` rule for rule, with the parenthesis noise gone and the literal translated. `diff examples/pascal.out examples/code.out` is the point, and `tests/pascal.sh` compiles this one and runs it |
 | [groups.pt](examples/groups.pt) | `[ … ]`, `[ … ]*` and `[ … ]+` — an argument list of any arity in one rule, and an optional part |
 | [hygiene.pt](examples/hygiene.pt) | `{~t}`, and the half of hygiene it cannot close. `tests/hygiene.sh` compiles the C it emits and runs it, so the remaining wrong answer is a number |
 

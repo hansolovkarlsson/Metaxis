@@ -694,14 +694,17 @@ form and the body left alone, so `diff examples/pascal.out examples/code.out` is
 what the second form is for:
 
 ```
--for (int i = 1; i <= 20; i++) if (((((i % mod) == 0)) && ((i != 9))))
-+for (int i = 1; i <= 20; i++) if ((i % mod == 0) && (i != 9))
--if ((!((total > 100)))) puts('it''s middling') else puts('big')
-+if (!(total > 100)) puts("it's middling") else puts("big")
+-for (…) { if (((((i % mod) == 0)) && ((i != 9)))) { total = (total + i); } … }
++for (…) { if ((i % mod == 0) && (i != 9))         { total = total + i; }   … }
+-if ((!((total > 100)))) { puts('it''s middling'); } else { puts('big'); }
++if (!(total > 100))     { puts("it's middling"); } else { puts("big"); }
 ```
 
 The parentheses come from `group(a, 60)` asking an operand its level; the
-literal from `replace(drop(x, 1, 1), "''", "'")`.
+literal from `replace(drop(x, 1, 1), "''", "'")`. `tests/pascal.sh` compiles
+what the second one emits and runs it, and the first is expected **not** to
+compile — that literal is the only thing wrong with it, and a string template
+has no way to write it (§8.1).
 
 ---
 

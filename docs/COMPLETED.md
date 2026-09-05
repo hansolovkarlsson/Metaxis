@@ -10,6 +10,59 @@ argued away.*
 
 Newest first.
 
+## Stage 1 begins: Pascal declares its variables, and a compiler checks the C
+
+`examples/pascal.pt` and `examples/code.pt` now read `program`, a `var` section
+with comma-separated declarations, `integer` and `boolean`, and an outer
+`begin … end.` that becomes `main`. What comes out of `code.pt` is a whole C
+program, `#include` and all, and `tests/pascal.sh` compiles it, runs it, and
+checks the number it prints.
+
+```
+ok      pascal.sh: the C compiles, runs, and computes 39
+            pascal.pt still cannot spell C's quotes -- as recorded
+```
+
+**The number is the point.** Every other example is pinned to a recorded `.out`,
+which catches a change and nothing else — an expansion can be wrong in any way
+that still looks plausible and the diff passes it. `39` is what the Pascal
+computes, worked out from the Pascal; if `mod`, the precedence, the loop or a
+branch were translated wrongly it would be some other number and nothing else in
+the suite would have to notice. That is what choosing C as the target buys, and
+`tests/hygiene.sh` had been the only place collecting it.
+
+**It paid immediately.** Both files had been emitting `if (c) x = 1 else x = 2`,
+which is not C: a branch that is an expression needs a `;` before the `else`, and
+a branch that is a block must not have one. Wrong since the day they were
+written, green in every recorded output the whole time, because it was plausible.
+Every branch is now braced, which is correct either way.
+
+**And it named the next mechanic.** Which of those two a branch is depends on the
+rule that filled the hole, and that is exactly what `terminated` already records
+— per rule, tracked through the parse. A template cannot ask: `level(h)` reads
+`Bind.level` and there is no `Bind.terminated` beside it. So the braces are the
+brace-shaped twin of `pascal.out`'s parenthesis noise, with the same cause, and
+`terminated(h)` is on the roadmap with a customer that asked for it rather than
+a guess that it would be wanted.
+
+**`var` needed no new machinery**, which was the useful thing to learn about the
+stage. A type is a quoted *word* rather than a `name` hole, because a hole
+splices the token it matched and `integer` has to come out as `int`; `,` is an
+ordinary infix rule at 20 and `:` one at 15, so `total, mod: integer` parses the
+way it reads; and `var` is a rule that does nothing to what follows it, which is
+what lets one `var` cover a section the way Pascal writes it. Everything else
+stage 1 still wants — `procedure`, `function`, `repeat`, `case` — is the same
+kind of work.
+
+**The half that stays wrong is pinned too.** `pascal.pt` cannot translate
+`'it''s'` into `"it's"`, and its output is the one in this tree expected *not*
+to compile. `tests/pascal.sh` fails if it ever starts, so whoever fixes it has
+to edit the test and the file's closing note in the same commit — the same
+device `tests/hygiene.sh` uses on `bump: 105 0`, for the same reason.
+
+*Verified at 10 examples, 36 error cases, `tests/hygiene.sh` and
+`tests/pascal.sh`; `make check` clean.*
+
 ## Two files declaring one thing, and the word a file says it with
 
 Three things could be declared twice and quietly were: a rule's pattern, a

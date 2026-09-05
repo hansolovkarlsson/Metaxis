@@ -52,38 +52,55 @@ we find out which.
 
 ---
 
-## 1 · Stage 1 — the C that `examples/pascal.pt` emits does not compile
+## 1 · Stage 1 — what Pascal→C still owes, and the one mechanic it asked for
 
-```
-$ pt examples/pascal.pt | cc -xc -
-error: use of undeclared identifier 'total'
-error: use of undeclared identifier 'mod'
-```
+**Where it got to.** `examples/pascal.pt` and `examples/code.pt` now read
+`program`, a `var` section with comma-separated declarations, `integer` and
+`boolean`, and an outer `begin … end.` that becomes `main`. `tests/pascal.sh`
+expands `code.pt`, compiles the C, runs it and checks the number it prints, so
+the arithmetic, the precedence, `mod`, the loop and the branches are checked by
+a compiler and a result rather than by `diff`. `pascal.pt` is expected **not**
+to compile, and that half is pinned too.
 
-Pascal declares its variables and the example has no rule for `var`, so the
-output assigns to names C never heard of. Nothing catches it, because
-`pascal.out` is checked by `diff` and `diff` does not compile anything.
+**The compiler found something the diff never could.** `if (c) x = 1 else x = 2`
+was being emitted, which is not C — a branch that is an expression needs a `;`
+before the `else` and a branch that is a block must not have one. Both files had
+been wrong since the day they were written, and every recorded `.out` was green
+throughout, because the output was plausible.
 
-**Almost none of what stage 1 still wants is a missing mechanic.** Working
-through Pascal against the file: `var a, b: integer`, `procedure`, `function`,
-`repeat … until`, `case … of`, and translating `'it''s'` to `"it's"` are all
-*rules nobody has written yet*, and every one of them is expressible with what
-is already here — a repeated group with a `sep` covers a declaration list and a
-parameter list, a `stmts` hole stopping at `end` covers a body, and
-`examples/code.pt` already translates the literal with `replace(drop(…))`.
+**Which is the mechanic this stage is asking for: `terminated(h)`.** Whether a
+branch needs its semicolon depends on the rule that filled the hole, and that is
+exactly what `terminated` already records — per rule, and tracked through the
+parse in `Out.terminated`. A template cannot ask. `level(h)` reads `Bind.level`
+and there is no `Bind.terminated` beside it, so the fix was to brace every
+branch unconditionally: correct either way, at the cost of `{ }` around a single
+statement. That is the brace-shaped twin of the parenthesis noise, and it has
+the same cause — a template that cannot ask its operand a question. It is a
+small addition next to `level`, and unlike the parentheses it would help the
+string form too, since `terminated` is about which text to write and not about
+which text to bracket.
 
-So stage 1 is mostly writing Pascal down, and the one piece of *tool* work it
-implies is the test: **`tests/pascal.sh`, compiling and running what comes out**,
-on the model of `tests/hygiene.sh`. That test is what makes the rest of the stage
-mean anything, and it cannot pass until `var` exists, which is the right order to
-do them in.
+**What is left to write, none of which needs new mechanics:** `procedure` and
+`function`, `repeat … until`, `case … of`, and the types past `integer` and
+`boolean`. A repeated group with a `sep` covers a parameter list, a `stmts` hole
+stopping at `end` covers a body, and `case` is a repeated group of labelled
+arms.
 
-Two things it will not reach without a decision. `writeln` takes a variable
-number of arguments of mixed type and C wants a format string per type, and this
-tool has no types; and Pascal's `real` alongside its `integer` is the same
-question one layer down. Both are honest limits of a rewriter that moves tokens
-rather than understanding them, and both should be *written down in the example*
-rather than faked.
+**And two that need a decision rather than a rule.** `writeln` takes a variable
+number of arguments of mixed type and C wants a format string per type; there
+are two rules for it now, one for a literal and one for a number, and a third
+argument type means a third rule. Pascal's `real` beside its `integer` is the
+same question one layer down. This tool has no types and is not obviously
+entitled to any: both are honest limits of a rewriter that moves tokens rather
+than understanding them, and both should be *written into the example* rather
+than faked.
+
+**Settled, and staying wrong on purpose.** `pascal.pt` cannot translate
+`'it''s'` into `"it's"`, because a rule cannot match a bare token and so nothing
+can rewrite a literal where it stands — it has to happen inside a rule that has
+a word in it, which is what `code.pt` does inside `writeln`. That is the one
+thing between `pascal.out` and a program that runs, it is recorded in the file's
+own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
 
 ## 2 · Stage 3 — a block that is an indentation
 
