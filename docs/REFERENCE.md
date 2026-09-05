@@ -121,6 +121,7 @@ directive   = "@use"       string
             | "@separator" string [ "=>" string ] [ "override" ]
             | "@syntax"    pattern [ level ] "=>" template { "terminated" | "override" }
             | "@template"  name "(" [ name { "," name } ] ")" code [ "override" ]
+            | "@fragment"  name [ "override" ] "=" pattern
             | "@end" .
 ```
 
@@ -141,7 +142,7 @@ applies — so `"0x[0-9a-fA-F]+|[0-9]+"` takes all of `0x0c` and not just the `0
   string literal would be declared, and how one is declared by accident.
 - **Redeclaring a name is refused** unless the second declaration says
   `override`, which replaces the pattern; rules already written against the
-  class keep working. §3.9.
+  class keep working. §3.10.
 - A class name may be used as a hole's kind (§4.3).
 - A bad pattern is `bad pattern for 'name': …` with the regex library's own
   words after it.
@@ -178,7 +179,7 @@ A separator that contains a newline makes **newline a token** instead of
 whitespace: a run of blank lines is one separator, and no separator is produced
 before the first token or after the last.
 
-**Declaring it twice is refused** unless the second says `override`. §3.9.
+**Declaring it twice is refused** unless the second says `override`. §3.10.
 Nothing may follow but `override`; anything else is `trailing text after
 @separator`.
 
@@ -214,7 +215,7 @@ brace is open, which is what lets the closing `}` sit at the left margin.
 separator is joined after it (§6.3). A code template can also **read** it off a
 hole — `terminated(h)` in §8.3 — which is how a rule decides whether what filled
 a hole needs punctuating. **`override`** says the rule means to displace an
-earlier one with the same pattern (§3.9). Either, both, in either order.
+earlier one with the same pattern (§3.10). Either, both, in either order.
 
 Both go **after the template**, which is the one place in a rule where a bare
 word cannot be anything else — a hole only appears in the pattern — so they
@@ -241,7 +242,7 @@ What it brings is what it declared. `examples/use.pt` takes its arithmetic from
 belong to the file being written and not to the arithmetic in it.
 
 Two used files that declare one thing are refused, and a file says which it
-meant. §3.9.
+meant. §3.10.
 
 ### 3.6 `@mode expression` · `@mode text`
 
@@ -255,8 +256,9 @@ Ends the header. §2.2.
 
 ### 3.8 `@template name(x, y) { … }`
 
-Names a piece of template so it can be called from more than one rule. This is
-the only thing besides a rule that can be named.
+Names a piece of template so it can be called from more than one rule.
+`@fragment` (§3.9) does the same for a piece of *pattern*, and those two are the
+only things besides a rule that can be named.
 
 ```
 @template load(x) {
@@ -283,13 +285,62 @@ the only thing besides a rule that can be named.
   the same name as `fresh("L")` in the rule that called it, which is what lets a
   template finish a construct the rule started (§8.2).
 - At most **8 parameters**. Declaring the same name twice is refused unless the
-  second says `override`, as everything else is (§3.9).
+  second says `override`, as everything else is (§3.10).
 - `examples/asm.pt` is the customer: one `load` against eight call sites.
 
-### 3.9 `override` — two files declaring one thing
+### 3.9 `@fragment name = pattern`
 
-Four things can be declared twice: a rule's pattern, a `@token` class name,
-`@separator`, and a `@template` name. **Unmarked, the second is an error naming both lines.** Marked
+Names a piece of **pattern** so it can be spliced into more than one rule.
+`@template` (§3.8) is the same idea one side over; they are two mechanics and
+not one, for the reasons below.
+
+```
+@fragment params = "(" [ p:name ":" "integer" ]* sep ";" ")"
+
+@syntax "procedure" f:name @params ";" b        => { … }
+@syntax "function"  f:name @params ":" "integer" ";" b  => { … }
+```
+
+- **It is spliced where it is named**, with `@name`, at the point the rule is
+  declared. Its elements are copied in, and from there on nothing can tell them
+  from elements written out by hand: the rule is checked, sealed, matched and
+  clashed (§3.10) as one pattern. `@` can be nothing else in a pattern — an
+  element is a quoted word, a hole, a group or a level — so this reserves no
+  name.
+- **It brings its own holes.** The two rules above splice `{p}` without
+  declaring `p`, because the fragment declared it. That is the difference
+  between a fragment and a hole, and it is why a splice is `@params` rather than
+  a kind: a *kind* says what one hole holds, and a fragment says what sequence
+  of elements goes here.
+- **It takes no arguments and has no scope.** A template is *called* at
+  expansion, takes arguments and can recurse; this is nearer to a macro over
+  pattern text. One directive covering both would be one word meaning two
+  things.
+- **It must be declared before it is spliced** — otherwise
+  `no fragment called '@params'`, the same thing `@token` asks of a class used
+  as a kind (§4.3). Two things come free with that: a fragment cannot splice
+  itself, so no cycle is expressible, and there is no order in which a file
+  could have meant something else.
+- **A fragment may splice a fragment**, since that one is already declared.
+- **A level belongs to a rule, not to a fragment**: it says how tightly *one*
+  rule binds, and a fragment is spliced into any number of them. Writing one is
+  `a level belongs to a rule and not to a fragment`.
+- **Its pattern is checked at each splice**, not at the declaration, because
+  every check in §4.2 is about a *whole* pattern — what stops a greedy hole is
+  the element after it, and a fragment does not know what will follow it.
+- `override` sits **before the `=`**, which is the opposite of everywhere else
+  and is forced: a fragment's pattern runs to the end of the directive, so there
+  is no *after* in which a bare word could not be part of the pattern, and a
+  trailing `override` would be read as a hole of that name. Before the `=` it is
+  a modifier on the declaration, which is what it always was. Rules already
+  spliced from the earlier declaration keep what they copied.
+- `examples/pascal.pt` and `examples/code.pt` are the customers: each wrote one
+  parameter list twice, once in `procedure` and once in `function`.
+
+### 3.10 `override` — two files declaring one thing
+
+Five things can be declared twice: a rule's pattern, a `@token` class name,
+`@separator`, a `@template` name, and a `@fragment` name. **Unmarked, the second is an error naming both lines.** Marked
 `override`, the second wins and nothing is said — because it was said in the
 source.
 
@@ -334,10 +385,11 @@ b.pt:1: this pattern is already declared at a.pt:3
 
 ```ebnf
 pattern     = element { element } .
-element     = string | hole | group .
+element     = string | hole | group | splice .
 hole        = name [ ":" kind ] .
 kind        = "expr" | "stmts" | "text" | a class named by @token .
 group       = "[" element { element } "]" [ rep ] .
+splice      = "@" a name declared by @fragment .
 rep         = ( "*" | "+" ) [ "sep" string ] [ "join" string ] .
 ```
 
@@ -375,6 +427,7 @@ a *nud* rule: it starts one, and does not.
 | a `stmts` hole with no word after it | `a 'stmts' hole needs a word after it to stop at` |
 | an empty group | `a group needs something in it` |
 | a repeated group that could not tell one turn from the next | `…needs a 'sep' to know where one turn stops` |
+| two holes with one name | `two holes called 'p': a template splices a hole by name, so only one of them could ever be reached` |
 
 Two holes may not be adjacent when the first is **greedy** — `expr` or `stmts`,
 the kinds that read up to a word — because it would take everything the second
@@ -382,6 +435,12 @@ wants: given `a b` and input `f x + y`, the first hole takes the sum and the
 second finds nothing. A class-kind hole takes exactly one token and cannot be
 greedy, so `"f" a:name b:name` is allowed. The check looks through a group's
 brackets: a group's last element is adjacent to whatever follows the group.
+
+A pattern may not declare **one hole name twice**. A template splices a hole by
+name and the first one wins, so the second could never be reached — silently,
+until it was refused. Writing it out by hand was always a mistake and nobody had
+made one; splicing a fragment (§3.9) twice into one rule makes it easy to make by
+accident, which is what asked for the check.
 
 Where a body is wanted, a rule takes its own delimiters —
 `"if" "(" c ")" "{" t:stmts "}"` — rather than needing a kind that means *a
@@ -395,6 +454,12 @@ block*.
 | `stmts` | statements separated by the declared separator, up to the pattern's next word. Expanded, and joined with the separator's output form. |
 | `text` | raw source text up to the pattern's next word. Text mode only (§7); in expression mode it is `a 'text' hole belongs to @mode text`. |
 | *a class name* | exactly one token of that class, spliced as its source text. Expression mode only (§7); in text mode it is `'x:name' asks for one token of a class, and text mode has no tokens`. |
+
+**A fragment is not a kind, and does not appear here.** A kind says what *one
+hole* holds; a fragment (§3.9) says what *sequence of elements* goes here and
+brings its own holes, so it is spliced with `@name` in a namespace of its own.
+Naming a `@fragment` and a `@token` class the same thing is therefore not a
+collision, and neither can shadow the other.
 
 A class-kind hole is how a hole says *stop here*:
 
@@ -895,8 +960,8 @@ Every message the tool can produce, and what it means.
 | `'y' is not one of this template's parameters` | §3.8 — a template cannot see the caller's holes |
 | `'level' is a builtin and gives a value — put it in an 'emit'…` | §3.8 |
 | `'t' is a template — it is called as a statement…` | §3.8 |
-| `the template 't' is already declared at f:n` | §3.9 |
-| `'override', but no template 't' was declared before it` | §3.9 |
+| `the template 't' is already declared at f:n` | §3.10 |
+| `'override', but no template 't' was declared before it` | §3.10 |
 | `expected a name after '@template'` · `expected '(' after a template's name` · `expected a parameter name` · `a template's body is a block` | §3.8 |
 | `a template takes at most 8 parameters` | §11 |
 | `templates called more than 64 deep — 't' calls itself without stopping` | §11 |
@@ -904,13 +969,21 @@ Every message the tool can produce, and what it means.
 | `cannot open path` | `@use` |
 | `a used file holds directives and nothing else` | §3.5 |
 | `@use nested more than 64 deep` | §3.5 |
-| `this pattern is already declared at f:n — write 'override' after the template to mean it` | §3.9 |
-| `'override', but nothing with this pattern was declared before it` | §3.9 |
-| `the class 'x' is already declared at f:n — write 'override' to mean it` | §3.9 |
-| `'override', but no class 'x' was declared before it` | §3.9 |
-| `the separator is already declared at f:n — write 'override' to mean it` | §3.9 |
-| `'override', but no separator was declared before it` | §3.9 |
-| `trailing text after @token` · `trailing text after @separator` | a word after the directive that is not one of its own |
+| `this pattern is already declared at f:n — write 'override' after the template to mean it` | §3.10 |
+| `'override', but nothing with this pattern was declared before it` | §3.10 |
+| `the class 'x' is already declared at f:n — write 'override' to mean it` | §3.10 |
+| `'override', but no class 'x' was declared before it` | §3.10 |
+| `the separator is already declared at f:n — write 'override' to mean it` | §3.10 |
+| `'override', but no separator was declared before it` | §3.10 |
+| `no fragment called '@p'` | §3.9 — spliced before it was declared, or never declared |
+| `expected a fragment's name after '@'` | a bare `@` in a pattern — §3.9 |
+| `a fragment needs something in it` | `@fragment p =` with no pattern — §3.9 |
+| `expected a name after '@fragment'` · `expected '=' after a fragment's name` | §3.9 |
+| `a level belongs to a rule and not to a fragment` | §3.9 |
+| `the fragment 'p' is already declared at f:n — write 'override' to mean it` | §3.10 |
+| `'override', but no fragment 'p' was declared before it` | §3.10 |
+| `two holes called 'p': …` | §4.2 |
+| `trailing text after @token` · `trailing text after @separator` · `trailing text after @fragment` | a word after the directive that is not one of its own |
 
 ### In the body
 

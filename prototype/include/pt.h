@@ -96,6 +96,26 @@ typedef struct {
     int    line;
 } Tmpl;
 
+/* A piece of *pattern* with a name -- the other half of naming a fragment, and
+   deliberately not the same mechanic as a template. It is spliced where it is
+   named, at declaration, so by the time any rule is matched its elements are
+   indistinguishable from ones written out by hand: nothing downstream of the
+   header knows a fragment was ever involved.
+
+   That is why it brings its own holes with it and takes no arguments. A
+   template is *called*, has a scope and can recurse; this is nearer to a macro
+   over pattern text, and one directive covering both would be one word meaning
+   two things. It is spliced with `@name`, which is a namespace of its own --
+   not a hole's kind, because a kind says what one hole holds and a fragment
+   says what sequence of elements goes here. */
+typedef struct {
+    char *name;
+    Elem *el;
+    int   nel;
+    char *file;
+    int   line;
+} Frag;
+
 typedef struct {
     Elem *el;
     int   nel;
@@ -133,6 +153,7 @@ typedef struct {
     char   **punct; int npunct;   /* every rule word, longest first */
     Rule    *rule;  int nrule;
     Tmpl    *tmpl;  int ntmpl;
+    Frag    *frag;  int nfrag;
     char *sep_in, *sep_out;
     int   sep_nl;                 /* the separator is a newline     */
     char *sep_file; int sep_line; /* where it was declared          */
@@ -146,6 +167,7 @@ Grammar *grammar_new(void);
    check. Returns 0, or -1 with *err set. */
 int      grammar_seal(Grammar *g, char **err);
 int      class_index(Grammar *g, const char *name);
+int      frag_index(Grammar *g, const char *name);
 
 /* Reads directives from src; *body is set to the offset the body starts at.
    Returns 0, or -1 with *err set. */

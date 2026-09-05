@@ -10,6 +10,65 @@ argued away.*
 
 Newest first.
 
+## `@fragment`: the other half of naming a fragment
+
+```
+@fragment params = "(" [ p:name ":" "integer" ]* sep ";" ")"
+
+@syntax "procedure" f:name @params ";" b               => { … }
+@syntax "function"  f:name @params ":" "integer" ";" b => { … }
+```
+
+`examples/pascal.pt` and `examples/code.pt` each wrote that parameter list
+twice, once in `procedure` and once in `function`, because this tool could name
+a rule and a piece of template and nothing else. Each now writes it once, and
+both files expand byte-identically to what they expanded to before — which is
+what makes it a refactor rather than a rewrite.
+
+**It is spliced, not called, and that is the design decision.** `@template`
+named a piece of template on the same day and the open question was whether
+these were one mechanic or two. They are two. A template is *called* at
+expansion, takes arguments, has a scope and can recurse; a fragment is copied
+into the pattern *at declaration* and has none of those. By the time any rule is
+matched, its elements are indistinguishable from ones written out by hand — the
+rule is checked, sealed, matched and clashed as one pattern, and nothing
+downstream of the header knows a fragment was ever involved.
+
+**It brings its own holes**, which is why the two rules above splice `{p}`
+without declaring `p`. That is also the argument for the spelling. The obvious
+alternative was to write it where a hole's kind goes — `p:params`, which is what
+[direction.md](direction.md) had sketched and what ROADMAP called `@kind`. A
+*kind* says what one hole holds; a fragment says what sequence of elements goes
+here. Putting both in one syntactic slot would have been the same mistake that
+splitting `@template` from this one had just avoided: one position meaning two
+unrelated things. So a splice is `@name`, in a namespace of its own, and a
+`@fragment` and a `@token` class may share a name without either shadowing the
+other.
+
+**It must be declared before it is spliced.** That is what `@token` asks of a
+class used as a kind, and it buys two things: a fragment cannot splice itself,
+so no cycle is expressible and no depth guard is needed, and there is no order
+in which a file could have meant something else. A fragment may splice another
+fragment, since that one is already declared.
+
+**`override` sits before the `=`**, which is the opposite of every other
+directive and is forced rather than chosen. Everywhere else the word goes last,
+because that is the one place a bare word cannot be part of the thing being
+declared. A fragment's pattern runs to the end of the directive, so there is no
+such place after it: a trailing `override` would be read as a hole called
+`override` — precisely the silent misreading the word exists to prevent.
+
+**What it cost was one new refusal, and not the one expected.** A pattern that
+declares one hole name twice is now an error. `bind_put` fills the first hole it
+finds by name, so the second could never be reached; writing that by hand was
+always a mistake and nothing in the tree had ever written one, so nothing
+refused it. Splicing one fragment twice into a rule is two of every hole it
+declares, which makes the mistake easy to make by accident — so the check landed
+with the feature that asked for it, and it refuses the hand-written case too.
+
+Verified at 12 examples byte-identical, 59 error cases, `tests/hygiene.sh`,
+`tests/pascal.sh` and `tests/asm.sh`, clean build with no warnings.
+
 ## `@template`: the first thing besides a rule that can be named
 
 ```

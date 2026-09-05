@@ -60,23 +60,34 @@ afternoon of writing Pascal:
 - `Result :=` exists because a rule cannot know which function it is inside.
 
 A fifth instance arrived from stage 2, in a code generator rather than a
-grammar, and it is the one that got answered: `examples/asm.pt` wrote the same
-two lines at eight operands, and `@template` now names them. **The common cause
-is that this tool could name a rule and nothing else**, and the four above are
-the pattern-shaped half of it — still open, as [ROADMAP.md](ROADMAP.md) 1.
+grammar: `examples/asm.pt` wrote the same two lines at eight operands, and
+`@template` now names them. **The common cause is that this tool could name a
+rule and nothing else** — and both halves of that are now built.
 
-The first three want **named, reusable pattern fragments** — something like
+The pattern-shaped half is `@fragment`, spliced with `@name`:
 
 ```
-@kind params = [ n:name ":" t ]* sep ";"
-@syntax "procedure" f:name "(" p:params ")" ";" b => …
+@fragment params = "(" [ p:name ":" "integer" ]* sep ";" ")"
+@syntax "procedure" f:name @params ";" b => …
 ```
 
 which is a non-terminal used as a *fragment to splice*, not as a top-down
 skeleton. It imposes no parse order and costs the bottom-up character nothing.
-**That is the grammar worth adding.** A recogniser grammar over the top is not.
+**That was the grammar worth adding.** A recogniser grammar over the top is not,
+and nothing since has argued otherwise.
 
-The fourth wants something else, and it is the real story.
+**This page sketched it as `@kind params = …`, spliced as `p:params`, and that
+was wrong in a way worth keeping.** A kind says what *one hole* holds; a
+fragment says what *sequence of elements* goes here, and it arrives carrying
+holes of its own. Putting both in the slot after a `:` would have been one
+position meaning two unrelated things — the same mistake that splitting
+`@template` from this one had just avoided, one level down. The name went with
+the spelling: `@fragment` is what this page's own prose had been calling it all
+along.
+
+So of the five instances, the fifth is answered by `@template` and the first
+three by `@fragment`. **The fourth wants something else, and it is the real
+story.**
 
 ## Everything that failed, failed for lack of context
 
@@ -260,17 +271,16 @@ refusing to become. The full accounts are in
 tool. Arithmetic and `num(h)` made an evaluator for expressions and not an
 interpreter. `@template` named a piece of template and, in doing so, settled that
 naming a *pattern* fragment is a second mechanic rather than the same one.
+`@fragment` then built that second mechanic, and refuted this page's spelling
+for it on the way.
 
 **Next, and what would falsify each:**
 
-1. **`@kind`, named pattern fragments** — [ROADMAP.md](ROADMAP.md) 1. Falsified
-   if the duplication it removes turns out to be rarer than two files writing one
-   parameter list twice; nothing else has asked yet.
-2. **Stage 3, Python's blocks** — [ROADMAP.md](ROADMAP.md) 3. Not falsifiable
+1. **Stage 3, Python's blocks** — [ROADMAP.md](ROADMAP.md) 2. Not falsifiable
    until a notation is chosen, because it is the first delimiter the *tool* would
    own rather than one a string declares, and that is a decision before it is a
    task.
-3. **A declared environment.** Falsified if it cannot be made safe across `@use`,
+2. **A declared environment.** Falsified if it cannot be made safe across `@use`,
    because rule locality is worth more than any single feature it would buy.
    Still last, and still the one that would change what this tool is.
 

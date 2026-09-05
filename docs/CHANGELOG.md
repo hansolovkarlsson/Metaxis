@@ -10,6 +10,24 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`@fragment name = pattern`** — a piece of *pattern* with a name, spliced into
+a rule with `@name`. It brings its own holes, so a rule that splices it can
+write `{p}` without declaring `p`; it takes no arguments and has no scope,
+because it is spliced at declaration rather than called at expansion. It must be
+declared before it is spliced, which makes a cycle inexpressible and the order a
+file is written in unable to change the answer. `override` sits before the `=`,
+which is the opposite of every other directive and is forced — a fragment's
+pattern runs to the end of the directive, so a trailing `override` would be read
+as a hole of that name. `examples/pascal.pt` and `examples/code.pt` each wrote
+one parameter list twice and now write it once; both expand byte-identically to
+what they did before.
+
+**A pattern that declares one hole name twice is now refused** —
+`two holes called 'p': a template splices a hole by name, so only one of them
+could ever be reached`. It was always a mistake and nothing had ever written
+one; splicing a fragment twice into a rule makes it easy to make by accident,
+which is what asked for the check.
+
 **`@template name(x) { … }`** — a piece of template with a name, called as a
 statement from a code template and emitting into whatever called it. Its body
 sees its parameters and its own loop variables and nothing else, so it can be

@@ -298,6 +298,59 @@ expect "the template 't' is already declared" <<'EOF'
 @template t(x) { emit x }
 EOF
 
+expect "no fragment called '@nope'" <<'EOF'
+@token name "[A-Za-z_]+"
+@syntax "f" @nope => "x"
+EOF
+
+expect "no fragment called '@p'" <<'EOF'
+@token name "[A-Za-z_]+"
+@syntax "f" @p => "x"
+@fragment p = "a"
+EOF
+
+expect "expected a fragment's name after '@'" <<'EOF'
+@token name "[A-Za-z_]+"
+@fragment p = "a"
+@syntax "f" @ => "x"
+EOF
+
+expect "a fragment needs something in it" <<'EOF'
+@fragment p =
+EOF
+
+expect "expected a name after '@fragment'" <<'EOF'
+@fragment = "a"
+EOF
+
+expect "expected '=' after a fragment's name" <<'EOF'
+@fragment p "a"
+EOF
+
+expect "a level belongs to a rule and not to a fragment" <<'EOF'
+@fragment p = "a" 50
+EOF
+
+expect "the fragment 'p' is already declared" <<'EOF'
+@fragment p = "a"
+@fragment p = "b"
+EOF
+
+expect "'override', but no fragment 'p' was declared before it" <<'EOF'
+@fragment p override = "a"
+EOF
+
+expect "two holes called 'x'" <<'EOF'
+@token name "[A-Za-z_]+"
+@fragment p = x:name
+@syntax "f" @p "," @p => "y"
+EOF
+
+expect "two holes called 'a'" <<'EOF'
+@token name "[A-Za-z_]+"
+@syntax "f" a:name "," a:name => "{a}"
+EOF
+
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"
 fi

@@ -32,8 +32,8 @@ on introducing new mechanics and test them out properly.*
 Stage 2 landed on 2026-09-05 as `examples/asm.pt` and `tests/asm.sh`. **The
 output side generalises**, which was the question: a rule's value became *the
 code that computes the phrase* rather than the phrase, and nothing in the tool
-had to change for that. What it cost is item 1 below, and what it found is
-[POSTMORTEM.md](POSTMORTEM.md) 10.
+had to change for that. What it cost was `@template`, which is built, and what
+it found is [POSTMORTEM.md](POSTMORTEM.md) 10.
 
 [direction.md](direction.md) says what the stages are ultimately *for*, and why
 stage 2 is assembly rather than another expression language.
@@ -63,31 +63,7 @@ we find out which.
 
 ---
 
-## 1 · `@kind` — the other half of naming a fragment
-
-`@template` named a piece of *template* on 2026-09-05, because
-`examples/asm.pt` had written one out eight times. The pattern side is still
-unnamed: `examples/pascal.pt` and `examples/code.pt` each write
-
-```
-[ p:name ":" "integer" ]* sep ";"
-```
-
-twice, once in `procedure` and once in `function`, because there is no way to
-say it once. `@kind params = …` is that, spliced where it is named.
-
-**They turned out to be two mechanics and not one**, which was the open question
-when `@template` was built. A template fragment is *called at expansion*, takes
-arguments, has a scope and can recurse; a pattern fragment is *spliced at
-declaration* and has none of those — it is nearer to a macro over pattern text
-than to a function. Sharing a directive between them would have meant one word
-meaning two unrelated things.
-
-What is not yet known is whether the pattern side wants parameters too —
-`@kind list(sep) = …` — and there is no customer for that, so the answer is
-probably no until there is one.
-
-## 2 · Stage 1 — what Pascal→C still owes
+## 1 · Stage 1 — what Pascal→C still owes
 
 **Where it got to.** `examples/pascal.pt` and `examples/code.pt` read `program`,
 a `var` section with comma-separated declarations, `integer` and `boolean`, and
@@ -141,7 +117,7 @@ a word in it, which is what `code.pt` does inside `writeln`. That is the one
 thing between `pascal.out` and a program that runs, it is recorded in the file's
 own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
 
-## 3 · Stage 3 — a block that is an indentation
+## 2 · Stage 3 — a block that is an indentation
 
 Python ends a block by out-denting, and there is no way to say that here. Three
 things stand in the way, and only the first is obvious:
@@ -170,7 +146,7 @@ y`, calls, subscripts — need none of this and read correctly today. That is wo
 knowing but is not worth an example on its own: a file that says Python and
 cannot write an `if` claims more than it does.
 
-## 4 · A class named after a kind
+## 3 · A class named after a kind
 
 `@token expr "…"` declares a class that can never be used, because `x:expr` is
 resolved as the *kind* `expr` and the class is never consulted — silently, and
@@ -182,7 +158,13 @@ Refusing the three names at `@token` is about two lines and the message writes
 itself. Found while writing a Python example whose string class was called
 `text`.
 
-## 5 · A budget for expression-mode backtracking
+**`@fragment` deliberately stayed out of this namespace**, which is why it is
+still only these three names and still about two lines. A fragment is spliced
+with `@name` rather than written after a `:`, so a `@fragment` and a `@token`
+class may share a name and neither shadows the other. See
+[COMPLETED.md](COMPLETED.md) for why that was the right side to put it on.
+
+## 4 · A budget for expression-mode backtracking
 
 Candidates under one leading word are retried with the cursor restored, and the
 only thing that stops it is a recursion depth of 400. Text mode was in the same
@@ -197,7 +179,7 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
-## 6 · `@mode` declared twice
+## 5 · `@mode` declared twice
 
 `@token`, `@separator` and a rule's pattern are all refused when declared twice
 without `override` (REFERENCE.md §3.8). `@mode` is the one global that is not:
@@ -211,7 +193,7 @@ question is whether `@mode expression` after `@mode text` is a thing a file
 could ever mean, or whether a second `@mode` should simply be an error with no
 `override` at all.
 
-## 7 · Source maps
+## 6 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -220,7 +202,7 @@ this far down.
 
 ---
 
-## 8 · Alternation inside a pattern — explored, not wanted yet
+## 7 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

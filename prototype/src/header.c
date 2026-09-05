@@ -28,6 +28,13 @@ int class_index(Grammar *g, const char *name)
     return -1;
 }
 
+int frag_index(Grammar *g, const char *name)
+{
+    for (int i = 0; i < g->nfrag; i++)
+        if (!strcmp(g->frag[i].name, name)) return i;
+    return -1;
+}
+
 static void *grow(void *base, int n, size_t size)
 {
     void *p = xmalloc(size * (size_t)(n + 1));
@@ -158,6 +165,25 @@ static const char *KINDS[] = { "expr", "stmts", "text", NULL };
    brackets -- those would be quoted. */
 static Elem *parse_elems(Grammar *g, D *d, Rule *r, int *nout, int depth);
 
+/* Splicing copies. A fragment may be spliced into many rules and each one goes
+   on to be sealed -- `seal_elems` walks a rule's own elements -- so sharing them
+   would make one declaration's words reachable through several rules, which is
+   exactly the aliasing the rest of this file avoids. The strings are copied too:
+   they are what the punctuation set ends up holding. */
+static Elem *elems_copy(const Elem *src, int n)
+{
+    Elem *out = xmalloc(sizeof *out * (size_t)(n + 1));
+    for (int i = 0; i < n; i++) {
+        out[i] = src[i];
+        if (src[i].word) out[i].word = xstrdup(src[i].word);
+        if (src[i].hole) out[i].hole = xstrdup(src[i].hole);
+        if (src[i].sep)  out[i].sep  = xstrdup(src[i].sep);
+        if (src[i].join) out[i].join = xstrdup(src[i].join);
+        if (src[i].sub)  out[i].sub  = elems_copy(src[i].sub, src[i].nsub);
+    }
+    return out;
+}
+
 static int parse_group(Grammar *g, D *d, Rule *r, Elem *e, int depth)
 {
     e->kind = EL_GROUP;
@@ -216,6 +242,32 @@ static Elem *parse_elems(Grammar *g, D *d, Rule *r, int *nout, int depth)
             if (!*w) { derr(d, "an empty word matches nothing"); return NULL; }
             e.kind = EL_WORD;
             e.word = w;
+        } else if (d->s[d->i] == '@') {
+            /* A splice. `@` can be nothing else here -- a pattern element is a
+               quoted word, a hole, a group or a level -- so this reserves no
+               name and no file written before today changes meaning. The
+               fragment's elements are copied in where it is named, and from the
+               next line on nothing can tell them from elements written out by
+               hand: the rule is checked, sealed, matched and clashed as one
+               pattern.
+
+               It must already be declared, which is what `@token` asks of a
+               class used as a kind, and it buys the same thing twice over: a
+               fragment cannot splice itself, so no cycle is expressible, and
+               there is no order in which this file could have meant something
+               else. */
+            d->i++;
+            char *fn = dident(d);
+            if (!fn) { derr(d, "expected a fragment's name after '@'"); return NULL; }
+            int fi = frag_index(g, fn);
+            if (fi < 0) { derr(d, xfmt("no fragment called '@%s'", fn)); return NULL; }
+            Frag *f  = &g->frag[fi];
+            Elem *cp = elems_copy(f->el, f->nel);
+            for (int k = 0; k < f->nel; k++) {
+                el = grow(el, nel, sizeof *el);
+                el[nel++] = cp[k];
+            }
+            continue;
         } else if (dtake(d, "[")) {
             if (parse_group(g, d, r, &e, depth) < 0) return NULL;
         } else {
@@ -283,6 +335,33 @@ static int hole_named(const Elem *el, int nel, const char *n)
 int rule_has_hole(Rule *r, const char *name)
 {
     return hole_named(r->el, r->nel, name);
+}
+
+/* Two holes with one name.
+ *
+ * A template splices a hole *by name* and `bind_put` fills the first it finds,
+ * so a pattern declaring one name twice fills one and drops the other --
+ * silently, which is the shape of defect this project keeps meeting. It was
+ * always a mistake and nobody had made it, so nothing refused it. Splicing
+ * makes it easy to make by accident: one fragment named twice in one rule is
+ * two of every hole it declares. So it is refused where the pattern is checked,
+ * and the message names the hole rather than the fragment, because a rule that
+ * wrote the collision out by hand deserves the same answer. */
+static const char *hole_dup(const Elem *el, int nel, char ***seen, int *n)
+{
+    for (int i = 0; i < nel; i++) {
+        if (el[i].kind == EL_GROUP) {
+            const char *bad = hole_dup(el[i].sub, el[i].nsub, seen, n);
+            if (bad) return bad;
+            continue;
+        }
+        if (el[i].kind != EL_HOLE) continue;
+        for (int j = 0; j < *n; j++)
+            if (!strcmp((*seen)[j], el[i].hole)) return el[i].hole;
+        *seen = grow(*seen, *n, sizeof **seen);
+        (*seen)[(*n)++] = el[i].hole;
+    }
+    return NULL;
 }
 
 static int check_elems(D *d, Elem *el, int nel)
@@ -377,6 +456,15 @@ static int rule_syntax(Grammar *g, D *d, int line)
         return -1;
     }
     if (check_elems(d, el, nel) < 0) return -1;
+
+    char **seen = NULL;
+    int    nseen = 0;
+    const char *dup = hole_dup(el, nel, &seen, &nseen);
+    if (dup) {
+        derr(d, xfmt("two holes called '%s': a template splices a hole by name,"
+                     " so only one of them could ever be reached", dup));
+        return -1;
+    }
 
     /* The template is checked here rather than at the first use of the rule,
        so that a splice nobody wrote a hole for is an error at the line that
@@ -570,6 +658,66 @@ static int directive(Grammar *g, D *d, const char *file, int line,
         }
         g->tmpl = grow(g->tmpl, g->ntmpl, sizeof *g->tmpl);
         g->tmpl[g->ntmpl++] = t;
+        return 0;
+    }
+    if (!strcmp(name, "fragment")) {
+        char *n = dident(d);
+        if (!n) { derr(d, "expected a name after '@fragment'"); goto fail; }
+        /* `override` sits before the `=`, which is the opposite of everywhere
+           else and is forced. A rule puts it after the template because that is
+           the one place a bare word cannot be anything else; a fragment's
+           pattern runs to the end of the directive, so there is no *after* --
+           a trailing `override` would be read as a hole called `override`,
+           which is precisely the silent misreading the word exists to prevent.
+           Before the `=` it is a modifier on the declaration, which is what it
+           has always been. */
+        int over = dtake(d, "override");
+        if (!dtake(d, "=")) { derr(d, "expected '=' after a fragment's name"); goto fail; }
+
+        Rule scratch;
+        memset(&scratch, 0, sizeof scratch);
+        scratch.level = -1;
+
+        Frag f;
+        memset(&f, 0, sizeof f);
+        f.name = n;
+        f.file = xstrdup(file);
+        f.line = line;
+        f.el   = parse_elems(g, d, &scratch, &f.nel, 0);
+        if (!f.el) goto fail;
+        if (!f.nel) { derr(d, "a fragment needs something in it"); goto fail; }
+        if (scratch.level >= 0) {
+            derr(d, "a level belongs to a rule and not to a fragment: it says how"
+                    " tightly one rule binds, and a fragment is spliced into any"
+                    " number of them");
+            goto fail;
+        }
+        if (dend(d, "@fragment") < 0) goto fail;
+
+        /* A fragment's pattern is not checked here. It is checked at every
+           splice, as part of the rule it lands in, because every check there is
+           about a *whole* pattern: what stops a greedy hole is the element after
+           it, and a fragment does not know what will follow it. */
+        int old = frag_index(g, n);
+        if (old >= 0) {
+            if (!over) {
+                derr(d, xfmt("the fragment '%s' is already declared at %s:%d"
+                             " -- write 'override' to mean it",
+                             n, g->frag[old].file, g->frag[old].line));
+                goto fail;
+            }
+            /* Rules already spliced from the earlier declaration keep what they
+               copied. That is what splicing at declaration means, and it is the
+               same answer `@token override` gives: what was read is read. */
+            g->frag[old] = f;
+            return 0;
+        }
+        if (over) {
+            derr(d, xfmt("'override', but no fragment '%s' was declared before it", n));
+            goto fail;
+        }
+        g->frag = grow(g->frag, g->nfrag, sizeof *g->frag);
+        g->frag[g->nfrag++] = f;
         return 0;
     }
     if (!strcmp(name, "syntax")) {

@@ -152,14 +152,23 @@
 ; front of it, and would stop being enough the moment two parameters had
 ; different types. The loop is the general form; here it is not the shorter one,
 ; and saying so is more use than claiming a win it did not get.
-@syntax "procedure" f:name "(" [ p:name ":" "integer" ]* sep ";" ")" ";" b
+;
+; The list itself is written once. `@fragment` names a piece of *pattern* and
+; `@params` splices it where the list goes; the holes come with it, which is why
+; the bodies below still say `p` without declaring it. It is not a template and
+; takes no arguments -- a template is called at expansion and this is spliced at
+; declaration, so by the time either rule is matched there is nothing left to
+; say a fragment was ever involved.
+@fragment params = "(" [ p:name ":" "integer" ]* sep ";" ")"
+
+@syntax "procedure" f:name @params ";" b
     => {
         emit "void " + f + "("
         if count(p) == 0 { emit "void" }
         for x in p sep ", " { emit "int " + x }
         emit ") " + b
     } terminated
-@syntax "function" f:name "(" [ p:name ":" "integer" ]* sep ";" ")" ":" "integer" ";" b
+@syntax "function" f:name @params ":" "integer" ";" b
     => {
         emit "int " + f + "("
         if count(p) == 0 { emit "void" }

@@ -20,5 +20,5 @@ go. If a paragraph would fit in one of those, it belongs there and not here.
 
 | Day | |
 |---|---|
-| [2026-09-05](2026-09-05.md) | Two roadmap items, a reference audit that found its own first example never ran, and a change of method: one translator at a time. Stage 1 of Pascal→C, checked by a compiler, which paid on the first run and asked for two builtins. |
+| [2026-09-05](2026-09-05.md) | Two roadmap items, a reference audit that found its own first example never ran, and a change of method: one translator at a time. Stage 1 of Pascal→C, checked by a compiler, which paid on the first run and asked for two builtins. Then an afternoon in which three predictions met files and failed, and a third stretch that built `@fragment` and refuted the spelling the plan had written down for it. |
 | [2026-09-04](2026-09-04.md) | The whole project in one day: the premise, the parser, hygiene split in two, both kinds of template, groups, and four wrong turns — including a rule that was wrong while doing exactly what it said. |

@@ -131,9 +131,18 @@
 ; *same* text in front of it, and stops being enough the moment two parameters
 ; have different types. This is the one place in these two files where the code
 ; template buys nothing.
-@syntax "procedure" f:name "(" [ p:name ":" "integer" ]* sep ";" join ", int " ")" ";" b
+;
+; `procedure` and `function` want the identical list, and before `@fragment`
+; there was no way to say it once -- the two lines below were written out twice,
+; and this file and examples/code.pt each did it. The fragment is spliced with
+; `@params` where the list goes, and what the rules see afterwards is what they
+; would have seen written by hand: the holes come with it, so the templates
+; still splice `{p}`.
+@fragment params = "(" [ p:name ":" "integer" ]* sep ";" join ", int " ")"
+
+@syntax "procedure" f:name @params ";" b
     => "void {f}(int {p}) {b}" terminated
-@syntax "function" f:name "(" [ p:name ":" "integer" ]* sep ";" join ", int " ")" ":" "integer" ";" b
+@syntax "function" f:name @params ":" "integer" ";" b
     => "int {f}(int {p}) {b}" terminated
 
 ; Standard Pascal returns by assigning to the function's own name, and that is
