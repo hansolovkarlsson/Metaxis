@@ -287,7 +287,7 @@ block*.
 | `expr` | one expression, at a binding power set by §5. **The default.** |
 | `stmts` | statements separated by the declared separator, up to the pattern's next word. Expanded, and joined with the separator's output form. |
 | `text` | raw source text up to the pattern's next word. Text mode only (§7); in expression mode it is `a 'text' hole belongs to @mode text`. |
-| *a class name* | exactly one token of that class, spliced as its source text. |
+| *a class name* | exactly one token of that class, spliced as its source text. Expression mode only (§7); in text mode it is `'x:name' asks for one token of a class, and text mode has no tokens`. |
 
 A class-kind hole is how a hole says *stop here*:
 
@@ -342,7 +342,7 @@ ask — a code template can (§8.3), and a string template cannot.
 turn that consumes no tokens ends the repetition. A failed optional group, or a
 failed turn, restores both the token cursor and every binding made inside it.
 
-Groups may nest, 16 deep. They are refused in text mode (§7).
+Groups may nest, 16 deep, in either mode.
 
 ---
 
@@ -471,9 +471,19 @@ else is copied through unchanged.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else — `examples/poem.pt`
   declares `-`, `--` and `---` in that order and `---` still wins.
-- **Every hole is text**, whatever kind it was given, and takes the shortest
-  run that lets the rest of the pattern match. A hole with nothing after it
-  takes the rest of the enclosing text.
+- **Every hole is text** and takes the shortest run that lets the rest of the
+  pattern match. A hole with nothing after it takes the rest of the enclosing
+  text.
+- **A class kind is refused here.** `expr` and `stmts` both mean *read up to the
+  word that stops you*, which is what a text-mode hole does anyway, so those
+  degrade honestly and are left alone. A class says something else — *one token,
+  matching this regex* — and text mode has no tokens, so `"[" x:name "]"` took
+  everything up to the `]` and never consulted the kind. It read as if it had
+  worked, which is why it is now refused rather than honoured; honouring it is
+  [ROADMAP.md](ROADMAP.md)'s job if anybody asks. **The check runs once the
+  header has finished**, not in the rule that declared it, because `@mode` is a
+  directive like any other and may be written after the rule, or in the file
+  that `@use`d it.
 - **A hole may not span the word that closes the rule** — the last literal word
   in its pattern, groups looked into. In `"[[" t "|" u "]]"`, a `]]` reached
   before the `|` means the construct has already ended, so the rule fails and
@@ -677,6 +687,7 @@ Every message the tool can produce, and what it means.
 | `a repeated group that ends in a greedy hole and begins with a hole needs a 'sep' to know where one turn stops` | §4.4 |
 | `expected a kind after ':'` | a hole wrote `:` and stopped |
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
+| `'x:name' asks for one token of a class, and text mode has no tokens` | §7 |
 | `a rule needs a pattern` | `@syntax => "…"` |
 | `trailing text after the template` | something after the template that is not `terminated` |
 | `an empty word matches nothing` | `""` as a pattern element |

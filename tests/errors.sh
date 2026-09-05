@@ -169,6 +169,15 @@ expect "cannot open" <<'EOF'
 @use "no-such-file.pt"
 EOF
 
+# The mode is named after the rule on purpose: this is checked once the header
+# has finished speaking, not by the rule that declared it, so the order a file
+# writes its directives in cannot let it through.
+expect "text mode has no tokens" <<'EOF'
+@token name "[a-z]+"
+@syntax "[" x:name "]" => "<{x}>"
+@mode text
+EOF
+
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"
 fi

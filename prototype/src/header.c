@@ -622,10 +622,46 @@ static void seal_elems(Grammar *g, Elem *el, int nel)
     }
 }
 
-void grammar_seal(Grammar *g)
+/* A class-kind hole is the one kind text mode cannot honour.
+ *
+ * `expr` and `stmts` both mean *read up to the word that stops you*, which is
+ * what a text-mode hole does anyway, so those degrade honestly. A class says
+ * something else entirely -- **one token, matching this regex** -- and text
+ * mode has no tokens to say it about, so `"[" x:name "]"` took everything up
+ * to the `]` and the kind was never consulted. It did not fail; it read as if
+ * it had worked. That is the shape of defect this project keeps meeting, so
+ * the hole is refused where it cannot mean what it says.
+ *
+ * The check is here rather than in the rule that declared it because `@mode`
+ * is a directive like any other: a rule may be written before the mode is, or
+ * in a file that `@use` pulled in and that names no mode at all. By the time
+ * the header has finished speaking, the mode is settled and every rule is in. */
+static int seal_check(Grammar *g, Rule *r, Elem *el, int nel, char **err)
+{
+    for (int i = 0; i < nel; i++) {
+        if (el[i].kind == EL_GROUP) {
+            if (seal_check(g, r, el[i].sub, el[i].nsub, err) < 0) return -1;
+            continue;
+        }
+        if (el[i].kind != EL_HOLE || el[i].hk != K_CLASS) continue;
+        *err = xfmt("%s:%d: '%s:%s' asks for one token of a class, and text mode"
+                    " has no tokens -- every hole there is text",
+                    r->file, r->line, el[i].hole, g->cls[el[i].cls].name);
+        return -1;
+    }
+    return 0;
+}
+
+int grammar_seal(Grammar *g, char **err)
 {
     for (int r = 0; r < g->nrule; r++)
         seal_elems(g, g->rule[r].el, g->rule[r].nel);
     if (g->sep_in && !g->sep_nl) seal_word(g, g->sep_in);
     qsort(g->punct, (size_t)g->npunct, sizeof *g->punct, cmp_len);
+
+    if (g->mode == MODE_TEXT)
+        for (int r = 0; r < g->nrule; r++)
+            if (seal_check(g, &g->rule[r], g->rule[r].el, g->rule[r].nel, err) < 0)
+                return -1;
+    return 0;
 }

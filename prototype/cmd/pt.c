@@ -75,7 +75,10 @@ int main(int argc, char **argv)
         fprintf(stderr, "pt: %s\n", err);
         return 1;
     }
-    grammar_seal(g);
+    if (grammar_seal(g, &err) < 0) {
+        fprintf(stderr, "pt: %s\n", err);
+        return 1;
+    }
 
     if (grammar_only) { dump(g); return 0; }
 

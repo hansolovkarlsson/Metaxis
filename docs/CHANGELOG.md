@@ -8,6 +8,16 @@ the reasoning behind any of it, belongs in [the journal](work-journal/) instead.
 Prototype has not been released, so there are no version numbers yet. Entries
 are grouped by the day the work happened, newest first.
 
+## 2026-09-05
+
+**A class-kind hole is refused in text mode.** `@syntax "[" x:name "]"` under
+`@mode text` used to take everything up to the `]` and ignore the kind. It now
+fails: `'x:name' asks for one token of a class, and text mode has no tokens —
+every hole there is text`. `expr`, `stmts`, `text` and a bare hole are
+unaffected, and expression mode is unaffected. The check runs once the whole
+header has been read, so the order a file writes `@mode` and `@syntax` in — and
+whether the rule came in through `@use` — does not change the answer.
+
 ## 2026-09-04
 
 The first day. The notation, the tool, and everything below.

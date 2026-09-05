@@ -10,6 +10,39 @@ argued away.*
 
 Newest first.
 
+## A class-kind hole is refused in text mode
+
+`@syntax "[" x:name "]"` under `@mode text` used to take everything up to the
+`]` and never consult the kind. It is now refused where it is written:
+`'x:name' asks for one token of a class, and text mode has no tokens — every
+hole there is text`.
+
+**Refused rather than honoured, and only the class kind.** `expr` and `stmts`
+both mean *read up to the word that stops you*, which is exactly what a
+text-mode hole already does, so those degrade honestly and were left alone. A
+class kind says something else — *one token, matching this regex* — and text
+mode has no tokens at all to say it about. So it was not a kind being
+approximated; it was a kind being ignored while the file went on looking
+correct. Honouring it, by running the class's regex at that position, is what to
+build if somebody asks for it; nobody has, and refusing costs nothing that
+`:text` or a bare hole does not already give.
+
+**The check runs at seal, not at the rule that declared it**, which is the part
+worth keeping. `@mode` is a directive like any other: a rule may be written
+before the mode is, or in a file that `@use` pulled in and that names no mode at
+all. Checking inside `@syntax` would have caught the file that happens to
+declare its mode first and let the other two through — the same silent pass, one
+directive-order away. Once the header has finished speaking the mode is settled
+and every rule is in, so all three are caught, and the error still points at the
+line and the file that wrote the hole. `grammar_seal` gained an error path for
+it, which is where anything else that only a finished header can decide now
+belongs.
+
+This was the last silent wrongness on the roadmap. Nothing in `examples/` used
+the form, which is why no recorded output changed.
+
+*Verified at 9 examples, 28 error cases, `tests/hygiene.sh`; `make check` clean.*
+
 ## Groups in text mode, and the matcher that made them possible
 
 `[ … ]`, `[ … ]*` and `[ … ]+` work in `@mode text`. `examples/poem.pt` writes a

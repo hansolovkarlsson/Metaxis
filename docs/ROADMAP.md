@@ -12,22 +12,14 @@ it is last.
 
 ---
 
-## 1 · A class-kind hole in text mode
-
-`@syntax "[" x:name "]"` in text mode ignores the kind and takes everything up
-to the `]`, silently. It should either match the class at that position or be
-refused at declaration. The second is one line and is probably right, since a
-`text` hole is what a text-mode rule almost always wants; the first is what
-somebody will eventually ask for.
-
-## 2 · Two files declaring one word
+## 1 · Two files declaring one word
 
 `@use` two files that both declare `"+"` and the later one wins, silently.
 Proto's README has a section on this and a rule; this has neither. The question
 is not how to detect it — that is easy — but what the right answer is: refuse,
 warn, or let a file say which it meant.
 
-## 3 · A budget for expression-mode backtracking
+## 2 · A budget for expression-mode backtracking
 
 Candidates under one leading word are retried with the cursor restored, and the
 only thing that stops it is a recursion depth of 400. Text mode was in the same
@@ -42,7 +34,7 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
-## 4 · Source maps
+## 3 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -51,7 +43,7 @@ this far down.
 
 ---
 
-## 5 · Alternation inside a pattern — explored, not wanted yet
+## 4 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

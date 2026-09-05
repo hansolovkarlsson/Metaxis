@@ -121,7 +121,9 @@ typedef struct {
 } Grammar;
 
 Grammar *grammar_new(void);
-void     grammar_seal(Grammar *g);          /* build the punctuation set */
+/* Builds the punctuation set, then checks what only a finished header can
+   check. Returns 0, or -1 with *err set. */
+int      grammar_seal(Grammar *g, char **err);
 int      class_index(Grammar *g, const char *name);
 
 /* Reads directives from src; *body is set to the offset the body starts at.
