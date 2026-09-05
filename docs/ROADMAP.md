@@ -101,9 +101,11 @@ notation anybody would want, or whether evaluation wants a spelling of its own.
 That is a question about reading, so the answer is a file: a small calculator,
 then a small language with variables, and a look at both.
 
-If it reads well, Prototype is an interpreter generator and
-[direction.md](direction.md) says what that is worth. If it does not, that is a
-result too, and the arithmetic is still worth having.
+If it reads well, Prototype is an interpreter generator, and the phrase
+[direction.md](direction.md) records as the one being aimed at — *a generic
+interpreter generator, meant to prototype a new notation* — becomes true rather
+than aspirational. If it does not read well, that is a result too, and the
+arithmetic is still worth having.
 
 ## 2 · Stage 1 — what Pascal→C still owes
 

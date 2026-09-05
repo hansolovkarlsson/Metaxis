@@ -161,6 +161,46 @@ first projection*. Not by performing projections, which Futamura already does,
 but by producing the artefact they need from a notation that did not exist that
 morning.
 
+## What to call it, and the one thing that would make it true
+
+**Hans, 2026-09-05:** *a generic interpreter generator, meant to prototype a new
+language.* That is the phrase being aimed at, and it is written down here before
+it is true so that it can be scored later rather than drifted into — which is
+what [POSTMORTEM.md](POSTMORTEM.md) 9 says a claim has to be shaped like if it
+is going to teach anything.
+
+**Half of it is true now.** *Meant to prototype* is the honest part and the
+strongest thing about the tool; the only word worth widening is the last one.
+**Notation**, not language: `examples/poem.pt` turns prose into HTML, which is a
+notation and not a language, and the broader word covers the DSL, the config
+format and the markup as well as the thing with an `if` in it.
+
+**The other half is not true yet, and the gap is exactly one roadmap item.**
+Today a `.pt` file emits *text*: it generates translators, and nothing it
+produces runs. Calling it an interpreter generator would be describing
+[ROADMAP.md](ROADMAP.md) 1 as though it had happened. What today's tool is, said
+without flattery, is what `CLAUDE.md` already says — **a language-agnostic
+rewriter whose grammar is declared in the file that uses it**.
+
+So the two descriptions, kept apart on purpose:
+
+| | |
+| --- | --- |
+| **now** | a language-agnostic rewriter; the grammar is declared in the header of the file it reads |
+| **if [ROADMAP.md](ROADMAP.md) 1 lands** | a generic interpreter generator for prototyping notations |
+
+**What would make the second one true is arithmetic and `num(h)`** — one
+operator and one conversion, both small. And the phrase is worth aiming at for a
+reason beyond accuracy: it completes the set. Phoenix makes a compiler, Futamura
+makes a machine, Prototype would make the interpreter, and the section above
+says why the three then compose rather than overlap.
+
+**What would falsify it** is not the build. It is the reading: if
+`=> { emit num(a) + num(b) }` turns out to be a rule nobody wants to write, then
+evaluation wants a spelling of its own and the phrase is premature for a second
+reason as well as the first. When that is known, this section is rewritten to
+say which it was.
+
 ## What it should not become
 
 **A serious C or Python front end.** It plays to every weakness in the table
