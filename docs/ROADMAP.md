@@ -6,7 +6,9 @@ against**, which is a result and stays written down with its reason.
 [notation.md](notation.md)'s "Not done" is the same list seen from the other
 side: what the notation admits it cannot do; [direction.md](direction.md) is the
 longer horizon, and says what these items are **for**. This file is what to do
-about it.*
+about it. And [prior-art.md](prior-art.md) is where an idea with **no** customer
+lives — a survey of what other tools have, so that a feature nobody here has
+asked for does not have to be put on this page to be written down.*
 
 **Stages** below says which translator the work is being driven by, and the
 items are ordered by that first and by how much is wanted after — not by size
@@ -203,6 +205,15 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
+**And the instrument is now specified, one page over.** `pt -g` prints the
+grammar a header built and nothing prints the parse it attempted, so a candidate
+list ordered longest-first with the cursor restored is invisible from outside. A
+trace flag that names each candidate tried, its pattern and the token it died
+on — with a counter — is the measurement this item is asking for and a debugging
+aid for a grammar under construction at the same time.
+[prior-art.md](prior-art.md) § 3.7 has it, and the tools that treat *watching
+the parse* as part of the job rather than a luxury.
+
 ## 4 · `@mode` declared twice
 
 A rule's pattern, `@token`, `@separator`, `@template` and `@fragment` are all
@@ -241,9 +252,44 @@ running it, and this is the smaller sibling.
 or in `tests/hygiene.sh`, which is already the file that checks a property
 rather than an output. A sixth script for one grep is probably one too many.
 
+## 6 · One grammar, two backends
+
+`examples/pascal.pt` and `examples/code.pt` are 280 and 272 lines, and the
+second opens by saying what the duplication is: *"The body below is character
+for character the body of pascal.pt. Every rule is the same rule. The only
+difference is that a template here is `=> { … }` rather than `=> "…"`."* Every
+pattern, every level, every `@token` and every group is written twice, and a
+change to the Pascal grammar has to be made in both or the diff those two files
+exist for stops meaning what it says.
+
+**`@use` cannot help and that is not an oversight.** A used file holds
+directives and nothing else (§3.5), so a file with a body cannot be used; and
+`override` re-declares the *whole rule*, pattern included (§3.10), so overriding
+a template means writing the pattern again — which is the thing being avoided.
+Both restrictions are right for what they were built for.
+
+**Why it is here rather than in [prior-art.md](prior-art.md) with the rest.**
+Ohm separates a grammar from its semantics so that one grammar carries many, and
+ANTLR with StringTemplate makes retargeting by swapping the template set its
+selling point; that is where this item was found. It is on this page and the
+other eight are not because **its customer is two files in this repository**,
+and the cost is paid on every future edit to the Pascal grammar rather than
+hypothetically. [prior-art.md](prior-art.md) § 3.1 has the argument in full.
+
+The shape that fits is a rule carrying more than one template, tagged, with one
+chosen at the command line — `pt -b tight examples/pascal.pt`. The tag namespace
+is new and nothing else is. **And it makes the demonstration better rather than
+worse**: today the argument for the code template is a diff between two files a
+reader has to be told are identical, and then it is a diff between two runs of
+one file, where the identity is a fact instead of a claim.
+
+**What would falsify it.** If the two template sets turn out to want different
+*patterns* often enough that the sharing is a lie. This tree is the evidence
+against that today, and it is the evidence that would change its mind.
+
 ---
 
-## 6 · Source maps
+## 7 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -252,7 +298,7 @@ this far down.
 
 ---
 
-## 7 · Alternation inside a pattern — explored, not wanted yet
+## 8 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

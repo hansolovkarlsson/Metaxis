@@ -10,6 +10,50 @@ argued away.*
 
 Newest first.
 
+## The survey: what else does this, and what they have that this does not
+
+[prior-art.md](prior-art.md). Twenty-six commits in, this project had been
+compared against Proto and against nothing else. Every argument in `docs/` had
+been checked against the code, which is the only thing the tree can check.
+
+**What it is.** Three families, because the tools that do something like this
+fail to be this tool in three different directions rather than one — a codemod
+family that is agnostic in delivery and not in kind (Comby ships a delimiter
+description per language and cannot read a notation invented this morning), a
+transformation-system family that reads anything and charges a grammar artefact
+and a build step (TXL, Stratego, Rascal, ANTLR, JastAdd, Silver), and an
+extensible-language family that puts the declaration in the file and always
+declares syntax **for its own host language** (Racket, Seed7, Coq, Prolog,
+Katahdin, SugarJ). Prototype is the third's placement with the second's
+agnosticism, and that is the combination that did not turn up.
+
+**What it cost the tree.** One false claim, corrected:
+[direction.md](direction.md)'s "no other tool here has it" is falsified by four
+of them, and the property is restated with the clause that was missing.
+[POSTMORTEM.md](POSTMORTEM.md) 17 is the scoring, and it is the first entry here
+scored by evidence from outside the repository.
+
+**What it found that is worth keeping.** META II wrote quoted literals on the
+pattern side and quoted output inside `.OUT` in 1964, which is this notation's
+premise, both halves, on a machine with 8K of six-bit memory. `examples/code.pt`
+is 272 lines duplicated from `examples/pascal.pt` and that is a maintenance cost
+rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 6. And **collection
+attributes** (JastAdd, Silver) are a better-shaped answer to
+[direction.md](direction.md)'s declared environment than the key/value store it
+sketches: contribution is union rather than assignment, so two `@use`'d files
+contributing is the intended case and rule locality survives — with a price this
+tool is exposed to, since the aggregate is not known until the last contribution
+and a one-pass tool would need a placeholder resolved afterwards.
+
+**And what it deliberately did not do.** Nine candidates were found and **one**
+became a roadmap item. That page's rule, written the same morning, is that a
+mechanic is picked by finding the translator that would ask for it; a survey
+finds mechanics the other way round, so the eight without a customer stayed in
+`prior-art.md`, which is now where an idea with no customer lives.
+
+Verified at 13 examples, 69 error cases and five check scripts, green — no code
+changed.
+
 ## Stage 3: a block that is an indentation
 
 ```
@@ -112,7 +156,7 @@ operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
 print `40 80 50`.
 
 **What the example does not do, in its own closing note.** `elif` is one rule
-per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 7 declines to build
+per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 8 declines to build
 for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
 thing rather than reading it. C's types come off Python's annotations or nowhere,
 which is the stage-1 wall in its honest form. And the example says `twice`

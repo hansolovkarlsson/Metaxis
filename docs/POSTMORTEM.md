@@ -11,6 +11,56 @@ Newest first.
 
 ---
 
+## 17 · A claim the page could not check, on the page that says it checks every claim
+
+**Issue.** [direction.md](direction.md) closed with **"One property, and no
+other tool here has it: the language definition and the program that uses it
+live in the same file and are read in one pass."** Four tools falsify it as
+written. Seed7 declares a statement's keywords, holes and priority in the
+program and uses it on the next line. Coq's `Notation` takes quoted words, bare
+holes, a level and an associativity. Katahdin lets a running program modify its
+own grammar. Prolog's `:- op(700, xfx, ===)` has done the smallest version of it
+since 1972.
+
+**What found it.** The first survey of tools outside this repository, run
+because it was asked for. Nothing in the tree could have found it: the suite has
+no opinion about Seed7, and neither has Proto.
+
+**Root cause.** The page's own note says *every claim in it that could be
+checked against the code has been*, and that clause is doing far more work than
+it reads as doing. **It scopes verification to what this repository contains —
+and the one claim on the page that was about the outside world is precisely the
+one the scope excludes.** The sentence reads as rigour and is, for every claim
+it was written for; the claim it was not written for sat under it for a day
+wearing the same authority as the rest.
+
+**Solution.** The section is rewritten rather than appended to, which is what
+that page requires of itself. What survives is a conjunction: the definition and
+the program in one file, in one pass, **and neither the language read nor the
+language written is the tool's own** — the clause that separates a rewriter from
+an extensible language, and the reason none of the four can be pointed at Pascal
+on Monday and arm64 on Tuesday. [prior-art.md](prior-art.md) § 2 holds the
+evidence, and is where the next claim of this kind gets checked.
+
+**Learnings.** **A verification rule is only as wide as the claims it was
+written for, and it does not announce the difference.** Every claim about the
+tool had been checked; the one claim about the *field* had never been checkable,
+and the note covering both did not distinguish them. What would have caught it
+is the thing that eventually did: going and looking, once, at what else exists.
+
+And the shape is 16 one step further out. That entry was **prose describing the
+tree drifting from the tree**, and its answer was to run a command instead of
+re-reading a sentence. This one is prose about the world that was never checked
+against the world at all, and its answer is that **some sentences have no
+command in this repository** — for those, the only instrument is a survey, and
+until yesterday this project had never run one.
+
+The correction is also the argument for doing it. The claim got *smaller* and
+*better* in the same edit: what it now says is what the tool is for, where what
+it said before was a boast about being first, and the boast was the false half.
+
+---
+
 ## 16 · A number counted by hand, wrong on the day it was written, that a close-out read and did not check
 
 **Issue.** `COMPLETED.md`'s entry for `tests/limit.sh` said **"All six places the

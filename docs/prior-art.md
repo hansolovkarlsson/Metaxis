@@ -94,7 +94,7 @@ The convergence is worth writing down rather than hiding. What Prototype has
 that META II did not is the level number in the directive rather than a rule
 per precedence tier, holes named and spliced rather than an output stack, and
 the declaration living in the same file as the thing it reads. What META II had
-that Prototype does not is **alternation** (`/`), which is [ROADMAP.md](ROADMAP.md) 7,
+that Prototype does not is **alternation** (`/`), which is [ROADMAP.md](ROADMAP.md) 8,
 and which every tool in this survey has.
 
 ## 3 · What they have that this does not
