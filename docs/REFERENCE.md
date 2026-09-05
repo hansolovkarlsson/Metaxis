@@ -652,7 +652,8 @@ stmt   = "emit" expr
        | "for" [ name "," ] name "in" expr [ "sep" expr ] code .
 expr   = expr ( "and" | "or" ) expr
        | expr ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) expr
-       | expr "+" expr                        (* text, joined      *)
+       | expr ( "+" | "-" ) expr              (* + joins or adds   *)
+       | expr ( "*" | "/" | "%" ) expr        (* numbers only      *)
        | "not" expr
        | string | integer | name
        | name "(" [ expr { "," expr } ] ")"
@@ -693,11 +694,26 @@ whole difference between the two kinds of template.
 **Truth**: a list is true when it has turns, an integer when it is not zero, a
 text when it is not empty.
 
+**Arithmetic.** `*` `/` `%` bind tighter than `+` `-`, which bind tighter than a
+comparison; `not` binds tighter than all of them, where it always did. `-` `*`
+`/` `%` want **two numbers** and are an error otherwise — nothing here reads a
+number out of text that merely looks like one, and `num(h)` is how a hole says
+it meant one. `+` is the exception and follows comparison's rule: it **adds**
+when both sides are already numbers and **joins** when they are not. Division or
+remainder by zero is an error.
+
+A rule whose template computes rather than writes is what `examples/calc.pt` is:
+`=> { emit num(a) * num(b) }` puts a number back into the parse as the value of
+that subexpression. **Evaluation is eager** — a hole is filled before the
+template runs — so a rule can select between two already-computed values but
+cannot leave one uncomputed. See its header for what that rules out.
+
 | builtin | gives |
 | --- | --- |
 | `matched(h)` | whether `h`'s group matched at all |
 | `count(h)` | how many turns a repeated hole took |
 | `at(h, n)` | the turn at position `n`, counting from 0. Out of range is an error, not an empty string — two groups of different lengths is the mistake `at` exists to catch |
+| `num(h)` | `h`'s text read as a number. The **whole** text or none of it: `'12abc'` is an error, not 12 |
 | `level(h)` | the level of the rule that filled `h`; 1000 for an atom |
 | `terminated(h)` | whether the rule that filled `h` was declared `terminated` (§3.4) — that is, whether `h`'s text already ends a statement. For a `stmts` hole it is the **last** statement that answers; for a bare token, and for a hole nothing filled, it is false |
 | `group(h, n)` | `h`, bracketed in `(` `)` when `level(h) < n` |
@@ -831,6 +847,9 @@ Every message the tool can produce, and what it means.
 | `expected a name after ',' in 'for'` | `for i, in h` — §8.3 |
 | `'for i, i' names the position and the turn the same thing` | §8.3 |
 | `'at' was given 9 and there are 2` | a position past the end of a list — §8.3 |
+| `'*' wants two numbers and was given 'x' and '2' — num(h) reads a hole as one` | §8.3; likewise `-`, `/`, `%` |
+| `'num' wants a number and was given 'x'` | §8.3 |
+| `'/' by zero` | §8.3; likewise `%` |
 | `loops nested more than 32 deep` | §11 |
 | `cannot open path` | `@use` |
 | `a used file holds directives and nothing else` | §3.5 |

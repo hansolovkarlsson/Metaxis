@@ -10,6 +10,61 @@ argued away.*
 
 Newest first.
 
+## Arithmetic, `num(h)`, and a file that runs its language instead of writing it
+
+`-`, `*`, `/` and `%` in a code template, binding tighter than `+` `-`, which
+bind tighter than a comparison. `num(h)` reads a hole's text as a number — the
+whole text or none of it, so `'12abc'` is an error rather than 12. `+` now
+**adds** when both sides are already numbers and **joins** when they are not,
+which is the rule comparison has always used; nothing else about it changed.
+
+`examples/calc.pt` is the first file here with no target language:
+
+```
+@syntax a "*" b 70 => { emit num(a) * num(b) }
+```
+```
+2 + 3 * 4      →   14        (2 + 3) * 4    →   20
+100 - 7 - 3    →   90        100 % 7        →   2
+```
+
+**Nothing about the tool made this possible except the arithmetic.** A rule has
+always taken the values its children produced and combined them into its own;
+the only change is that the combining may now be `*` instead of concatenation.
+That is what [direction.md](direction.md)'s *bottom-up attribute grammar* means
+spelled out, and seeing it run is worth more than the phrase was.
+
+**It reads well, which was the question the experiment was given.** `num` on
+every operand is the only noise and it is deliberate: a hole holds text, and
+reading a number out of text that merely looks like one is the coercion this
+tool refuses everywhere else. So `-` `*` `/` `%` are an error on non-numbers
+rather than a silent zero.
+
+**And it failed a test nobody had written down, which is the result worth
+having.** [ROADMAP.md](ROADMAP.md) and [direction.md](direction.md) both said
+this would make Prototype an interpreter generator. It does not:
+
+```
+if 1 then 10 else (1 / 0)      →      pt: '/' by zero
+```
+
+A hole is filled by parsing and expanding its subexpression **before** the
+template runs, so a rule can select between two values that have already been
+computed and cannot leave one uncomputed. **Evaluation is eager and cannot be
+otherwise.** Every construct an interpreter needs that a calculator does not —
+a short circuit, a loop, a recursion, a definition used before it runs — is a
+thing that must *not* happen, and none of them is reachable.
+
+So what arithmetic bought is exact: an **evaluator for expressions**. The gap to
+an interpreter is **deferral** — a hole held unexpanded and run on demand — which
+is a much larger idea than this was, and is not on the roadmap because nothing
+has asked for it yet. direction.md's naming section is rewritten to say so, and
+records that the risk it had predicted (would it read well?) was not the one that
+bit.
+
+*Verified at 11 examples, 42 error cases, `tests/hygiene.sh` and
+`tests/pascal.sh`; `make check` clean.*
+
 ## `for i, x in h` and `at(h, n)`: two holes of one group, walked together
 
 A repeated group may hold more than one hole, and until now that was a shape

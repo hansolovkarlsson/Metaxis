@@ -96,26 +96,50 @@ that list would be adding structure to solve a context problem.
 If the attribute is text and flows only upward, there are exactly two ways to
 grow, and they are the two halves of an attribute grammar.
 
-### 1 · Let what flows up be a value, not only text
+### 1 · Let what flows up be a value, not only text — **done, and it taught something**
 
-The code template already has integers, booleans and lists; comparison already
-works numerically when both sides are already numbers. What it does not have is
-arithmetic — `+` concatenates, always — and it has no way to read a hole's text
-back as a number. Two small additions and this becomes legal:
+Built on 2026-09-05. `-`, `*`, `/`, `%` and `num(h)` are in, `+` adds when both
+sides are numbers and joins when they are not, and `examples/calc.pt` is the
+first file here that does not translate its language but runs it:
 
 ```
-@syntax a "+" b 60 => { emit num(a) + num(b) }
 @syntax a "*" b 70 => { emit num(a) * num(b) }
 ```
+```
+2 + 3 * 4      ->   14
+100 - 7 - 3    ->   90
+```
 
-and a `.pt` file stops translating its language and starts **evaluating** it.
+**It reads well**, which was the stated question. `num` on every operand is the
+only noise, and it is noise on purpose: a hole holds text, and reading a number
+out of text that merely looks like one is the coercion this tool refuses
+everywhere else.
 
-That is an interpreter generator, and it is nearly free: the code template is
-already an interpreter, with statements, control flow, values and scope. What is
-missing is one operator and one conversion. [ROADMAP.md](ROADMAP.md) 1 is the
-experiment that decides whether the idea is real, and it is deliberately small,
-because the interesting question is not whether it can be built but whether a
-file that evaluates reads as well as a file that translates.
+**And it is not an interpreter generator, which is what the experiment was
+actually worth.** This page said it would be. It is not, and the reason is
+structural rather than a missing feature:
+
+```
+if 1 then 10 else (1 / 0)      →      pt: '/' by zero
+```
+
+A hole is filled by parsing and expanding its subexpression **before** the
+template runs. So a rule can *select* between two values that have already been
+computed, and cannot leave one uncomputed. **Evaluation is eager and cannot be
+otherwise**, which rules out every construct whose meaning is that something does
+*not* happen: a short circuit, a loop, a recursion, a definition used before it
+runs. What arithmetic bought is exact and is worth naming exactly — an
+**evaluator for expressions**, which is a calculator and not an interpreter.
+
+**What the gap actually is, now that it has been measured: deferral.** An
+interpreter needs a hole it can hold without running, and a way to run it later.
+The shape that would fit is a kind that binds the *source* of its subexpression
+rather than the expansion — `text` already does something like this in text mode
+— together with a builtin that re-enters the grammar on demand. That is a much
+larger idea than arithmetic was: it puts the parser back on the stack from
+inside a template, and brings termination questions with it. It is not on
+[ROADMAP.md](ROADMAP.md) yet, because nothing has asked for it and this page has
+already been wrong once about how near it was.
 
 ### 2 · Let a file declare what flows down
 
@@ -161,45 +185,54 @@ first projection*. Not by performing projections, which Futamura already does,
 but by producing the artefact they need from a notation that did not exist that
 morning.
 
-## What to call it, and the one thing that would make it true
+## What to call it — scored 2026-09-05, and the answer moved
 
 **Hans, 2026-09-05:** *a generic interpreter generator, meant to prototype a new
-language.* That is the phrase being aimed at, and it is written down here before
-it is true so that it can be scored later rather than drifted into — which is
-what [POSTMORTEM.md](POSTMORTEM.md) 9 says a claim has to be shaped like if it
-is going to teach anything.
+language.* This section was written the same day to record that phrase before it
+was true, so that it could be scored rather than drifted into. It was scored
+within hours, and it moved, so it is rewritten here rather than added to.
 
-**Half of it is true now.** *Meant to prototype* is the honest part and the
-strongest thing about the tool; the only word worth widening is the last one.
-**Notation**, not language: `examples/poem.pt` turns prose into HTML, which is a
-notation and not a language, and the broader word covers the DSL, the config
-format and the markup as well as the thing with an `if` in it.
+**What held.** *Meant to prototype* is the honest half and the strongest thing
+about the tool. One word widened: **notation**, not language — `examples/poem.pt`
+turns prose into HTML, which is a notation without an `if` in it, and the broader
+word covers the DSL, the config format and the markup too.
 
-**The other half is not true yet, and the gap is exactly one roadmap item.**
-Today a `.pt` file emits *text*: it generates translators, and nothing it
-produces runs. Calling it an interpreter generator would be describing
-[ROADMAP.md](ROADMAP.md) 1 as though it had happened. What today's tool is, said
-without flattery, is what `CLAUDE.md` already says — **a language-agnostic
-rewriter whose grammar is declared in the file that uses it**.
+**What this section got wrong.** It said the other half was *exactly one roadmap
+item* away, and that arithmetic would make it true. Arithmetic landed and it did
+not. `examples/calc.pt` runs its language rather than translating it, and stops
+precisely at the point where an interpreter begins: a hole is expanded before
+the template that uses it runs, so a rule can select between computed values but
+cannot leave one uncomputed. `if 1 then 10 else (1 / 0)` divides by zero.
+Evaluation is eager, and everything an interpreter needs that a calculator does
+not — a short circuit, a loop, a recursion — is a thing that must *not* happen.
 
-So the two descriptions, kept apart on purpose:
+So the three descriptions, kept apart, with the middle one newly earned:
 
 | | |
 | --- | --- |
-| **now** | a language-agnostic rewriter; the grammar is declared in the header of the file it reads |
-| **if [ROADMAP.md](ROADMAP.md) 1 lands** | a generic interpreter generator for prototyping notations |
+| **before 2026-09-05** | a language-agnostic rewriter; the grammar is declared in the header of the file it reads |
+| **now** | that, and an **evaluator for expressions** — a `.pt` file can compute rather than emit, bottom-up and eagerly |
+| **not yet** | a generic interpreter generator for prototyping notations |
 
-**What would make the second one true is arithmetic and `num(h)`** — one
-operator and one conversion, both small. And the phrase is worth aiming at for a
-reason beyond accuracy: it completes the set. Phoenix makes a compiler, Futamura
-makes a machine, Prototype would make the interpreter, and the section above
-says why the three then compose rather than overlap.
+**What the third row now costs is deferral, not an operator.** A hole that can be
+held unexpanded and run on demand — see the first of the two directions above.
+That is a much larger idea than the one this section originally priced, and no
+date is being put on it, because the estimate here has already been wrong once
+in the direction of *too near*.
 
-**What would falsify it** is not the build. It is the reading: if
-`=> { emit num(a) + num(b) }` turns out to be a rule nobody wants to write, then
-evaluation wants a spelling of its own and the phrase is premature for a second
-reason as well as the first. When that is known, this section is rewritten to
-say which it was.
+**The phrase is still worth aiming at**, and for the reason it always was: it
+completes the set. Phoenix makes a compiler, Futamura makes a machine, Prototype
+would make the interpreter, and the section above says why the three then compose
+rather than overlap. What has changed is only the distance, and knowing the
+distance is worth more than the phrase was.
+
+**The method, though, is the part to keep.** A claim written down before the
+evidence, specific enough to be wrong in public, was wrong in public within a
+day — and the useful correction was not the one it predicted. It had named
+*reading* as the risk; reading was fine, and eagerness was the wall. That is the
+ordinary case rather than a surprise, and it is the argument for building the
+cheap thing rather than reasoning about it, which is the same argument
+[POSTMORTEM.md](POSTMORTEM.md) 9 makes about the staging.
 
 ## What it should not become
 
@@ -238,9 +271,11 @@ reason.
    this, because it is the honest test of whether the *output* side generalises
    past targets shaped like the input. If emitting labels and an order is
    painful, that is worth learning before deciding what Prototype is.
-2. **Arithmetic and `num(h)`.** Cheap. Falsified if a file that evaluates reads
-   worse than one that translates — which is a question about how it reads, and
-   so has to be tried rather than argued.
+2. ~~**Arithmetic and `num(h)`.**~~ **Done, 2026-09-05.** It read well, which
+   was the test it was given, and it failed a test nobody had written down:
+   evaluation is eager, so it makes a calculator and not an interpreter. The
+   falsification that mattered was not the one predicted, which is the ordinary
+   case and the reason for building the cheap thing first.
 3. **`@kind`, named pattern fragments.** Falsified if the duplication it removes
    turns out to be rarer than stage 1 suggested.
 4. **A declared environment.** Falsified if it cannot be made safe across `@use`,

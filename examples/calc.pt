@@ -1,0 +1,56 @@
+; calc.pt -- a file that does not translate its language. It runs it.
+;
+; Every other example here rewrites one notation into another and the output is
+; text in some target. This one has no target: each rule computes a number, the
+; number goes back into the parse as the value of that subexpression, and what
+; comes out is an answer.
+;
+; Nothing about the tool made that possible except arithmetic. A rule has always
+; taken the values its children produced and combined them into its own; the
+; only thing that changed is that the combining may now be `*` instead of
+; concatenation. That is what "bottom-up attribute grammar" in docs/direction.md
+; means when it is spelled out.
+;
+; `num(h)` is on every operand and there is no way to leave it off, because a
+; hole holds text and reading a number out of text that merely looks like one is
+; the sort of quiet coercion this tool refuses everywhere else. `+` adds when
+; both sides are already numbers and joins when they are not, which is the rule
+; comparison has always used.
+;
+; **What this file cannot do is the interesting half, and it is the reason
+; docs/direction.md does not yet call this an interpreter generator.** The
+; conditional below picks the right branch. It does not avoid the other one:
+;
+;     if 1 then 10 else (1 / 0)      ->      pt: '/' by zero
+;
+; A hole is filled by parsing and expanding its subexpression *before* the
+; template runs, so both branches have already been computed by the time
+; anything asks which was wanted. Evaluation here is eager and cannot be
+; otherwise, which rules out anything that has to not-happen: a loop, a
+; recursion, a short circuit, a definition used before it is run. What this is,
+; exactly, is an evaluator for expressions.
+
+@token number "[0-9]+"
+@comment "#" eol
+@separator "\n" => "\n"
+
+@syntax "(" e ")"                    => { emit e }
+
+@syntax a "*" b   70                 => { emit num(a) * num(b) }
+@syntax a "/" b   70                 => { emit num(a) / num(b) }
+@syntax a "%" b   70                 => { emit num(a) % num(b) }
+@syntax a "+" b   60                 => { emit num(a) + num(b) }
+@syntax a "-" b   60                 => { emit num(a) - num(b) }
+
+@syntax a "<" b   40                 => { if num(a) < num(b) { emit 1 } else { emit 0 } }
+@syntax a ">" b   40                 => { if num(a) > num(b) { emit 1 } else { emit 0 } }
+
+; It selects. It does not defer -- see the note above.
+@syntax "if" c "then" t "else" f  20 => { if num(c) { emit t } else { emit f } }
+@end
+2 + 3 * 4               # precedence, from the levels and nothing else
+(2 + 3) * 4
+100 / 7                 # integer division, because the values are integers
+100 % 7
+100 - 7 - 3             # left, so 90 and not 96
+if 1 < 2 then 10 * 10 else 0

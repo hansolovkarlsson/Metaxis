@@ -44,7 +44,8 @@ static void cerr(C *c, const char *msg)
 }
 
 static const char *PUNCT[] = {
-    "==", "!=", "<=", ">=", "(", ")", "{", "}", ",", "+", "<", ">", ";", NULL
+    "==", "!=", "<=", ">=", "(", ")", "{", "}", ",", "+", "-", "*", "/", "%",
+    "<", ">", ";", NULL
 };
 
 /* The words the language keeps for itself. A hole may not be called one of
@@ -222,18 +223,43 @@ static Expr *e_not(C *c)
     return primary(c);
 }
 
-static Expr *e_cat(C *c)
+/* `*` `/` `%` bind tighter than `+` `-`, which bind tighter than a comparison.
+   `not` stays where it was, under both, so `not a + b` still reads as it did. */
+static Expr *e_mul(C *c)
 {
     Expr *a = e_not(c);
-    while (a && !c->err && take(c, C_PUNCT, "+")) {
+    for (;;) {
+        if (!a || c->err) return a;
+        const char *op = at(c, C_PUNCT, "*") ? "*"
+                       : at(c, C_PUNCT, "/") ? "/"
+                       : at(c, C_PUNCT, "%") ? "%" : NULL;
+        if (!op) return a;
+        cnext(c);
         Expr *e = mk(E_BIN);
-        e->s = xstrdup("+");
+        e->s = xstrdup(op);
         e->a = a;
         e->b = e_not(c);
         if (!e->b) return NULL;
         a = e;
     }
-    return a;
+}
+
+static Expr *e_cat(C *c)
+{
+    Expr *a = e_mul(c);
+    for (;;) {
+        if (!a || c->err) return a;
+        const char *op = at(c, C_PUNCT, "+") ? "+"
+                       : at(c, C_PUNCT, "-") ? "-" : NULL;
+        if (!op) return a;
+        cnext(c);
+        Expr *e = mk(E_BIN);
+        e->s = xstrdup(op);
+        e->a = a;
+        e->b = e_mul(c);
+        if (!e->b) return NULL;
+        a = e;
+    }
 }
 
 static Expr *e_cmp(C *c)
@@ -382,6 +408,7 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { "matched", 1, "whether a hole's group matched"          },
     { "count",   1, "how many turns a repeated hole took"     },
     { "at",      2, "the turn at a position, counting from 0"  },
+    { "num",     1, "a hole's text read as a number"            },
     { "level",   1, "the level of what filled a hole"         },
     { "terminated", 1, "whether what filled a hole ends a statement" },
     { "group",   2, "a hole, bracketed when its level is lower" },
@@ -641,6 +668,24 @@ static int call(Ev *ev, Expr *e, Val *out)
         *out = v_text(a[0].kind == V_LIST ? a[0].items[n] : as_text(a[0]));
         return 0;
     }
+    if (!strcmp(e->s, "num")) {
+        if (a[0].kind == V_INT) { *out = a[0]; return 0; }
+        char *t = as_text(a[0]);
+        while (*t == ' ' || *t == '\t' || *t == '\n' || *t == '\r') t++;
+        char *end = NULL;
+        long  n = strtol(t, &end, 10);
+        while (end && (*end == ' ' || *end == '\t' || *end == '\n' || *end == '\r')) end++;
+        /* The whole text, or none of it. Reading 12 out of `12abc` is the kind
+           of quiet wrongness this tree keeps finding, and there is no reason to
+           add one on purpose. */
+        if (end == t || !end || *end) {
+            ev->err = xfmt("%s:%d: 'num' wants a number and was given '%s'",
+                           ev->r->file, ev->r->line, as_text(a[0]));
+            return -1;
+        }
+        *out = v_int(n);
+        return 0;
+    }
     if (!strcmp(e->s, "level"))   { *out = v_int(a[0].level);           return 0; }
     if (!strcmp(e->s, "terminated")) { *out = v_bool(a[0].terminated);   return 0; }
     if (!strcmp(e->s, "fresh"))   { *out = v_text(pt_fresh(as_text(a[0]))); return 0; }
@@ -691,9 +736,40 @@ static int eval(Ev *ev, Expr *e, Val *out)
         if (!strcmp(e->s, "and")) { *out = v_bool(truthy(x) && (eval(ev, e->b, &y) == 0 && truthy(y))); return ev->err ? -1 : 0; }
         if (!strcmp(e->s, "or"))  { *out = v_bool(truthy(x) || (eval(ev, e->b, &y) == 0 && truthy(y))); return ev->err ? -1 : 0; }
         if (eval(ev, e->b, &y) < 0) return -1;
-        if (!strcmp(e->s, "+")) { *out = v_text(xfmt("%s%s", as_text(x), as_text(y))); return 0; }
 
-        int num = x.kind == V_INT && y.kind == V_INT;
+        int both = x.kind == V_INT && y.kind == V_INT;
+
+        /* `+` joins text and adds numbers, which is the rule comparison has
+           always used: numeric when both sides already are, and never by
+           reading a number out of text that only looks like one. `num(h)` is
+           how a hole says it meant a number. */
+        if (!strcmp(e->s, "+")) {
+            if (both) { *out = v_int(x.num + y.num); return 0; }
+            *out = v_text(xfmt("%s%s", as_text(x), as_text(y)));
+            return 0;
+        }
+        if (!strcmp(e->s, "-") || !strcmp(e->s, "*") ||
+            !strcmp(e->s, "/") || !strcmp(e->s, "%")) {
+            if (!both) {
+                ev->err = xfmt("%s:%d: '%s' wants two numbers and was given '%s' and"
+                               " '%s' -- num(h) reads a hole as one",
+                               ev->r->file, ev->r->line, e->s, as_text(x), as_text(y));
+                return -1;
+            }
+            if ((e->s[0] == '/' || e->s[0] == '%') && y.num == 0) {
+                ev->err = xfmt("%s:%d: '%s' by zero", ev->r->file, ev->r->line, e->s);
+                return -1;
+            }
+            switch (e->s[0]) {
+            case '-': *out = v_int(x.num - y.num); break;
+            case '*': *out = v_int(x.num * y.num); break;
+            case '/': *out = v_int(x.num / y.num); break;
+            default:  *out = v_int(x.num % y.num); break;
+            }
+            return 0;
+        }
+
+        int num = both;
         int cmp = num ? (x.num < y.num ? -1 : x.num > y.num ? 1 : 0)
                       : strcmp(as_text(x), as_text(y));
         if (!strcmp(e->s, "==")) *out = v_bool(cmp == 0);

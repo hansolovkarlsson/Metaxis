@@ -239,6 +239,29 @@ expect "'at' was given 9 and there are 2" <<'EOF'
 f x, y
 EOF
 
+# Arithmetic never reads a number out of text that only looks like one, so an
+# operand that is not already a number is an error and not a silent zero.
+expect "wants two numbers and was given" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { emit a * 2 }
+@end
+f x
+EOF
+
+expect "'num' wants a number and was given 'x'" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a => { emit num(a) }
+@end
+f x
+EOF
+
+expect "'/' by zero" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { emit num(a) / 0 }
+@end
+f 5
+EOF
+
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"
 fi

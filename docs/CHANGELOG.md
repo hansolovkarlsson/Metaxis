@@ -10,6 +10,17 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**Arithmetic in a code template, and `num(h)`.** `-`, `*`, `/` and `%` are new;
+`*` `/` `%` bind tighter than `+` `-`. They want two numbers and are an error
+otherwise, and `num(h)` reads a hole's text as one — the whole text or none of
+it. **`+` changes**: it adds when both sides are already numbers and joins when
+they are not, which is the rule comparison has always used. `count(a) + count(b)`
+therefore writes `3` where it used to write `12`; nothing in `examples/` did
+that. Division or remainder by zero is an error.
+
+`examples/calc.pt` is the first file here that does not translate its language
+but **runs** it.
+
 **`for i, x in h`, and `at(h, n)`.** A `for` in a code template may name the
 position as well as the turn — first name is the index, counting from 0 — and
 `at(h, n)` takes the turn at a position. Together they walk **two holes of one
