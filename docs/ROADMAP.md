@@ -89,26 +89,43 @@ its arms as `[ v ":" s ]*` and walks the two lists in step;
 `examples/pascal.pt` still folds the pair into one hole with an infix rule,
 because a string template cannot interleave two lists at all.
 
-**What is left to write:** the types past `integer` and `boolean`, which is one
-of the decisions below rather than a rule.
+**`real` is in**, and it is what gave `@fragment` its first two-hole customer.
+A type is now a rule of its own — a word alone, `@syntax "real" => "double"` —
+so a parameter list can hold a *hole* where the type goes and translate each one
+separately. `examples/code.pt` writes `void Scale(int n, double k)` and
+`tests/pascal.sh` compiles and runs it. See COMPLETED.md for what it cost.
 
-**And three that need a decision rather than a rule.**
+**What is left to write:** nothing, for the types this program uses. What
+remains are the two decisions below.
+
+**And two that need a decision rather than a rule.**
 
 - `writeln` takes a variable number of arguments of mixed type and C wants a
   format string per type. There are two rules for it now, one for a literal and
-  one for a number; a third argument type means a third rule.
-- Pascal's `real` beside its `integer` is the same question one layer down, and
-  it reaches the parameter lists too: `join ", int "` writes one type in front of
-  every turn, and a group whose parameters differ needs the loop form.
+  one for a number; a third argument type means a third rule. **`real` did not
+  settle this and deliberately did not try**: a `real` can be declared, passed
+  and typed correctly, and printing one would need the rule to know its
+  argument's type, which is the wall below.
 - **A parameterless procedure cannot be called.** Pascal writes `Banner;` where C
   writes `Banner();`, and nothing distinguishes that from reading a variable
   called `Banner` — the two are the same token in the same position, and telling
   them apart wants a symbol table. That is why the example declares no
   parameterless procedure: it could be written and not called.
 
-This tool has no types and is not obviously entitled to any. All three are
-honest limits of a rewriter that moves tokens rather than understanding them,
-and all three should be *written into the example* rather than faked.
+This tool has no types and is not obviously entitled to any. Both are honest
+limits of a rewriter that moves tokens rather than understanding them, and both
+should be *written into the example* rather than faked — which is what was done
+with the third: `real` went in as far as it goes and stopped where it would have
+needed a symbol table, with the stopping place recorded.
+
+**A third instance of the same wall turned up while doing it.** The obvious way
+to write a declaration is `a ":" t`, with the type as a hole. It cannot be done:
+`1: writeln(11)` and `mod: integer` are both `expr ":" expr`, and nothing
+distinguishes a `case` arm from a declaration without knowing what the left side
+*is*. So the declaration keeps one quoted rule per type while the parameter list
+gets the hole — the difference being that inside `"(" … ")"` after a procedure
+name there is no case arm to be confused with. Context again, from a new
+direction.
 
 **Settled, and staying wrong on purpose.** `pascal.pt` cannot translate
 `'it''s'` into `"it's"`, because a rule cannot match a bare token and so nothing

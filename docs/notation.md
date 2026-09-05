@@ -222,6 +222,22 @@ the plainest customer for the code template (§ *What it costs*), and the reason
 `join` covers only the easy half of per-element output — `examples/code.pt`
 writes the other half with a `for … sep` loop.
 
+**The sharp edge of that is `join` writes one text and cannot vary it.** A
+parameter list is the case, and it stopped being hypothetical on 2026-09-05:
+`Scale(n: integer; k: real)` needs `int` in front of one turn and `double` in
+front of the next, and `join ", int "` can only write the same word before every
+one. So `examples/pascal.pt` emits `void Scale(int n, int k)` — output that
+compiles, links, runs, and is wrong. It is recorded in `examples/pascal.out` and
+pinned by `tests/pascal.sh` for exactly that reason: a failure a compiler will
+not mention is the kind that has to be written down. `examples/code.pt` holds
+the types as a second list and walks the two in step, and gets `double k`.
+
+Underneath it is one limitation, not two: **a string template splices each list
+joined and has no way to interleave two.** The `case` arms met it first and were
+worked around by folding the pair into one value before the group saw it; a
+parameter list cannot be folded that way, because the two lists have to come
+back apart in the output.
+
 **Two holes may not sit next to each other.** Proto's rule, kept, and for
 Proto's reason: given `a b` and `f x + y` the first hole takes the sum and the
 second finds nothing. Proto allows the pair when the second is a `block`; here a

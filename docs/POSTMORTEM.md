@@ -11,6 +11,47 @@ Newest first.
 
 ---
 
+## 13 · A file warned about its own trap, and the trap still had to be stepped around by hand
+
+**Issue.** `examples/pascal.pt` reads a `case` arm with a general `a ":" s` rule,
+which is only safe because `a ":" "integer"` is declared above it — both patterns
+are three elements long, so declaration *order* is what decides. The file said so
+in a comment, and finished the thought:
+
+> Add a second type and it goes above this line too — and nothing enforces that,
+> which is the other half of what the workaround costs.
+
+A second type arrived on 2026-09-05. `real` went above that line, and nothing
+enforced it. Had it gone below, `k: real` would have been read as a case arm and
+the file would have emitted `case k: double; break;` — which compiles about as
+well as it reads, but only because this program happens to use `real` in a place
+the compiler objects to. A different program gets silently wrong output.
+
+**Root cause.** Nothing here can express *this rule must be tried before that
+one*. Rules are found longest-first with declaration order breaking the tie, so
+a tie between two three-element patterns is settled by a fact about the file's
+layout that no directive states and no check reads.
+
+**Solution.** None, and that is the entry. The comment was updated to record
+that its own prediction came due and was still handled by hand.
+
+**Learnings.** **A warning in a comment is not a mechanism, and writing an
+accurate one does not discharge the risk.** This is the best case for a comment
+— specific, correctly located, correctly predicting both the trigger and the
+consequence — and it still did nothing except be right. What made it safe was
+that somebody read it at the moment they were changing that file.
+
+Worth separating from the other thing this repository does with limits, which
+*does* work: `bump: 105 0` and the `it''s` literal are recorded in output and
+pinned by a test, so a change trips something. The difference is not
+documentation versus code; it is **whether the record is downstream of the thing
+it describes**. A pinned output is; a comment beside the rule is not.
+
+The narrow version, for when this is met again: **an ordering constraint between
+two declarations is invisible to every check here.** Anything relying on one
+should say so at the point of the *later* declaration, which is where somebody
+inserting a third will be looking.
+
 ## 12 · A `for` inside a template read through a null rule and crashed
 
 **Issue.** `@template` landed on 2026-09-05 with `for` legal in a template body,

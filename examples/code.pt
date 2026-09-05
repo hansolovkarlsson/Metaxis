@@ -58,9 +58,21 @@
 ; come out as `int`, and a hole would splice the token it matched.
 @syntax "program" n:name                       => { emit "/* " + n + " */\n#include <stdio.h>" } terminated
 @syntax a "," b                   20           => { emit a + ", " + b }
-@syntax a ":" "integer"           15           => { emit "int " + a }
+; A type is a rule of its own, a word alone, so that it can be *read* as well
+; as matched. That is what lets a parameter list hold a hole where the type goes
+; and translate each one on its own -- see the fragment below.
+@syntax "integer"                              => { emit "int" }
+@syntax "boolean"                              => { emit "int" }
+@syntax "real"                                 => { emit "double" }
 
+; The declaration still names the type as a quoted word, one rule per type, and
+; cannot use the hole. `a ":" t` would read every `case` arm as a declaration:
+; `1: writeln(11)` and `mod: integer` are both `expr ":" expr` and nothing here
+; tells them apart. That is the context wall again -- the same one `writeln` and
+; a parameterless call sit against -- reached this time from the type side.
+@syntax a ":" "integer"           15           => { emit "int " + a }
 @syntax a ":" "boolean"           15           => { emit "int " + a }
+@syntax a ":" "real"              15           => { emit "double " + a }
 @syntax "var" d                                => { emit d }
 
 ; A block's last statement needs its own semicolon: @separator puts one
@@ -145,13 +157,19 @@
         emit s
     }
 
-; A parameter list, and the one place where the two forms come out the same.
-; `p` is a hole inside a repeated group, so it is a **list**, and a loop writes
-; `int ` in front of each turn. examples/pascal.pt gets identical text out of
-; `join ", int "` -- which is enough because every turn needs the same word in
-; front of it, and would stop being enough the moment two parameters had
-; different types. The loop is the general form; here it is not the shorter one,
-; and saying so is more use than claiming a win it did not get.
+; A parameter list, and the place the two forms finally part company.
+; `p` is a hole inside a repeated group, so it is a **list**; `t` is a second
+; one holding the type of each turn, and the loop below walks them in step with
+; `for i, x in p` and `at(t, i)`. That is what lets `Scale(n: integer; k: real)`
+; come out as `void Scale(int n, double k)`.
+;
+; examples/pascal.pt cannot. `join ", int "` writes one word in front of every
+; turn and cannot vary it, and a string template splices each list joined with
+; no way to interleave two -- so that file writes `int k` for a `real` and its
+; recorded output carries the wrong type on purpose. This used to be the one
+; place in these two files where the code template bought nothing. It is now
+; the clearest place it buys something, and the argument is the diff between
+; the two recorded outputs rather than this paragraph.
 ;
 ; The list itself is written once. `@fragment` names a piece of *pattern* and
 ; `@params` splices it where the list goes; the holes come with it, which is why
@@ -159,24 +177,24 @@
 ; takes no arguments -- a template is called at expansion and this is spliced at
 ; declaration, so by the time either rule is matched there is nothing left to
 ; say a fragment was ever involved.
-@fragment params = "(" [ p:name ":" "integer" ]* sep ";" ")"
+@fragment params = "(" [ p:name ":" t ]* sep ";" ")"
 
 ; And the body once, which is where the two mechanics meet: the pattern is
 ; shared by `@params` and the template by `subprogram`, and the only thing left
 ; that differs between a procedure and a function is C's return type. A list
 ; goes through a template parameter unchanged -- `p` arrives as a list and the
 ; loop below walks it -- which nothing had asked for until this call site.
-@template subprogram(ret, f, p, b) {
+@template subprogram(ret, f, p, t, b) {
     emit ret + " " + f + "("
     if count(p) == 0 { emit "void" }
-    for x in p sep ", " { emit "int " + x }
+    for i, x in p sep ", " { emit at(t, i) + " " + x }
     emit ") " + b
 }
 
 @syntax "procedure" f:name @params ";" b
-    => { subprogram("void", f, p, b) } terminated
-@syntax "function" f:name @params ":" "integer" ";" b
-    => { subprogram("int", f, p, b) } terminated
+    => { subprogram("void", f, p, t, b) } terminated
+@syntax "function" f:name @params ":" rt ";" b
+    => { subprogram(rt, f, p, t, b) } terminated
 
 ; Free Pascal's `Result`, for the reason examples/pascal.pt gives.
 @syntax "Result" ":=" e                        => { emit "return " + e }
@@ -197,6 +215,11 @@ var
   C ones. }
 
 procedure Show(n: integer);
+begin
+  writeln(n)
+end;
+
+procedure Scale(n: integer; k: real);
 begin
   writeln(n)
 end;
@@ -244,5 +267,6 @@ begin
   end;
 
   Show(Double(total));
+  Scale(7, 2);
   Pair(total, 2)
 end.

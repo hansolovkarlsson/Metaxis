@@ -54,6 +54,15 @@
 @syntax "program" n:name                       => "/* {n} */\n#include <stdio.h>" terminated
 @syntax a "," b                   20           => "{a}, {b}"
 @syntax a ":" "integer"           15           => "int {a}"
+@syntax a ":" "real"              15           => "double {a}"
+
+; A type is also a rule of its own, a word alone, so the parameter list below
+; can hold a hole where the type goes. This file cannot *use* what that hole
+; reads -- see the note there -- but without it a `real` parameter would not
+; parse at all, and the two files must read the same program.
+@syntax "integer"                              => "int"
+@syntax "boolean"                              => "int"
+@syntax "real"                                 => "double"
 
 ; A case arm, and the price of a string template paid in the pattern rather
 ; than in the output. `case n of 1: a; 2: b end` wants its arms to be a repeated
@@ -64,10 +73,12 @@
 ; with `for i, x in v` and `at(s, i)`, which is what that pair of additions was
 ; built for.
 ;
-; This is safe only because the type rule above is declared first: both patterns
-; are three elements long, so declaration order is what tries `: integer` before
-; `: anything`. Add a second type and it goes above this line too -- and nothing
-; enforces that, which is the other half of what the workaround costs.
+; This is safe only because the type rules above are declared first: both
+; patterns are three elements long, so declaration order is what tries
+; `: integer` before `: anything`. That warning used to end "add a second type
+; and it goes above this line too -- and nothing enforces that". A second type
+; arrived, `real` went above this line, and nothing enforced it: the file said
+; where the trap was and the trap still had to be stepped around by hand.
 @syntax a ":" s                   15           => "case {a}: {s}; break;"
 @syntax a ":" "boolean"           15           => "int {a}"
 
@@ -126,11 +137,22 @@
 ; is where that happens: `join ", int "` puts the word back between the turns
 ; and the template writes the first one.
 ;
-; It comes out identical to the loop examples/code.pt uses, which is worth
-; knowing rather than glossing: `join` is enough whenever every turn needs the
-; *same* text in front of it, and stops being enough the moment two parameters
-; have different types. This is the one place in these two files where the code
-; template buys nothing.
+; That used to come out identical to the loop examples/code.pt uses, and this
+; note used to say so and add that `join` "stops being enough the moment two
+; parameters have different types". It does. `Scale(n: integer; k: real)` is in
+; the program below, and this file writes
+;
+;     void Scale(int n, int k)
+;
+; where `double k` was declared. **That is wrong output and it is recorded on
+; purpose**, the same way this file's Pascal string literal is: `join` writes
+; one word in front of every turn and cannot write a different one per turn, so
+; the type hole `t` in the fragment above is read and then thrown away, because
+; a string template splices each list joined and has no way to interleave two.
+; examples/code.pt walks the two lists in step and gets `double k` right.
+;
+; So the parameter list, which was the one place in these two files where the
+; code template bought nothing, is now the clearest place it buys something.
 ;
 ; `procedure` and `function` want the identical list, and before `@fragment`
 ; there was no way to say it once -- the two lines below were written out twice,
@@ -138,11 +160,11 @@
 ; `@params` where the list goes, and what the rules see afterwards is what they
 ; would have seen written by hand: the holes come with it, so the templates
 ; still splice `{p}`.
-@fragment params = "(" [ p:name ":" "integer" ]* sep ";" join ", int " ")"
+@fragment params = "(" [ p:name ":" t ]* sep ";" join ", int " ")"
 
 @syntax "procedure" f:name @params ";" b
     => "void {f}(int {p}) {b}" terminated
-@syntax "function" f:name @params ":" "integer" ";" b
+@syntax "function" f:name @params ":" rt ";" b
     => "int {f}(int {p}) {b}" terminated
 
 ; Standard Pascal returns by assigning to the function's own name, and that is
@@ -167,6 +189,11 @@ var
   C ones. }
 
 procedure Show(n: integer);
+begin
+  writeln(n)
+end;
+
+procedure Scale(n: integer; k: real);
 begin
   writeln(n)
 end;
@@ -214,11 +241,13 @@ begin
   end;
 
   Show(Double(total));
+  Scale(7, 2);
   Pair(total, 2)
 end.
 
-(* One thing this file does not do, and the omission is now the only thing
-   standing between what comes out and a program that runs.
+(* Two things this file does not do. The first still stops the output being a
+   program that runs; the second compiles and is simply wrong, which is worse
+   and is why it is recorded rather than left to be discovered.
 
    The apostrophe string reaches the output as Pascal spelled it --
    puts('it''s middling') -- because a `string` hole splices the source text it
@@ -233,6 +262,19 @@ end.
    translation has to happen in a rule that has a word in it, which is what
    examples/code.pt does inside `writeln`. This is a string template being
    honest: the tool moved the token, it did not understand it.
+
+   The second is the type in a parameter list. `Scale(n: integer; k: real)`
+   comes out as void Scale(int n, int k), because `join ", int "` writes one
+   word in front of every turn and a string template has no way to write a
+   different one per turn. It compiles. It links. It runs. And `k` is the wrong
+   type, which no compiler here will say and no diff would have questioned --
+   so examples/pascal.out carries it deliberately, and the diff against
+   examples/code.out, which gets `double k`, is the argument.
+
+   The two failures are worth telling apart. The literal is a thing this
+   notation *cannot express*. The type is a thing it expresses *wrongly and
+   quietly*, and only the second kind needs to be written down, because the
+   first announces itself.
 
    This note is in a Pascal comment because it is below @end, and below @end
    the only comments are the ones this file declared. *)

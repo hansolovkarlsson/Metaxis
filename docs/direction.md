@@ -54,7 +54,11 @@ afternoon of writing Pascal:
   in two places.
 - The arms of `case` could not be `[ v ":" s ]` in a string template, so
   `examples/pascal.pt` declares an infix `a ":" s` rule meaning *case arm* and
-  folds the pair into one value before the group sees it.
+  folds the pair into one value before the group sees it. **A parameter list
+  whose types differ is the same limitation with no workaround**: the two lists
+  have to come back apart in the output, so folding cannot help, and that file
+  writes `int k` for a parameter declared `real` — recorded, and pinned by
+  `tests/pascal.sh`.
 - `var a, b: integer` is read by reusing the `,` and `:` operator rules, which
   works and is a structural hack.
 - `Result :=` exists because a rule cannot know which function it is inside.

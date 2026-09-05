@@ -10,6 +10,62 @@ argued away.*
 
 Newest first.
 
+## Pascal's `real`, and the first parameter list whose types differ
+
+```
+procedure Scale(n: integer; k: real);
+
+examples/code.out     void Scale(int n, double k)
+examples/pascal.out   void Scale(int n, int k)      <- recorded, and wrong
+```
+
+**No code changed.** This is entirely in the examples, and it is here because it
+is the first thing to put weight on `@fragment` beyond the case it was built
+for.
+
+**A type became a rule of its own** — `@syntax "real" => "double"`, a word
+alone. That is what lets a parameter list hold a *hole* where the type goes, so
+the fragment is `[ p:name ":" t ]* sep ";"` with **two** holes, and the template
+walks them in step with `for i, x in p` and `at(t, i)`. `@fragment` was argued on
+2026-09-05 against a spelling that would have capped a fragment at one hole; this
+is the customer that would have broken it, arriving the same day.
+
+**The declaration cannot use the hole, and that is a finding.** `a ":" t` reads
+every `case` arm as a declaration: `1: writeln(11)` and `mod: integer` are both
+`expr ":" expr` and nothing tells them apart without knowing what the left side
+is. So declarations keep one quoted rule per type and the parameter list gets
+the hole — legal only because inside `"(" … ")"` after a procedure name there is
+no arm to confuse it with. It is the same context wall as `writeln`, `Banner;`
+and C's `typedef`, reached from the type side.
+
+**The string template writes the wrong type, on purpose.** `join ", int "` puts
+one word in front of every turn and cannot vary it, and a string template
+splices each list joined with no way to interleave two — the same limitation the
+`case` arms met, but with no workaround available, because the two lists have to
+come back apart in the output. So `examples/pascal.pt` emits `int k` for a
+parameter declared `real`: output that compiles, links, runs and is wrong.
+
+**It is recorded and pinned.** `examples/pascal.out` carries it and
+`tests/pascal.sh` fails if it ever stops being true, the same device as that
+file's `it''s` literal and `tests/hygiene.sh`'s `bump: 105 0`. The two failures
+are different in kind and the file's closing note now says so: the literal is
+something the notation *cannot express* and announces itself at the compiler;
+the type is something it expresses *wrongly and quietly*, and only the second
+kind needs writing down.
+
+**The program body is still shared.** Both files read the same Pascal, so every
+difference between the two recorded outputs is still caused by the template form
+alone — which is what makes that diff an argument rather than a comparison of
+two programs. Keeping that was the reason for choosing this over letting the
+bodies diverge.
+
+**What it did not do.** `writeln(k)` is not written, because printing a `real`
+would need the rule to know its argument's type. That is [ROADMAP.md](ROADMAP.md)
+1's remaining decision and it is left there, marked, rather than faked.
+
+Verified at 12 examples, 62 error cases, `tests/hygiene.sh`, `tests/asm.sh`, and
+`tests/pascal.sh` compiling and running the C to `4 44 80 7 42`.
+
 ## A class named after a kind is refused
 
 ```

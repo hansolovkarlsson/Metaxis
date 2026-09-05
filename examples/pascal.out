@@ -5,6 +5,9 @@ int i, n;
 void Show(int n) {
 printf("%d\n", n);
 }
+void Scale(int n, int k) {
+printf("%d\n", n);
+}
 void Pair(int a, int b) {
 printf("%d\n", (a + b));
 }
@@ -31,6 +34,7 @@ case 4: printf("%d\n", 44); break;
 default: printf("%d\n", 0); break;
 }
 Show(Double(total));
+Scale(7, 2);
 Pair(total, 2);
 return 0;
 }
