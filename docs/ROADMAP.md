@@ -181,8 +181,9 @@ there; there is no equivalent here yet.
 
 ## 5 · `@mode` declared twice
 
-`@token`, `@separator` and a rule's pattern are all refused when declared twice
-without `override` (REFERENCE.md §3.8). `@mode` is the one global that is not:
+A rule's pattern, `@token`, `@separator`, `@template` and `@fragment` are all
+refused when declared twice without `override` (REFERENCE.md §3.10). `@mode` is
+the one global that is not:
 a second `@mode` silently replaces the first, which is the same silence the
 `override` work was done to remove, one directive over. It was left out because
 the scope of that work was settled as those three and widening it unasked is

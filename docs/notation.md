@@ -349,7 +349,7 @@ contains this, and does not remove it.
 touch it.** Quoting settles *directive against declaration*. It says nothing
 about two declarations of `"+"`, which is the other problem and a different one,
 and it was answered separately: unmarked, the second is refused naming both
-lines; marked `override`, it wins and nothing is said. REFERENCE.md §3.8.
+lines; marked `override`, it wins and nothing is said. REFERENCE.md §3.10.
 
 **That answer cost a word, and the word could only go in one place.** Everywhere
 left of the `=>` a bare word is a hole — that is the notation's whole premise —
