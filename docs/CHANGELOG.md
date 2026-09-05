@@ -10,6 +10,22 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`override`, and two files declaring one thing.** A rule's pattern, a `@token`
+class name and `@separator` may each be declared only once; a second is an error
+naming both lines. `override` — after the template for a rule, after the
+declaration for the other two — says the second means to displace the first, and
+then it wins silently. `override` with nothing to displace is also an error.
+Two rules that only share a leading word are unaffected. A hole may still be
+called `override`.
+
+**`@token` and `@separator` refuse trailing text**, as `@syntax` always has.
+`@token name "…" garbage` used to be accepted and the extra word ignored; it is
+now `trailing text after @token`. This is what makes the optional `override`
+after them unambiguous.
+
+**`@use` reads a file once**, however many times it is reached, so a diamond
+costs nothing and a cycle ends rather than hitting the depth guard.
+
 **A class-kind hole is refused in text mode.** `@syntax "[" x:name "]"` under
 `@mode text` used to take everything up to the `]` and ignore the kind. It now
 fails: `'x:name' asks for one token of a class, and text mode has no tokens —

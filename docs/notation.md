@@ -94,9 +94,9 @@ header      = { directive } [ "@end" ] .
 
 directive   = "@use"       string
             | "@mode"      ( "expression" | "text" )
-            | "@token"     name string
+            | "@token"     name string [ "override" ]
             | "@comment"   string ( string | "eol" )
-            | "@separator" string [ "=>" string ]
+            | "@separator" string [ "=>" string ] [ "override" ]
             | "@syntax"    pattern [ level ] "=>" template
             | "@end" .
 
@@ -127,9 +127,10 @@ output with. Without the second half the input text is reused. A separator of
 uses it.
 
 **`@use`** reads another file's directives into this header. It is looked for
-beside the file that used it, holds directives and nothing else, and stops at
-64 deep. `examples/use.pt` takes its arithmetic from `lib/arith.pt` and keeps
-its own comment and separator, which is the division that file is for.
+beside the file that used it, holds directives and nothing else, is read once
+however many times it is reached, and stops at 64 deep. `examples/use.pt` takes
+its arithmetic from `lib/arith.pt` and keeps its own comment and separator,
+which is the division that file is for.
 
 **`@end`** ends the header. Without it the header ends at the first line that
 does not begin a directive. Either way it is one-way: below it nothing is a
@@ -339,9 +340,20 @@ fine; declaring `"<"` and then `@use`-ing a file that adds `"<<"` re-lexes every
 `a < <b` that was already written. Reading the whole header before the body
 contains this, and does not remove it.
 
-**Collision between two used files is unchanged.** Quoting settles *directive
-against declaration*. It says nothing about two declarations of `"+"`, which is
-the other problem and a different one. Today the later one wins, silently.
+**Collision between two used files is a separate problem, and quoting does not
+touch it.** Quoting settles *directive against declaration*. It says nothing
+about two declarations of `"+"`, which is the other problem and a different one,
+and it was answered separately: unmarked, the second is refused naming both
+lines; marked `override`, it wins and nothing is said. REFERENCE.md §3.8.
+
+**That answer cost a word, and the word could only go in one place.** Everywhere
+left of the `=>` a bare word is a hole — that is the notation's whole premise —
+and a rule whose first hole is called `override` is a legal rule. So the one
+place a bare word cannot be mistaken for a hole is *after* the template, where
+`terminated` already lives, and that is where it went. The premise decided the
+syntax rather than being bent around it, which is the case it is supposed to
+earn its keep on; the cost is that a word about the declaration reads at the far
+end of the line from the declaration it is about.
 
 ## Not done
 

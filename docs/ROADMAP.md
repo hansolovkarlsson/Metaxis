@@ -12,14 +12,7 @@ it is last.
 
 ---
 
-## 1 · Two files declaring one word
-
-`@use` two files that both declare `"+"` and the later one wins, silently.
-Proto's README has a section on this and a rule; this has neither. The question
-is not how to detect it — that is easy — but what the right answer is: refuse,
-warn, or let a file say which it meant.
-
-## 2 · A budget for expression-mode backtracking
+## 1 · A budget for expression-mode backtracking
 
 Candidates under one leading word are retried with the cursor restored, and the
 only thing that stops it is a recursion depth of 400. Text mode was in the same
@@ -33,6 +26,20 @@ item is really asking for is the **measurement** — a large program in one of t
 declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
+
+## 2 · `@mode` declared twice
+
+`@token`, `@separator` and a rule's pattern are all refused when declared twice
+without `override` (REFERENCE.md §3.8). `@mode` is the one global that is not:
+a second `@mode` silently replaces the first, which is the same silence the
+`override` work was done to remove, one directive over. It was left out because
+the scope of that work was settled as those three and widening it unasked is
+what the item it came from existed to prevent.
+
+It is small — the same shape as `@separator`'s check — and the only real
+question is whether `@mode expression` after `@mode text` is a thing a file
+could ever mean, or whether a second `@mode` should simply be an error with no
+`override` at all.
 
 ## 3 · Source maps
 

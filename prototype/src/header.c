@@ -81,6 +81,18 @@ static int dtake(D *d, const char *lit)
     return 1;
 }
 
+/* Nothing may follow a directive but its own words. `@syntax` has always said
+   so; the two that now end in an optional bare word have to, because `dtake`
+   matches a prefix and `overridden` would otherwise be read as `override` with
+   three characters silently dropped after it. */
+static int dend(D *d, const char *what)
+{
+    dskip(d);
+    if (d->i >= d->end) return 0;
+    derr(d, xfmt("trailing text after %s", what));
+    return -1;
+}
+
 static int ident_ch(int c) { return isalnum((unsigned char)c) || c == '_'; }
 
 /* A Prototype string: "..." with \" \\ \n \t \r and nothing else. */
@@ -337,10 +349,18 @@ static int rule_syntax(Grammar *g, D *d, int line)
         if (!tmpl) return -1;
         r.tmpl = tmpl;
     }
-    /* `terminated` sits after the template, which is the one place in a rule
-       where a bare word cannot be anything else -- a hole can only appear in the
-       pattern. So it needs no quoting and reserves nothing. */
-    if (dtake(d, "terminated")) r.terminated = 1;
+    /* `terminated` and `override` sit after the template, which is the one
+       place in a rule where a bare word cannot be anything else -- a hole can
+       only appear in the pattern. So they need no quoting and reserve nothing,
+       and `override` in particular could not have gone anywhere else: before
+       the `=>` it would be sitting where the notation says a bare word is a
+       hole, and a rule whose first hole is called `override` is legal. Either
+       order; neither twice. */
+    for (int again = 1; again;) {
+        again = 0;
+        if (!r.terminated && dtake(d, "terminated")) { r.terminated = 1; again = 1; }
+        if (!r.override   && dtake(d, "override"))   { r.override   = 1; again = 1; }
+    }
     dskip(d);
     if (d->i < d->end) { derr(d, "trailing text after the template"); return -1; }
 
@@ -428,9 +448,13 @@ static int directive(Grammar *g, D *d, const char *file, int line,
         if (!n) { derr(d, "expected a class name"); goto fail; }
         char *re = dstring(d);
         if (!re) goto fail;
+        int over = dtake(d, "override");
+        if (dend(d, "@token") < 0) goto fail;
         Class c;
         c.name = n;
         c.src  = re;
+        c.file = xstrdup(file);
+        c.line = line;
         char *anchored = xfmt("^(%s)", re);
         int rc = regcomp(&c.re, anchored, REG_EXTENDED);
         if (rc) {
@@ -440,7 +464,20 @@ static int directive(Grammar *g, D *d, const char *file, int line,
             goto fail;
         }
         int old = class_index(g, n);
-        if (old >= 0) { g->cls[old] = c; return 0; }
+        if (old >= 0) {
+            if (!over) {
+                derr(d, xfmt("the class '%s' is already declared at %s:%d"
+                             " -- write 'override' to mean it",
+                             n, g->cls[old].file, g->cls[old].line));
+                goto fail;
+            }
+            g->cls[old] = c;
+            return 0;
+        }
+        if (over) {
+            derr(d, xfmt("'override', but no class '%s' was declared before it", n));
+            goto fail;
+        }
         g->cls = grow(g->cls, g->ncls, sizeof *g->cls);
         g->cls[g->ncls++] = c;
         return 0;
@@ -463,6 +500,20 @@ static int directive(Grammar *g, D *d, const char *file, int line,
         if (!in) goto fail;
         char *out = NULL;
         if (dtake(d, "=>")) { out = dstring(d); if (!out) goto fail; }
+        int over = dtake(d, "override");
+        if (dend(d, "@separator") < 0) goto fail;
+        if (g->sep_in && !over) {
+            derr(d, xfmt("the separator is already declared at %s:%d"
+                         " -- write 'override' to mean it",
+                         g->sep_file, g->sep_line));
+            goto fail;
+        }
+        if (!g->sep_in && over) {
+            derr(d, "'override', but no separator was declared before it");
+            goto fail;
+        }
+        g->sep_file = xstrdup(file);
+        g->sep_line = line;
         g->sep_in  = in;
         g->sep_out = out ? out : xstrdup(in);
         g->sep_nl  = strchr(in, '\n') != NULL;
@@ -565,6 +616,28 @@ int header_read(Grammar *g, const char *src, const char *file,
     }
 }
 
+/* A file is read once, however many times it is reached.
+ *
+ * Without this a diamond -- `a` and `b` both using `base`, and one file using
+ * both -- declares everything in `base` twice, which under the rule below is a
+ * file colliding with itself over declarations nobody wrote twice. Proto reads
+ * once for exactly this reason. Identity is the resolved path, so two spellings
+ * of one file are one file; a path that cannot be resolved is used as written,
+ * which at worst reads it a second time and cannot read the wrong thing.
+ *
+ * A cycle now ends rather than erroring: the second visit finds the file
+ * already read and returns. The depth guard stays for genuinely deep nesting. */
+static int seen_before(Grammar *g, const char *full)
+{
+    char *real = realpath(full, NULL);
+    const char *key = real ? real : full;
+    for (int i = 0; i < g->nseen; i++)
+        if (!strcmp(g->seen[i], key)) { free(real); return 1; }
+    g->seen = grow(g->seen, g->nseen, sizeof *g->seen);
+    g->seen[g->nseen++] = real ? real : xstrdup(full);
+    return 0;
+}
+
 static int use_file(Grammar *g, const char *path, const char *from, char **err)
 {
     if (++g->nfiles > 64) { *err = xstrdup("@use nested more than 64 deep"); return -1; }
@@ -576,6 +649,8 @@ static int use_file(Grammar *g, const char *path, const char *from, char **err)
     const char *slash = strrchr(from, '/');
     if (path[0] == '/' || !slash) full = xstrdup(path);
     else full = xfmt("%.*s%s", (int)(slash - from + 1), from, path);
+
+    if (seen_before(g, full)) { g->nfiles--; return 0; }
 
     char *src = read_file(full, err);
     if (!src) return -1;
@@ -652,8 +727,87 @@ static int seal_check(Grammar *g, Rule *r, Elem *el, int nel, char **err)
     return 0;
 }
 
+/* Two patterns are the same when nothing about matching tells them apart.
+   Hole *names* are not part of it: `a "+" b` and `x "+" y` match the same text,
+   so the second is as unreachable as a verbatim copy would be. Levels are not
+   part of it either -- two rules for one pattern at two levels is a grammar
+   that cannot say which it means, and saying `override` is how it says. */
+static int same_pattern(Elem *a, int na, Elem *b, int nb)
+{
+    if (na != nb) return 0;
+    for (int i = 0; i < na; i++) {
+        if (a[i].kind != b[i].kind) return 0;
+        switch (a[i].kind) {
+        case EL_WORD:
+            if (strcmp(a[i].word, b[i].word)) return 0;
+            break;
+        case EL_HOLE:
+            if (a[i].hk != b[i].hk || a[i].cls != b[i].cls) return 0;
+            break;
+        default:
+            if (a[i].rep != b[i].rep) return 0;
+            if (!!a[i].sep != !!b[i].sep) return 0;
+            if (a[i].sep && strcmp(a[i].sep, b[i].sep)) return 0;
+            if (!!a[i].join != !!b[i].join) return 0;
+            if (a[i].join && strcmp(a[i].join, b[i].join)) return 0;
+            if (!same_pattern(a[i].sub, a[i].nsub, b[i].sub, b[i].nsub)) return 0;
+        }
+    }
+    return 1;
+}
+
+/* Two files declaring one thing.
+ *
+ * A rule is found by its pattern, so two rules with the same pattern are one
+ * rule declared twice and the second could never fire -- candidates are tried
+ * longest-first with declaration order breaking a tie, so it is the *earlier*
+ * that wins here and the later that is dead. Silently, which is the part worth
+ * fixing: the file that wrote the second template gets the first one's output
+ * and nothing says so.
+ *
+ * The answer is that a file says which it meant. Unmarked, it is refused and
+ * both lines are named. Marked `override`, the later displaces the earlier and
+ * nothing is said, because it was said in the source. And `override` with
+ * nothing to displace is refused too, so the word cannot quietly become noise
+ * when the declaration it was written against moves away. */
+static int rule_clash(Grammar *g, char **err)
+{
+    int *dead = xmalloc(sizeof *dead * (size_t)(g->nrule + 1));
+    memset(dead, 0, sizeof *dead * (size_t)(g->nrule + 1));
+
+    for (int i = 0; i < g->nrule; i++) {
+        Rule *r = &g->rule[i];
+        int   prev = -1;
+        for (int j = 0; j < i; j++)
+            if (!dead[j] && same_pattern(g->rule[j].el, g->rule[j].nel, r->el, r->nel))
+                prev = j;
+
+        if (prev < 0) {
+            if (!r->override) continue;
+            *err = xfmt("%s:%d: 'override', but nothing with this pattern was"
+                        " declared before it", r->file, r->line);
+            return -1;
+        }
+        if (!r->override) {
+            *err = xfmt("%s:%d: this pattern is already declared at %s:%d"
+                        " -- write 'override' after the template to mean it",
+                        r->file, r->line, g->rule[prev].file, g->rule[prev].line);
+            return -1;
+        }
+        dead[prev] = 1;
+    }
+
+    int n = 0;
+    for (int i = 0; i < g->nrule; i++)
+        if (!dead[i]) g->rule[n++] = g->rule[i];
+    g->nrule = n;
+    return 0;
+}
+
 int grammar_seal(Grammar *g, char **err)
 {
+    if (rule_clash(g, err) < 0) return -1;
+
     for (int r = 0; r < g->nrule; r++)
         seal_elems(g, g->rule[r].el, g->rule[r].nel);
     if (g->sep_in && !g->sep_nl) seal_word(g, g->sep_in);

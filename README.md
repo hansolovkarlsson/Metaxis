@@ -57,7 +57,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [pascal.pt](examples/pascal.pt) | Pascal in, C out; neither language the tool's. `pascal.out` keeps its parenthesis noise, which is the cost of agnosticism showing itself |
 | [poem.pt](examples/poem.pt) | `@mode text`: prose in, HTML out |
 | [reserved.pt](examples/reserved.pt) | every character Prototype writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
-| [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator |
+| [use.pt](examples/use.pt) | `@use`, taking its arithmetic from [lib/arith.pt](lib/arith.pt) and keeping its own comment and separator — a diamond through [lib/vector.pt](lib/vector.pt), and an `override` of one of arith's rules |
 | [code.pt](examples/code.pt) | `=> { … }` — `examples/pascal.pt` rule for rule, with the parenthesis noise gone and the literal translated. `diff examples/pascal.out examples/code.out` is the point |
 | [groups.pt](examples/groups.pt) | `[ … ]`, `[ … ]*` and `[ … ]+` — an argument list of any arity in one rule, and an optional part |
 | [hygiene.pt](examples/hygiene.pt) | `{~t}`, and the half of hygiene it cannot close. `tests/hygiene.sh` compiles the C it emits and runs it, so the remaining wrong answer is a number |

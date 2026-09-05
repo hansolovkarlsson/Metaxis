@@ -178,6 +178,48 @@ expect "text mode has no tokens" <<'EOF'
 @mode text
 EOF
 
+# Two files declaring one thing. The hole names differ on purpose: what makes
+# the second rule unreachable is its pattern, and a pattern does not know what
+# its holes were called.
+expect "this pattern is already declared" <<'EOF'
+@token number "[0-9]+"
+@syntax a "+" b 60 => "add({a},{b})"
+@syntax x "+" y 60 => "plus({x},{y})"
+EOF
+
+expect "nothing with this pattern was declared before it" <<'EOF'
+@token number "[0-9]+"
+@syntax a "+" b 60 => "add({a},{b})" override
+EOF
+
+expect "the class 'name' is already declared" <<'EOF'
+@token name "[a-z]+"
+@token name "[A-Z]+"
+EOF
+
+expect "no class 'name' was declared before it" <<'EOF'
+@token name "[a-z]+" override
+EOF
+
+expect "the separator is already declared" <<'EOF'
+@separator ";"
+@separator "."
+EOF
+
+expect "no separator was declared before it" <<'EOF'
+@separator ";" override
+EOF
+
+# `dtake` matches a prefix, so without this 'overridden' would be read as
+# 'override' with three characters dropped after it in silence.
+expect "trailing text after @token" <<'EOF'
+@token name "[a-z]+" overridden
+EOF
+
+expect "trailing text after @separator" <<'EOF'
+@separator ";" nonsense
+EOF
+
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"
 fi

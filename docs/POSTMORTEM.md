@@ -11,6 +11,50 @@ Newest first.
 
 ---
 
+## 6 · A roadmap item that described its own defect backwards
+
+**Issue.** The roadmap said: *`@use` two files that both declare `"+"` and the
+later one wins, silently.* For a **rule** that is the opposite of what happens.
+Candidates under one leading word are tried longest-pattern-first with
+declaration order breaking a tie, so the **earlier** wins and the later is
+unreachable — the file that wrote the second template silently gets the first
+one's output. The sentence was true of `@token` and `@separator`, which do
+replace in place, and it was written in one breath covering all three.
+
+Had the fix been built to the description, it would have been built to make the
+later win, which it already did in two cases out of three and never did in the
+one the example was about.
+
+**Root cause.** The item was written from the shape of the code — three
+declarations, one array, an obvious hazard — and not from running it. Nothing
+in the tree contradicted it, because the case had no test and no example: it was
+on the roadmap precisely *because* nothing exercised it.
+
+A second thing hid inside the same item. `@use` read a file once per route to
+it, so a diamond declared everything in the shared file twice. Any collision
+rule would have fired on that first, and it would have looked like the rule
+working.
+
+**Solution.** Run the case before believing the description of it: four `.pt`
+files, both orders, three directives, ten minutes. The behaviour was the
+opposite in one case and undefined-looking in another, and both were then
+written into the item's own record before a line of the fix was written.
+
+**Learnings.** **A record of what is broken goes stale exactly like a record of
+what works, and has one fewer thing checking it.** REFERENCE.md is read against
+the code every time somebody uses the tool; ROADMAP.md describes behaviour
+nobody exercises, by construction, so an error in it can survive any amount of
+green. What would have caught this is the thing that did: **the first step of
+fixing a defect is reproducing it**, and the roadmap entry should have carried
+the two-file reproduction that produced it rather than a sentence about it.
+
+The narrower lesson is about *aggregation*. The claim was accurate for two of
+the three things it covered, which is how it read as true; a sentence that says
+"declarations" when the tool has three kinds with two different resolution
+rules is a sentence that cannot be checked without being split first.
+
+---
+
 ## 5 · Two changes that looked right because what they broke was silent
 
 **Issue.** Two on the same afternoon, hours apart.

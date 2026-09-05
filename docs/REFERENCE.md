@@ -103,10 +103,10 @@ in a `@use`d file, not anywhere. It is the boundary the whole notation rests on.
 ```ebnf
 directive   = "@use"       string
             | "@mode"      ( "expression" | "text" )
-            | "@token"     name string
+            | "@token"     name string [ "override" ]
             | "@comment"   string ( string | "eol" )
-            | "@separator" string [ "=>" string ]
-            | "@syntax"    pattern [ level ] "=>" template [ "terminated" ]
+            | "@separator" string [ "=>" string ] [ "override" ]
+            | "@syntax"    pattern [ level ] "=>" template { "terminated" | "override" }
             | "@end" .
 ```
 
@@ -125,11 +125,14 @@ applies — so `"0x[0-9a-fA-F]+|[0-9]+"` takes all of `0x0c` and not just the `0
 - Matching is case sensitive.
 - `.` matches a newline, so a class **may span lines**. That is how a multi-line
   string literal would be declared, and how one is declared by accident.
-- Redeclaring a name replaces the pattern. Rules already written against the
-  class keep working.
+- **Redeclaring a name is refused** unless the second declaration says
+  `override`, which replaces the pattern; rules already written against the
+  class keep working. §3.8.
 - A class name may be used as a hole's kind (§4.3).
 - A bad pattern is `bad pattern for 'name': …` with the regex library's own
   words after it.
+- **Nothing may follow but `override`.** Anything else is `trailing text after
+  @token`, as it has always been after a template.
 
 ### 3.2 `@comment "open" eol` · `@comment "open" "close"`
 
@@ -161,10 +164,14 @@ A separator that contains a newline makes **newline a token** instead of
 whitespace: a run of blank lines is one separator, and no separator is produced
 before the first token or after the last.
 
+**Declaring it twice is refused** unless the second says `override`. §3.8.
+Nothing may follow but `override`; anything else is `trailing text after
+@separator`.
+
 Without `@separator` the body is a single expression and a `stmts` hole takes
 one expression.
 
-### 3.4 `@syntax pattern [level] => template [terminated]`
+### 3.4 `@syntax pattern [level] => template [terminated] [override]`
 
 The only rule-making directive. §4, §5 and §6 are about the pattern; §8 about
 the template, of which there are two kinds.
@@ -190,10 +197,14 @@ anything else spanning lines does — except that a directive never ends while a
 brace is open, which is what lets the closing `}` sit at the left margin.
 
 **`terminated`** says the rule's output already ends a statement, so no
-separator is joined after it (§6.3). It goes after the template, which is the
-one place in a rule where a bare word cannot be anything else — a hole only
-appears in the pattern — so it reserves nothing and a hole may still be called
-`terminated`. `examples/reserved.pt` has a rule that is both.
+separator is joined after it (§6.3). **`override`** says the rule means to
+displace an earlier one with the same pattern (§3.8). Either, both, in either
+order.
+
+Both go **after the template**, which is the one place in a rule where a bare
+word cannot be anything else — a hole only appears in the pattern — so they
+reserve nothing and a hole may still be called `terminated` or `override`.
+`examples/reserved.pt` has a rule that is both.
 
 ### 3.5 `@use "path"`
 
@@ -204,12 +215,18 @@ no search path and no environment variable.
 A used file holds **directives and nothing else**; a statement in one is
 `a used file holds directives and nothing else`. Nesting is limited to 64.
 
+**A file is read once**, however many times it is reached. So a diamond — two
+files that both use a third, and one file that uses both — costs nothing and
+cannot make a declaration collide with itself, and a cycle ends rather than
+failing. Identity is the resolved path, so two spellings of one file are one
+file. `lib/vector.pt` uses `lib/arith.pt`, and `examples/use.pt` uses both.
+
 What it brings is what it declared. `examples/use.pt` takes its arithmetic from
 `lib/arith.pt` and declares its own `@comment` and `@separator`, because those
 belong to the file being written and not to the arithmetic in it.
 
-Two used files that declare the same word do not collide loudly: **the later
-declaration wins, silently.**
+Two used files that declare one thing are refused, and a file says which it
+meant. §3.8.
 
 ### 3.6 `@mode expression` · `@mode text`
 
@@ -220,6 +237,46 @@ one matches, and copies everything else through. §7.
 ### 3.7 `@end`
 
 Ends the header. §2.2.
+
+### 3.8 `override` — two files declaring one thing
+
+Three things can be declared twice: a rule's pattern, a `@token` class name, and
+`@separator`. **Unmarked, the second is an error naming both lines.** Marked
+`override`, the second wins and nothing is said — because it was said in the
+source.
+
+```
+@use "../lib/arith.pt"
+@syntax a "/" b 70 => "{a}:idiv({b})" override
+```
+
+```
+b.pt:1: this pattern is already declared at a.pt:3
+        -- write 'override' after the template to mean it
+```
+
+- **`override` with nothing to displace is also an error.** The word stays true
+  that way: it cannot quietly become noise when the declaration it was written
+  against is renamed, moved, or dropped from the file it came from.
+- **What counts as one pattern is what matching can tell apart**: the same
+  elements, in the same order, with the same words, the same hole kinds, the
+  same group shapes. **Hole names are not part of it** — `a "+" b` and
+  `x "+" y` match the same text, so the second is unreachable whatever its
+  holes are called. **Nor are levels** — one pattern at two levels is a grammar
+  that cannot say which it means, and `override` is how it says.
+- **Two rules that merely share a leading word do not collide.** That is the
+  candidate mechanism, not an accident: `"if" c "then" t` and
+  `"if" c "then" t "else" f` coexist, `"-" a` and `a "-" b` coexist, and
+  `examples/poem.pt` declares `-`, `--` and `---`. §4.2, §5.
+- **The rule check runs once the header has finished**, so the order a file
+  writes `@mode`, `@syntax` and `@use` in does not change the answer, and a
+  rule that came in through `@use` is named at the line in the file that wrote
+  it. A class and a separator are checked where they are written, because a
+  later one replaces the earlier in place.
+- **Which one wins is not which one is doing the overriding.** Without
+  `override`, nothing wins: it is refused. This is the one question the tool
+  declines to answer by position, for the same reason it declines to guess
+  precedence.
 
 ---
 
@@ -714,6 +771,13 @@ Every message the tool can produce, and what it means.
 | `cannot open path` | `@use` |
 | `a used file holds directives and nothing else` | §3.5 |
 | `@use nested more than 64 deep` | §3.5 |
+| `this pattern is already declared at f:n — write 'override' after the template to mean it` | §3.8 |
+| `'override', but nothing with this pattern was declared before it` | §3.8 |
+| `the class 'x' is already declared at f:n — write 'override' to mean it` | §3.8 |
+| `'override', but no class 'x' was declared before it` | §3.8 |
+| `the separator is already declared at f:n — write 'override' to mean it` | §3.8 |
+| `'override', but no separator was declared before it` | §3.8 |
+| `trailing text after @token` · `trailing text after @separator` | a word after the directive that is not one of its own |
 
 ### In the body
 
@@ -734,7 +798,7 @@ Every message the tool can produce, and what it means.
 
 | | |
 | --- | --- |
-| `@use` nesting | 64 |
+| `@use` nesting | 64 (and a file is read once, §3.5) |
 | group nesting | 16 |
 | loop nesting in a code template | 32 |
 | text-mode match attempts per rule | 200000 |

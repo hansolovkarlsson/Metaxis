@@ -32,7 +32,7 @@ enum { EL_WORD, EL_HOLE, EL_GROUP };
 enum { K_EXPR, K_CLASS, K_STMTS, K_TEXT };
 enum { REP_ONE, REP_STAR, REP_PLUS };
 
-typedef struct { char *name, *src; regex_t re; } Class;
+typedef struct { char *name, *src; regex_t re; char *file; int line; } Class;
 typedef struct { char *open, *close; int eol; } Comment;
 
 typedef struct Elem Elem;
@@ -90,6 +90,7 @@ typedef struct {
     Stmt *body;      /* a code template, or NULL                 */
     int   nbody;
     int   terminated;/* its output ends a statement on its own    */
+    int   override;  /* it means to displace an earlier declaration */
     char *file;
     int   line;
 } Rule;
@@ -116,8 +117,10 @@ typedef struct {
     Rule    *rule;  int nrule;
     char *sep_in, *sep_out;
     int   sep_nl;                 /* the separator is a newline     */
+    char *sep_file; int sep_line; /* where it was declared          */
     int   mode;
-    int   nfiles;                 /* @use guard                     */
+    int   nfiles;                 /* @use depth guard               */
+    char **seen; int nseen;       /* @use reads a file once         */
 } Grammar;
 
 Grammar *grammar_new(void);

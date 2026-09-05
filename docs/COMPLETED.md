@@ -10,6 +10,74 @@ argued away.*
 
 Newest first.
 
+## Two files declaring one thing, and the word a file says it with
+
+Three things could be declared twice and quietly were: a rule's pattern, a
+`@token` class name, and `@separator`. Now the second is an error naming both
+lines, unless it says `override`, in which case it wins and nothing is said —
+because it was said in the source.
+
+```
+@use "../lib/arith.pt"
+@syntax a "/" b 70 => "{a}:idiv({b})" override
+```
+
+**The roadmap described this backwards, and finding that out was most of the
+work.** It said the later declaration wins, silently. For `@token` and
+`@separator` it did. For a *rule* it is the opposite: candidates under one
+leading word are tried longest-first with declaration order breaking a tie, so
+the **earlier** wins and the later is unreachable — the file that wrote the
+second template gets the first one's output. So the tool had two opposite silent
+behaviours and the item's own example, `"+"`, was the one it described wrongly.
+
+**A diamond had to stop being a collision before a collision rule could mean
+anything.** `@use` read a file once per route to it, so `a` and `b` both using
+`base`, and one file using both, declared everything in `base` twice — a file
+colliding with itself over declarations nobody wrote twice, which any rule here
+would have fired on first. A file is now read once, identity being the resolved
+path. Proto does the same and for the same reason. A cycle now ends instead of
+hitting the depth guard.
+
+**Refuse-and-let-a-file-say-so rather than Proto's rule**, which is *later wins,
+and the compiler says so*, graded by who could have known. Proto's answer needs
+a warning channel this tool does not have and would have flipped rule resolution
+from earlier-wins to later-wins; more to the point, it decides by position what
+this tool declines to decide by position everywhere else. `override` makes the
+file say it. `override` with nothing to displace is refused too, so the word
+stays true when the declaration it was written against moves away.
+
+**The word could only go in one place, and the notation put it there.** Left of
+the `=>` a bare word is a hole — the premise the whole notation rests on — and a
+rule whose first hole is called `override` is legal. After the template there is
+no pattern, so a bare word cannot be anything else; `terminated` was already
+there for exactly that reason. `terminated` and `override` may both appear, in
+either order, and a hole may still be called either.
+
+**What counts as one pattern is what matching can tell apart**: same elements,
+same order, same words, same hole kinds, same group shapes. Hole names are not
+part of it, since `a "+" b` and `x "+" y` match the same text. Levels are not
+either. Two rules that merely share a leading word do not collide — that is the
+candidate mechanism, and `if`/`if…else` and `examples/poem.pt`'s `-`/`--`/`---`
+depend on it.
+
+The rule check runs at seal, like the class-kind check below it, so directive
+order cannot let one through and a rule that arrived through `@use` is named at
+the line that wrote it. A class and a separator are checked where they are
+written, because a later one replaces the earlier in place.
+
+`examples/use.pt` is the recorded evidence: it uses `lib/arith.pt` and a new
+`lib/vector.pt` that uses `lib/arith.pt` too — a diamond — and overrides
+arith's `/`.
+
+**And one thing found while testing it.** `@token name "…" garbage` and
+`@separator ";" garbage` were accepted with the extra word ignored — `@syntax`
+had always refused trailing text and these two never had. It stopped being
+harmless the moment they took an optional bare word: `dtake` matches a prefix,
+so `overridden` would have been read as `override` with three characters
+dropped in silence. Both now refuse trailing text.
+
+*Verified at 9 examples, 36 error cases, `tests/hygiene.sh`; `make check` clean.*
+
 ## A class-kind hole is refused in text mode
 
 `@syntax "[" x:name "]"` under `@mode text` used to take everything up to the
