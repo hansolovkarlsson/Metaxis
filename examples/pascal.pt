@@ -56,7 +56,10 @@
 ; one `var` cover a whole block the way Pascal writes it.
 @syntax "var" d                                => "{d}"
 
-@syntax "begin" body:stmts "end"               => "{{\n{body}\n}}"
+; The `;` is unconditional for the same reason: @separator puts one between two
+; statements and never after the last, and this template cannot ask whether the
+; last one already ended.
+@syntax "begin" body:stmts "end"               => "{{\n{body};\n}}" terminated
 
 ; The outer block, which ends in a full stop. It is a longer pattern than the
 ; one above, so it is tried first and the inner blocks are unaffected.
@@ -65,11 +68,11 @@
 
 ; A branch is braced whether or not it needs to be. C's `if (c) x = 1; else`
 ; wants a semicolon that C's `if (c) {{ … }} else` must not have, and which of
-; the two a branch is depends on the rule that filled the hole -- which a
-; template cannot ask. Braces are correct either way, at the cost of a `{{ }}`
-; around a single statement, and they are the brace-shaped twin of the
-; parentheses this file is already recorded as over-writing. What would remove
-; them is a `terminated(h)` a template could ask; see docs/ROADMAP.md 1.
+; the two a branch is depends on the rule that filled the hole. A code template
+; asks -- `terminated(t)`, which examples/code.pt uses to write neither brace
+; nor stray semicolon. A string template cannot ask anything, so it braces
+; every branch and is right either way. This is the same trade as the
+; parentheses one line of rules up, in the other punctuation.
 @syntax "if" c "then" t                        => "if ({c}) {{ {t}; }}"
 @syntax "if" c "then" t "else" f               => "if ({c}) {{ {t}; }} else {{ {f}; }}"
 @syntax "while" c "do" b                       => "while ({c}) {{ {b}; }}"
@@ -105,6 +108,13 @@ begin
     else
       total := total - 1;
   if not (total > 100) then writeln('it''s middling') else writeln('big');
+  if total > 30 then
+    begin
+      total := total + 1;
+      writeln(total)
+    end
+  else
+    writeln(total);
   writeln(total)
 end.
 

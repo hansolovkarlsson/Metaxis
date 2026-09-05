@@ -157,7 +157,7 @@ static char *subst(P *p, Rule *r, Bind *b, int nb)
 /* ------------------------------------------------------------------- parser */
 
 static char *p_expr(P *p, int minbp, Out *o);
-static char *p_stmts(P *p, const char *term);
+static char *p_stmts(P *p, const char *term, int *terminated);
 
 /* Every hole the pattern declares, groups included, starts bound to nothing.
    A group that matched no turns leaves its holes empty rather than unbound, so
@@ -192,8 +192,13 @@ static void bind_pre(Elem *el, int nel, Bind *b, int *nb, int inrep)
    a string template splices, and the turns themselves, which is what a code
    template loops over. Keeping only the first is what `join` used to throw
    away, and is the whole difference between the two kinds of template. */
+/* `level` and `terminated` are the two things a hole remembers about the rule
+   that filled it: how tightly it bound, and whether its output already ends a
+   statement. A code template asks the first with `level(h)` and the second with
+   `terminated(h)`; both are the rule's own property, not the text's, which is
+   why neither can be worked out from `val` afterwards. */
 static void bind_put(Bind *b, int nb, const char *name, char *val,
-                     int append, const char *join, int level)
+                     int append, const char *join, int level, int terminated)
 {
     for (int i = 0; i < nb; i++) {
         if (strcmp(b[i].name, name)) continue;
@@ -207,8 +212,9 @@ static void bind_put(Bind *b, int nb, const char *name, char *val,
         } else {
             b[i].val = val;
         }
-        b[i].set   = 1;
-        b[i].level = level;
+        b[i].set        = 1;
+        b[i].level      = level;
+        b[i].terminated = terminated;
         return;
     }
 }
@@ -274,7 +280,7 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
         }
 
         char *v = NULL;
-        int   lev = LEVEL_ATOM;
+        int   lev = LEVEL_ATOM, term = 0;
         switch (e->hk) {
         case K_CLASS: {
             Tok *t = cur(p);
@@ -293,13 +299,16 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
                 Out o = { LEVEL_ATOM, 0 };
                 v = p_expr(p, bp, &o);
                 if (!v) return 0;
-                lev = o.level;
+                lev  = o.level;
+                term = o.terminated;
             }
             break;
         }
         case K_STMTS: {
-            const char *term = k + 1 < nel ? el[k + 1].word : NULL;
-            v = p_stmts(p, term);
+            /* A run of statements is terminated when its *last* one was: that
+               is the statement a word after the hole would follow. */
+            const char *stop = k + 1 < nel ? el[k + 1].word : NULL;
+            v = p_stmts(p, stop, &term);
             if (!v) return 0;
             break;
         }
@@ -307,19 +316,19 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
             p->err = xfmt("%s:%d: a 'text' hole belongs to @mode text", r->file, r->line);
             return 0;
         }
-        bind_put(b, nb, e->hole, v, append, join, lev);
+        bind_put(b, nb, e->hole, v, append, join, lev, term);
     }
     return 1;
 }
 
-static char *p_rule(P *p, Rule *r, char *leftval, int leftlev)
+static char *p_rule(P *p, Rule *r, char *leftval, int leftlev, int leftterm)
 {
     int   nb = 0;
     Bind *b  = xmalloc(sizeof *b * (size_t)(count_holes(r->el, r->nel) + 1));
     bind_pre(r->el, r->nel, b, &nb, 0);
 
     int k = 0;
-    if (r->led) { bind_put(b, nb, r->el[0].hole, leftval, 0, NULL, leftlev); k = 1; }
+    if (r->led) { bind_put(b, nb, r->el[0].hole, leftval, 0, NULL, leftlev, leftterm); k = 1; }
     if (!m_elems(p, r, r->el + k, r->nel - k, 1, 0, NULL, b, nb)) return NULL;
 
     if (r->body) {
@@ -368,7 +377,7 @@ static char *p_nud(P *p, Out *o)
         int    n = collect(p, c, 0, 0);
         for (int i = 0; i < n && !res && !p->err; i++) {
             int save = p->i;
-            res = p_rule(p, c[i], NULL, LEVEL_ATOM);
+            res = p_rule(p, c[i], NULL, LEVEL_ATOM, 0);
             if (!res) p->i = save;
             else {
                 if (c[i]->level >= 0) o->level = c[i]->level;
@@ -400,7 +409,7 @@ static char *p_expr(P *p, int minbp, Out *o)
         char  *res = NULL;
         for (int i = 0; i < n && !res && !p->err; i++) {
             int save = p->i;
-            res = p_rule(p, c[i], left, mine.level);
+            res = p_rule(p, c[i], left, mine.level, mine.terminated);
             if (!res) p->i = save;
             else { mine.level = c[i]->level; mine.terminated = c[i]->terminated; }
         }
@@ -412,15 +421,19 @@ static char *p_expr(P *p, int minbp, Out *o)
     return left;
 }
 
-static char *p_stmts(P *p, const char *term)
+static char *p_stmts(P *p, const char *term, int *terminated)
 {
     Grammar *g = p->g;
     Buf b = {0};
     int first = 1;
 
+    if (terminated) *terminated = 0;
     if (!g->sep_in) {
         if (term && tok_is(p, term)) return xstrdup("");
-        return p_expr(p, 0, NULL);
+        Out one = { LEVEL_ATOM, 0 };
+        char *only = p_expr(p, 0, &one);
+        if (only && terminated) *terminated = one.terminated;
+        return only;
     }
     int prev_terminated = 0;
     for (;;) {
@@ -439,6 +452,7 @@ static char *p_stmts(P *p, const char *term)
         buf_str(&b, s);
         first = 0;
         prev_terminated = o.terminated;
+        if (terminated) *terminated = o.terminated;
         if (tok_is(p, g->sep_in)) continue;
         /* A separator is wanted between two statements, and not after one that
            ended in a word. That is what lets `}` stand on its own, in C and in
@@ -454,7 +468,7 @@ char *expand_expr(Grammar *g, Toks *tk, char **err)
 {
     fresh_src = tk->src; fresh_g = g; fresh_n = 0;
     P p = { g, tk, 0, 0, 0, NULL };
-    char *out = p_stmts(&p, NULL);
+    char *out = p_stmts(&p, NULL, NULL);
     if (out && cur(&p)->kind != T_EOF) out = NULL;
     if (!out) {
         if (p.err) { *err = p.err; return NULL; }
@@ -639,7 +653,7 @@ static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
         Bind *snap = tm_save(t);
         char *v = text_expand(t->g, t->s + pos, stop - pos, t->depth + 1, t->err);
         if (!v) return 0;
-        bind_put(t->b, t->nb, e->hole, v, append, join, LEVEL_ATOM);
+        bind_put(t->b, t->nb, e->hole, v, append, join, LEVEL_ATOM, 0);
         if (tm_match(t, el, nel, k + 1, stop, cont, append, join)) return 1;
         tm_load(t, snap);
         if (cap == t->len && stop == t->len) break;

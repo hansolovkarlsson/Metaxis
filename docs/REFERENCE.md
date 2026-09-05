@@ -210,9 +210,10 @@ anything else spanning lines does — except that a directive never ends while a
 brace is open, which is what lets the closing `}` sit at the left margin.
 
 **`terminated`** says the rule's output already ends a statement, so no
-separator is joined after it (§6.3). **`override`** says the rule means to
-displace an earlier one with the same pattern (§3.8). Either, both, in either
-order.
+separator is joined after it (§6.3). A code template can also **read** it off a
+hole — `terminated(h)` in §8.3 — which is how a rule decides whether what filled
+a hole needs punctuating. **`override`** says the rule means to displace an
+earlier one with the same pattern (§3.8). Either, both, in either order.
 
 Both go **after the template**, which is the one place in a rule where a bare
 word cannot be anything else — a hole only appears in the pattern — so they
@@ -680,6 +681,7 @@ text when it is not empty.
 | `matched(h)` | whether `h`'s group matched at all |
 | `count(h)` | how many turns a repeated hole took |
 | `level(h)` | the level of the rule that filled `h`; 1000 for an atom |
+| `terminated(h)` | whether the rule that filled `h` was declared `terminated` (§3.4) — that is, whether `h`'s text already ends a statement. For a `stmts` hole it is the **last** statement that answers; for a bare token, and for a hole nothing filled, it is false |
 | `group(h, n)` | `h`, bracketed in `(` `)` when `level(h) < n` |
 | `replace(s, from, to)` | `s` with every `from` replaced |
 | `drop(s, front, back)` | `s` with that many characters off each end |
@@ -695,16 +697,22 @@ what the second form is for:
 
 ```
 -for (…) { if (((((i % mod) == 0)) && ((i != 9)))) { total = (total + i); } … }
-+for (…) { if ((i % mod == 0) && (i != 9))         { total = total + i; }   … }
++for (…) if ((i % mod == 0) && (i != 9)) total = total + i; …
 -if ((!((total > 100)))) { puts('it''s middling'); } else { puts('big'); }
-+if (!(total > 100))     { puts("it's middling"); } else { puts("big"); }
++if (!(total > 100)) puts("it's middling"); else puts("big")
+-if ((total > 30)) { { … }; } else { printf("%d\n", total); }
++if (total > 30) { … } else printf("%d\n", total)
 ```
 
-The parentheses come from `group(a, 60)` asking an operand its level; the
-literal from `replace(drop(x, 1, 1), "''", "'")`. `tests/pascal.sh` compiles
-what the second one emits and runs it, and the first is expected **not** to
-compile — that literal is the only thing wrong with it, and a string template
-has no way to write it (§8.1).
+Three things, one per builtin. The parentheses come from `group(a, 60)` asking
+an operand its level. The braces and the semicolons come from `terminated(t)`
+asking whether a branch already ends a statement — a string template has to
+brace every branch, because bracing is right either way and it cannot ask. The
+literal comes from `replace(drop(x, 1, 1), "''", "'")`.
+
+`tests/pascal.sh` compiles what the second one emits and runs it, and the first
+is expected **not** to compile: that literal is the only thing wrong with it,
+and no `@syntax` can reach it, because a rule cannot match a bare token.
 
 ---
 

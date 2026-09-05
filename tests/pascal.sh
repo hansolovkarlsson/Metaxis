@@ -13,7 +13,10 @@
 #   code.pt    must compile and print what the Pascal computes. If the
 #              arithmetic, the precedence, `mod`, the loop or the branches were
 #              translated wrongly, the number is wrong and nothing else has to
-#              notice.
+#              notice. It is also the only place `terminated(h)` is checked
+#              against a compiler: the Pascal has one branch that is a
+#              `begin … end` and one that is not, so a rule that punctuated
+#              either of them wrongly would not build.
 #
 #   pascal.pt  must NOT compile, and the reason must be the string literal.
 #              **That is recorded on purpose**, the way tests/hygiene.sh records
@@ -31,9 +34,12 @@ mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 
 # 3+6+12+15+18 = 54 for the multiples of 3 that are not 9, minus 1 for each of
-# the other fifteen. Worked out from the Pascal, not from the C.
+# the other fifteen, so 39 after the loop. 39 is not over 100, so the first
+# line; it is over 30, so the branch that adds one and prints, and then the
+# same total again. Worked out from the Pascal, not from the C.
 WANT="it's middling
-39"
+40
+40"
 
 # ---------------------------------------------------------------- code.pt
 if ! "$PT" examples/code.pt > "$TMP/code.c" 2> "$TMP/err"; then
@@ -83,6 +89,6 @@ if ! grep -q "it''s" "$TMP/pascal.c"; then
     exit 1
 fi
 
-echo "ok      pascal.sh: the C compiles, runs, and computes 39"
+echo "ok      pascal.sh: the C compiles, runs, and computes 40"
 echo "            pascal.pt still cannot spell C's quotes -- as recorded"
 exit 0

@@ -10,6 +10,13 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`terminated(h)` in a code template.** A new builtin beside `level(h)`: whether
+the rule that filled a hole was declared `terminated`, that is, whether the
+hole's text already ends a statement. For a `stmts` hole it is the last
+statement that answers. It is what lets a rule decide whether what came out of a
+hole needs a semicolon, and `examples/code.pt` uses it to emit
+`if (c) x = 1; else y = 2` and `if (c) { … } else y = 2` from one rule.
+
 **`override`, and two files declaring one thing.** A rule's pattern, a `@token`
 class name and `@separator` may each be declared only once; a second is an error
 naming both lines. `override` — after the template for a rule, after the

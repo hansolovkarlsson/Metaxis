@@ -303,7 +303,9 @@ number.
 **The output separator was joined between every pair of statements**, including
 after one that ended in a word, so `examples/hygiene.out` used to carry a `};`
 at file scope where C wants none. **This is settled**: a rule may be declared
-`terminated`, and then nothing is joined after it.
+`terminated`, and then nothing is joined after it. A code template can read the
+same flag back off a hole with `terminated(h)`, which is what lets one rule
+punctuate another rule's output without either of them knowing the other.
 
 What settled it is worth more than the fix. The obvious cheap answer — look at
 the last character emitted, and skip the separator after a `}` — would have been

@@ -10,6 +10,59 @@ argued away.*
 
 Newest first.
 
+## `terminated(h)`: a template asks what a rule said about itself
+
+`level(h)` had always been half of a pair. It answers *how tightly did the rule
+that filled this hole bind*, so a template can decide whether to **bracket** it.
+`terminated(h)` answers *did that rule declare its output already ends a
+statement*, so a template can decide whether to **punctuate** it.
+
+```
+@syntax "if" c "then" t "else" f
+    => {
+        emit "if (" + c + ") " + t
+        if not terminated(t) { emit ";" }
+        emit " else " + f
+    }
+```
+
+C wants `if (c) x = 1; else …` and forbids `if (c) { … }; else …`, and which of
+the two a branch is depends entirely on the rule that filled the hole. Before
+this, `examples/code.pt` braced every branch unconditionally — correct either
+way, and noise around every single statement.
+
+**Nothing had to be computed; something had to stop being thrown away.** The
+flag already existed per rule, and the parse already carried it: `Out` returns
+`{ level, terminated }` from `p_expr` and only `level` reached `bind_put`.
+`Bind` gained the field beside `level`, `Val` gained it beside `level`, and the
+builtin reads it the way `level` does. That is the whole change, and the shape
+of it is the point — a question a template could not ask was one field of
+plumbing, not a new idea.
+
+**A `stmts` hole answers for its last statement**, which is the one a word after
+the hole would follow. `p_stmts` was already tracking exactly that to decide its
+own joining and discarding it at the end. A bare token, and a hole nothing
+filled, are false.
+
+**Two things only a compiler could have said.** The first draft emitted the
+semicolon at the end of a rule as well as before an `else`, and got `x = 1;;`
+— because `@separator` is what ends a statement, and a rule that also ends one
+is writing it twice. The rule is that **a template punctuates inside itself and
+never at its end**. The second: a block's last statement had never had a
+semicolon at all, since a separator goes *between* two statements and never
+after the last, and `begin … end` closed straight over it. Both were invisible
+until `tests/pascal.sh` started compiling, and one of them predates this change.
+
+**It does not help a string template**, and an earlier note here said it would.
+A string template has no way to emit conditionally, so this is a code-template
+builtin exactly as `level` and `group` are. `examples/pascal.pt` still braces
+every branch, and the recorded diff between the two files now shows three
+differences rather than two — parentheses, punctuation, and the literal — one
+for each thing a template can ask that a string cannot.
+
+*Verified at 10 examples, 36 error cases, `tests/hygiene.sh` and
+`tests/pascal.sh`; `make check` clean.*
+
 ## Stage 1 begins: Pascal declares its variables, and a compiler checks the C
 
 `examples/pascal.pt` and `examples/code.pt` now read `program`, a `var` section

@@ -370,6 +370,7 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { "matched", 1, "whether a hole's group matched"          },
     { "count",   1, "how many turns a repeated hole took"     },
     { "level",   1, "the level of what filled a hole"         },
+    { "terminated", 1, "whether what filled a hole ends a statement" },
     { "group",   2, "a hole, bracketed when its level is lower" },
     { "replace", 3, "one text with another inside a third"    },
     { "drop",    3, "a text with characters off each end"      },
@@ -486,7 +487,7 @@ typedef struct {
     char  *text;
     long   num;
     char **items;
-    int    nitems, set, level;
+    int    nitems, set, level, terminated;
 } Val;
 
 typedef struct Frame {
@@ -562,8 +563,9 @@ static int lookup(Ev *ev, const char *n, Val *out)
             v.kind = V_TEXT;
             v.text = b->val;
         }
-        v.set   = b->set;
-        v.level = b->level >= 0 ? b->level : LEVEL_ATOM;
+        v.set        = b->set;
+        v.level      = b->level >= 0 ? b->level : LEVEL_ATOM;
+        v.terminated = b->terminated;
         *out = v;
         return 1;
     }
@@ -595,6 +597,7 @@ static int call(Ev *ev, Expr *e, Val *out)
     if (!strcmp(e->s, "count"))   { *out = v_int(a[0].kind == V_LIST ? a[0].nitems
                                                 : (a[0].set ? 1 : 0)); return 0; }
     if (!strcmp(e->s, "level"))   { *out = v_int(a[0].level);           return 0; }
+    if (!strcmp(e->s, "terminated")) { *out = v_bool(a[0].terminated);   return 0; }
     if (!strcmp(e->s, "fresh"))   { *out = v_text(pt_fresh(as_text(a[0]))); return 0; }
     if (!strcmp(e->s, "replace")) {
         *out = v_text(replace_all(as_text(a[0]), as_text(a[1]), as_text(a[2])));

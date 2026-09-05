@@ -52,33 +52,20 @@ we find out which.
 
 ---
 
-## 1 · Stage 1 — what Pascal→C still owes, and the one mechanic it asked for
+## 1 · Stage 1 — what Pascal→C still owes
 
-**Where it got to.** `examples/pascal.pt` and `examples/code.pt` now read
-`program`, a `var` section with comma-separated declarations, `integer` and
-`boolean`, and an outer `begin … end.` that becomes `main`. `tests/pascal.sh`
-expands `code.pt`, compiles the C, runs it and checks the number it prints, so
-the arithmetic, the precedence, `mod`, the loop and the branches are checked by
-a compiler and a result rather than by `diff`. `pascal.pt` is expected **not**
-to compile, and that half is pinned too.
+**Where it got to.** `examples/pascal.pt` and `examples/code.pt` read `program`,
+a `var` section with comma-separated declarations, `integer` and `boolean`, and
+an outer `begin … end.` that becomes `main`. `tests/pascal.sh` expands `code.pt`,
+compiles the C, runs it and checks the number, so the arithmetic, the
+precedence, `mod`, the loop and the branches are checked by a compiler and a
+result rather than by `diff`. `pascal.pt` is expected **not** to compile, and
+that half is pinned too.
 
-**The compiler found something the diff never could.** `if (c) x = 1 else x = 2`
-was being emitted, which is not C — a branch that is an expression needs a `;`
-before the `else` and a branch that is a block must not have one. Both files had
-been wrong since the day they were written, and every recorded `.out` was green
-throughout, because the output was plausible.
-
-**Which is the mechanic this stage is asking for: `terminated(h)`.** Whether a
-branch needs its semicolon depends on the rule that filled the hole, and that is
-exactly what `terminated` already records — per rule, and tracked through the
-parse in `Out.terminated`. A template cannot ask. `level(h)` reads `Bind.level`
-and there is no `Bind.terminated` beside it, so the fix was to brace every
-branch unconditionally: correct either way, at the cost of `{ }` around a single
-statement. That is the brace-shaped twin of the parenthesis noise, and it has
-the same cause — a template that cannot ask its operand a question. It is a
-small addition next to `level`, and unlike the parentheses it would help the
-string form too, since `terminated` is about which text to write and not about
-which text to bracket.
+**The mechanic this stage asked for is built.** `terminated(h)` — a code
+template reading back the flag a rule declares about itself — is what decides
+whether a branch needs its semicolon, and `code.pt` now emits idiomatic C
+without bracing single statements. See COMPLETED.md.
 
 **What is left to write, none of which needs new mechanics:** `procedure` and
 `function`, `repeat … until`, `case … of`, and the types past `integer` and

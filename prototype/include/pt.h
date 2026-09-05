@@ -105,6 +105,7 @@ typedef struct {
     int         nitems;
     int         set;     /* its group matched at least once   */
     int         level;   /* the level of what filled it, or -1 */
+    int         terminated; /* what filled it already ends a statement */
     int         islist;  /* it sits inside a repeated group   */
 } Bind;
 
