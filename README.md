@@ -1,8 +1,15 @@
 # Prototype
 
-**Working name.** A language-agnostic rewriter in the shape of Proto: a file
-declares its own grammar in its header and is then read with it. `.pt` in,
-`.out` out.
+**Working name.** A language-agnostic rewriter and **evaluator for
+expressions**: a file declares its own grammar in its header and is then read
+with it, in one pass, with neither the language read nor the language written
+built in. `.pt` in, `.out` out — or, in
+[examples/calc.pt](examples/calc.pt), an answer, because a template can compute
+rather than emit.
+
+It is in the shape of Proto, one directory over, and the name is provisional:
+[docs/direction.md](docs/direction.md)'s "What to call it" has what it costs and
+what it buys.
 
 Its one premise is that **every mention of foreign text inside a directive is a
 string** — quoted words on the pattern side, a quoted template with `{hole}`

@@ -59,6 +59,18 @@ The correction is also the argument for doing it. The claim got *smaller* and
 *better* in the same edit: what it now says is what the tool is for, where what
 it said before was a boast about being first, and the boast was the false half.
 
+**A second instance, found within the hour and worth adding here rather than
+opening an entry for.** The GitHub repository's *About* field held the
+description `direction.md`'s own table labels **before 2026-09-05** — "a
+language-agnostic rewriter", with no mention of the evaluator that landed that
+morning — and it had been stale all day. It is the same root cause one step
+further out again: **repository metadata is a document that nothing in the tree
+can read.** `make check` cannot see it, `grep` cannot see it, and no close-out
+had ever thought to look, because every instrument this project has stops at the
+edge of the working tree. It was fixed by asking `gh` what it said, which is the
+survey answer at the smallest possible scale: **the instrument for a claim
+outside the repository is to go and fetch it.**
+
 ---
 
 ## 16 · A number counted by hand, wrong on the day it was written, that a close-out read and did not check
