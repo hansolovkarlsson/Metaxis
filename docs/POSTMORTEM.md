@@ -11,6 +11,100 @@ Newest first.
 
 ---
 
+## 9 · A method proposed in the morning and scored the same evening
+
+**Issue.** Hans introduced staging on 2026-09-05: one translator at a time,
+taken far enough to be compiled and run, *"and that way we can work on
+introducing new mechanics and test them out properly."* That is a prediction —
+that pressure from a single finished translator surfaces the right features —
+and it met evidence within hours, which almost never happens to a claim about
+method.
+
+**It held, and it held in the way that is hard to arrange deliberately.** Two
+mechanics were built the same day and both had a customer that asked before the
+feature existed. `terminated(h)` came from C wanting a semicolon before `else`
+and forbidding one after a block, a distinction that depends on the rule that
+filled the hole. `for i, x in h` with `at(h, n)` came from `case` arms being two
+holes in one repeated group and therefore two parallel lists. Neither was on the
+roadmap that morning. Neither would have been guessed at, and the shape of both
+was decided by the thing that needed them rather than by what seemed general.
+
+**And a prediction inside it failed, which is why it worked.** The roadmap had
+said stage 1 needed no new mechanics — `procedure`, `function`, `repeat` and
+`case` were *"rules nobody has written yet"*. Three of the four were exactly
+that. `case` was not: its arms want to be `[ v ":" s ]*` and cannot be, and the
+workaround is an infix rule whose correctness depends on the order of
+declarations in its own file. The failure is what produced the second mechanic.
+A schedule that had only confirmed its own predictions would have produced
+nothing.
+
+**Root cause of the prediction being scorable at all.** It was written down as a
+claim about the work rather than as an intention — *what is left to write, none
+of which needs new mechanics* — naming four items and a reason. A sentence in
+that shape can be wrong in public. "We should focus" cannot.
+
+**Learnings.** **A method is a prediction and should be recorded as one, with
+the thing it claims will happen written down before it does.** The staging note
+in ROADMAP.md names which translator, in which order, and what each is for, so
+by the evening it could be checked rather than believed.
+
+The narrower one is about *where* to make predictions falsifiable. Listing four
+things and asserting they need nothing new is a bet with four outcomes; three
+held, one paid. Compare the alternative sentence, "the rest of Pascal should be
+straightforward", which is unfalsifiable and would have taught nothing when
+`case` turned out not to be.
+
+---
+
+## 8 · Three defects a diff could not have seen, and one it structurally cannot
+
+**Issue.** Hans's argument for a C target on 2026-09-05 was that *"C as output is
+good because it can be tested that the output is correct."* `tests/pascal.sh`
+was written to do it — expand, compile, run, check the number — and it found
+three things the same day.
+
+1. **`if (c) x = 1 else x = 2`.** Not C: a branch that is an expression wants a
+   `;` before the `else` and a branch that is a block must not have one. Both
+   example files had emitted it since the day they were written.
+2. **A block's last statement had no semicolon.** A separator goes *between* two
+   statements and never after the last, and `begin … end` closed straight over
+   it. Also older than the test.
+3. **A hang.** A `for` with an index puts two frames on the environment, and the
+   restore pointed at the first frame rather than at what was there before both,
+   so the second turn linked a frame to itself and `lookup` walked a cycle.
+
+**Root cause.** The first two are the same cause as POSTMORTEM 5: the output was
+*plausible*. Every recorded `.out` in this tree was green through both of them,
+because a `.out` pins what the expansion **is** and says nothing about whether
+it is **right**. A diff catches change. Only a test that runs the output catches
+wrongness, and until 2026-09-05 `tests/hygiene.sh` was the only one here that
+did.
+
+The third has a different cause and is the more interesting one. It was not a
+wrong answer; it was no answer. **A tree of recorded outputs has no `.out` for
+*did not terminate*.** There is no expansion to compare, the harness waits, and
+the failure is invisible to the format the entire suite is built on.
+
+**Solution.** `tests/pascal.sh`, on `tests/hygiene.sh`'s model: compile what
+`examples/code.pt` emits, run it, and check the numbers the Pascal computes,
+worked out from the Pascal and not from the C. The half that must *not* compile
+— `examples/pascal.pt`, which cannot spell C's quotes — is pinned too, so that
+whoever fixes it has to edit the test in the same commit.
+
+**Learnings.** **A recorded output is a regression test and not a correctness
+test, and the difference is invisible until something else checks.** Two of
+these three predate the test by days and sat under a green suite the whole time.
+Where a target language can be executed, executing it is not a nicety; it is the
+only part of the suite that can disagree with the expansion rather than with
+yesterday's expansion.
+
+And the narrower one, which cost fifteen minutes of confusion before it was
+understood: **a suite whose failure mode is a diff cannot report a hang.** Any
+harness built on recorded outputs needs a clock somewhere, or the one bug class
+it cannot express is the one that stops the run.
+
+---
+
 ## 7 · A page that said it was checked, opening with an example that never ran
 
 **Issue.** REFERENCE.md began *Everything here is checked by `make check`*, and

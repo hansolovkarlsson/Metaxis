@@ -12,12 +12,13 @@ The other records answer narrower questions and are kept separately: what is
 left ([ROADMAP.md](../ROADMAP.md)), what was built
 ([COMPLETED.md](../COMPLETED.md)), what a mistake taught
 ([POSTMORTEM.md](../POSTMORTEM.md)), and when something shipped
-([CHANGELOG.md](../CHANGELOG.md)). Two more sit beside them and are not records
-of the work but of the thing: [REFERENCE.md](../REFERENCE.md) states what a
-`.pt` file means, and [notation.md](../notation.md) argues for why it is shaped
-that way. If a paragraph would fit in one of those, it belongs there and not
-here.
+([CHANGELOG.md](../CHANGELOG.md)). Three more sit beside them and are not
+records of the work but of the thing: [REFERENCE.md](../REFERENCE.md) states
+what a `.pt` file means, [notation.md](../notation.md) argues for why it is
+shaped that way, and [direction.md](../direction.md) argues for where it could
+go. If a paragraph would fit in one of those, it belongs there and not here.
 
 | Day | |
 |---|---|
+| [2026-09-05](2026-09-05.md) | Two roadmap items, a reference audit that found its own first example never ran, and a change of method: one translator at a time. Stage 1 of Pascal→C, checked by a compiler, which paid on the first run and asked for two builtins. |
 | [2026-09-04](2026-09-04.md) | The whole project in one day: the premise, the parser, hygiene split in two, both kinds of template, groups, and four wrong turns — including a rule that was wrong while doing exactly what it said. |
