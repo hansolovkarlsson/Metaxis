@@ -14,6 +14,7 @@
 
 PT="${1:-./bin/pt}"
 CC="${CC:-cc}"
+LIMIT="${LIMIT:-10}"
 
 if [ "$(uname -m)" != "arm64" ]; then
     echo "ok      asm.sh: skipped, examples/asm.pt emits arm64 and this is $(uname -m)"
@@ -32,7 +33,7 @@ WANT="14
 10
 20"
 
-if ! "$PT" examples/asm.pt > "$TMP/prog.s" 2> "$TMP/err"; then
+if ! sh tests/limit.sh "$LIMIT" "$PT" examples/asm.pt > "$TMP/prog.s" 2> "$TMP/err"; then
     echo "FAILED  asm.sh: examples/asm.pt did not expand"
     cat "$TMP/err"
     exit 1

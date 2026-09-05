@@ -24,6 +24,13 @@ what they did before. `examples/code.pt` also shares the body the two rules had
 in common through a `@template`, so the two ways of naming a fragment now meet
 in one file.
 
+**`make check` now reports a hang instead of waiting on one.** Every place the
+suite runs `pt` goes through `tests/limit.sh`, which kills a command that
+outlives a wall-clock limit and reports it as its own kind of failure —
+previously a `.pt` file that never terminated stopped the suite rather than
+failing it, which no recorded output could express. `make check LIMIT=30` raises
+the limit, which defaults to 10 seconds; the full run takes 2.3.
+
 **`@token expr`, `@token stmts` and `@token text` are now refused** —
 `'expr' is a kind, so a class called that could never be used`. A hole written
 `x:expr` resolves as the *kind*, so a class of that name was never consulted:

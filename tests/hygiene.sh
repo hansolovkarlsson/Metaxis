@@ -28,6 +28,7 @@
 
 PT="${1:-./bin/pt}"
 CC="${CC:-cc}"
+LIMIT="${LIMIT:-10}"
 SRC="${SRC:-examples/hygiene.pt}"
 
 TMP="${TMPDIR:-/tmp}/pt-hygiene.$$"
@@ -50,7 +51,7 @@ WHOLE='swap: 2 1
 again: 4 3
 bump: 100 5'
 
-if ! "$PT" "$SRC" > "$TMP/body.c" 2> "$TMP/err"; then
+if ! sh tests/limit.sh "$LIMIT" "$PT" "$SRC" > "$TMP/body.c" 2> "$TMP/err"; then
     echo "FAILED  hygiene.sh: $SRC did not expand"
     cat "$TMP/err"
     exit 1

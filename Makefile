@@ -12,6 +12,13 @@ BIN  = bin/pt
 EXAMPLES = $(wildcard examples/*.pt)
 OUTS     = $(EXAMPLES:examples/%.pt=examples/%.out)
 
+# Seconds any one expansion gets before it is killed. Every example here runs in
+# milliseconds, so this is not a performance budget -- it is the only way the
+# suite can report *did not terminate*, which no recorded .out can express. See
+# tests/limit.sh. Raise it on the command line if a machine is loaded:
+# `make check LIMIT=30`.
+LIMIT ?= 10
+
 all: $(BIN)
 
 $(BIN): $(OBJ)
@@ -29,7 +36,13 @@ build/pt.o: prototype/cmd/pt.c prototype/include/pt.h
 # Re-record every example's output. Read the diff before committing it.
 record: $(BIN)
 	@for f in $(EXAMPLES); do \
-	    ./$(BIN) -o $${f%.pt}.out $$f || exit 1; \
+	    sh tests/limit.sh $(LIMIT) ./$(BIN) -o $${f%.pt}.out $$f; \
+	    rc=$$?; \
+	    if [ $$rc -eq 124 ]; then \
+	        echo "FAILED  $$f did not finish in $(LIMIT)s -- nothing recorded"; \
+	        exit 1; \
+	    fi; \
+	    [ $$rc -eq 0 ] || exit 1; \
 	    echo "recorded $${f%.pt}.out"; \
 	done
 
@@ -39,16 +52,27 @@ check: $(BIN)
 	for f in $(EXAMPLES); do \
 	    want=$${f%.pt}.out; \
 	    if [ ! -f $$want ]; then echo "MISSING $$want"; fail=1; continue; fi; \
-	    if ./$(BIN) $$f 2>build/err.txt | diff -u $$want - > build/diff.txt; then \
+	    sh tests/limit.sh $(LIMIT) ./$(BIN) $$f >build/got.txt 2>build/err.txt; \
+	    rc=$$?; \
+	    if [ $$rc -eq 124 ]; then \
+	        echo "FAILED  $$f: did not finish in $(LIMIT)s, and was killed."; \
+	        echo "        A hang is the one failure a recorded .out cannot show,"; \
+	        echo "        so it is reported here rather than waited on."; \
+	        fail=1; continue; \
+	    fi; \
+	    if [ $$rc -ne 0 ]; then \
+	        echo "FAILED  $$f"; cat build/err.txt; fail=1; continue; \
+	    fi; \
+	    if diff -u $$want build/got.txt > build/diff.txt; then \
 	        echo "ok      $$f"; \
 	    else \
 	        echo "FAILED  $$f"; cat build/err.txt build/diff.txt; fail=1; \
 	    fi; \
 	done; \
-	sh tests/errors.sh ./$(BIN) || fail=1; \
-	sh tests/hygiene.sh ./$(BIN) || fail=1; \
-	sh tests/pascal.sh ./$(BIN) || fail=1; \
-	sh tests/asm.sh ./$(BIN) || fail=1; \
+	LIMIT=$(LIMIT) sh tests/errors.sh ./$(BIN) || fail=1; \
+	LIMIT=$(LIMIT) sh tests/hygiene.sh ./$(BIN) || fail=1; \
+	LIMIT=$(LIMIT) sh tests/pascal.sh ./$(BIN) || fail=1; \
+	LIMIT=$(LIMIT) sh tests/asm.sh ./$(BIN) || fail=1; \
 	exit $$fail
 
 test: check

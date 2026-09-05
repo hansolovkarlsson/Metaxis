@@ -11,6 +11,61 @@ Newest first.
 
 ---
 
+## 14 · The suite could not report the one failure it could not express, and that sat in a commit message for a day
+
+**Issue.** `make check` had no time limit anywhere — not in the Makefile, not in
+any of the four test scripts. A `.pt` file that never terminates did not make it
+go red; it made it *stop*, which from outside is indistinguishable from a slow
+machine. This was known: the defect that proved it was found and fixed on
+2026-09-05, `COMPLETED.md` records that it "surfaced as the first test hanging
+rather than as a wrong answer, which is the one kind of failure this tree's
+recorded outputs cannot express", and that morning's close-out commit is titled
+*a suite that cannot report a hang*.
+
+Nothing was done about it for the rest of the day, across eleven further
+commits, because the observation lived in a commit title and a paragraph and
+never became an item anybody would meet again.
+
+**What found it.** Not a test. A `ps` listing, run for an unrelated reason nine
+hours later, showing the original hung process still spinning — 4½ hours
+elapsed, 205 minutes of CPU, holding a pre-fix binary in memory that no longer
+existed on disk. The bug had been fixed hours earlier; only the process outlived
+it, because nothing reaps a background job whose session has ended.
+
+**Root cause.** Two, and they are the same shape. The suite compares outputs, so
+it can only report failures that *are* outputs — a hang produces none. And the
+observation that this was a gap was recorded where nothing would act on it.
+
+**Solution.** `tests/limit.sh`, and every one of the six places the suite runs
+`pt` now goes through it. Exit 124 is a hang, reported in its own words rather
+than as an empty diff. It costs nothing when nothing hangs: the full run is 2.3
+seconds.
+
+**Two things went wrong while building it**, both worth keeping.
+
+The watchdog inherited stdout, so under `x=$(limit.sh …)` the command
+substitution waited for the *sleeper* to release the pipe — every case paying
+the full limit even after finishing in milliseconds. A 62-case run went from
+two seconds to over ten minutes. **A background process holds the pipe whether
+or not it ever writes to it.**
+
+And `kill -9` on the child left the child's own children running. That is the
+exact orphan this file exists because of, about to be recreated by the thing
+policing it — so the command is started under `set -m` and the group is killed,
+not the process.
+
+**Learnings.** **A known gap recorded only in prose is a gap that stays open.**
+This is POSTMORTEM 13's lesson arriving from the other end on the same day: that
+entry was about a warning in a comment that was accurate and did nothing; this
+is about an accurate observation in a commit message that did nothing. Both were
+right, both were well written, and neither was *downstream* of anything. What
+closed this one was not better prose but a check that fails.
+
+The narrower one: **a test suite can only report the failure modes its output
+format can express.** Recorded `.out` files catch a changed answer. Compiling
+and running catches a wrong one. Neither can say *did not terminate*, and the
+gap was invisible precisely because every existing check was passing.
+
 ## 13 · A file warned about its own trap, and the trap still had to be stepped around by hand
 
 **Issue.** `examples/pascal.pt` reads a `case` arm with a general `a ":" s` rule,

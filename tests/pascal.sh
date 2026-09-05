@@ -31,6 +31,7 @@
 
 PT="${1:-./bin/pt}"
 CC="${CC:-cc}"
+LIMIT="${LIMIT:-10}"
 
 TMP="${TMPDIR:-/tmp}/pt-pascal.$$"
 mkdir -p "$TMP" || exit 1
@@ -58,7 +59,7 @@ WANT="it's middling
 42"
 
 # ---------------------------------------------------------------- code.pt
-if ! "$PT" examples/code.pt > "$TMP/code.c" 2> "$TMP/err"; then
+if ! sh tests/limit.sh "$LIMIT" "$PT" examples/code.pt > "$TMP/code.c" 2> "$TMP/err"; then
     echo "FAILED  pascal.sh: examples/code.pt did not expand"
     cat "$TMP/err"
     exit 1
@@ -82,7 +83,7 @@ if [ "$got" != "$WANT" ]; then
 fi
 
 # ---------------------------------------------------------------- pascal.pt
-if ! "$PT" examples/pascal.pt > "$TMP/pascal.c" 2> "$TMP/err"; then
+if ! sh tests/limit.sh "$LIMIT" "$PT" examples/pascal.pt > "$TMP/pascal.c" 2> "$TMP/err"; then
     echo "FAILED  pascal.sh: examples/pascal.pt did not expand"
     cat "$TMP/err"
     exit 1

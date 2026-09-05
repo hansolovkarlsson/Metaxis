@@ -6,6 +6,7 @@
 # non-zero and say the fragment.
 
 PT="${1:-./bin/pt}"
+LIMIT="${LIMIT:-10}"
 TMP="${TMPDIR:-/tmp}/pt-errors.$$"
 mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
@@ -18,8 +19,16 @@ expect() {
     n=$((n + 1))
     f="$TMP/case$n.pt"
     cat > "$f"
-    got=$("$PT" "$f" 2>&1)
-    if [ $? -eq 0 ]; then
+    got=$(sh tests/limit.sh "$LIMIT" "$PT" "$f" 2>&1)
+    rc=$?
+    if [ $rc -eq 124 ]; then
+        echo "FAILED  errors.sh case $n: did not finish in ${LIMIT}s -- killed."
+        echo "        Refusing a bad file should be immediate; a hang here is a"
+        echo "        defect in the check, not a slow machine."
+        fail=1
+        return
+    fi
+    if [ $rc -eq 0 ]; then
         echo "FAILED  errors.sh case $n: expected a failure, got output"
         fail=1
         return

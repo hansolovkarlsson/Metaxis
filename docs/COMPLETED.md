@@ -10,6 +10,47 @@ argued away.*
 
 Newest first.
 
+## A suite that can report a hang
+
+```
+FAILED  examples/x.pt: did not finish in 10s, and was killed.
+        A hang is the one failure a recorded .out cannot show,
+        so it is reported here rather than waited on.
+```
+
+Every check here compares an output to one recorded beside it, and two of them
+compile that output and run it. **None of them can express *did not
+terminate*.** There is no `.out` for a hang: `make check` in front of one did
+not go red, it stopped.
+
+`tests/limit.sh` runs a command under a wall-clock limit and exits 124 if it has
+to kill it, which is what GNU `timeout` uses. macOS has no `timeout(1)` and this
+tree takes no dependencies, so it is the portable shape: start the command, race
+it against a sleeper, and let whichever finishes first decide. **All six places
+the suite runs `pt`** — the Makefile's `check` and `record` loops and one or two
+calls in each of the four test scripts — go through it. `make check LIMIT=30`
+raises it for a loaded machine.
+
+**It costs nothing when nothing hangs.** The full run is 2.3 seconds, and the
+limit is not a performance budget: every example expands in milliseconds and 10
+seconds is three orders of magnitude of headroom.
+
+**Two mistakes while building it, both kept in the file's comments** because
+both are easy to make again. The watchdog inherited stdout, so under
+`x=$(limit.sh …)` the command substitution waited for the *sleeper* to release
+the pipe and a 62-case run took over ten minutes — a background process holds a
+pipe whether or not it writes to it. And `kill -9` on the child orphaned the
+child's own children, which is the precise failure this file exists because of;
+the command now runs under `set -m` and the process *group* is killed.
+
+**Verified against a stub that never returns**, through the real Makefile
+recipe: each example is killed at the limit and reported, `make check` exits
+nonzero instead of waiting, `errors.sh` says so in its own words, and no
+process is left behind.
+
+See [POSTMORTEM.md](POSTMORTEM.md) 14 for what this cost a day, and why an
+accurate observation in a commit message closed nothing.
+
 ## Pascal's `real`, and the first parameter list whose types differ
 
 ```
