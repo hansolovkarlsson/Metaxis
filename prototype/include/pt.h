@@ -57,7 +57,7 @@ struct Elem {
    read once more. */
 
 enum { E_TEXT, E_INT, E_NAME, E_CALL, E_BIN, E_NOT };
-enum { S_EMIT, S_IF, S_FOR };
+enum { S_EMIT, S_IF, S_FOR, S_CALL };
 
 typedef struct Expr Expr;
 typedef struct Stmt Stmt;
@@ -80,6 +80,21 @@ struct Stmt {
     Stmt *body; int nbody;
     Stmt *alt;  int nalt;
 };
+
+/* A piece of template with a name. It is called as a *statement* and emits into
+   whatever called it, which is why it needs no return: `emit` already writes to
+   one place. Its body sees its parameters and its own loop variables and
+   nothing else -- not the caller's holes -- so it can be checked where it is
+   written rather than at each call. */
+typedef struct {
+    char  *name;
+    char **param;
+    int    nparam;
+    Stmt  *body;
+    int    nbody;
+    char  *file;
+    int    line;
+} Tmpl;
 
 typedef struct {
     Elem *el;
@@ -117,6 +132,7 @@ typedef struct {
     Comment *com;   int ncom;
     char   **punct; int npunct;   /* every rule word, longest first */
     Rule    *rule;  int nrule;
+    Tmpl    *tmpl;  int ntmpl;
     char *sep_in, *sep_out;
     int   sep_nl;                 /* the separator is a newline     */
     char *sep_file; int sep_line; /* where it was declared          */
@@ -165,7 +181,10 @@ char *pt_fresh(const char *label);
 Stmt *code_parse(const char *s, size_t *i, size_t end, const char *file,
                  int *nout, char **err);
 int   code_check(Rule *r, char **err);
-char *code_eval(Rule *r, Bind *b, int nb, char **err);
+/* Resolves every template call in every rule and template, once the header has
+   finished and they are all in. Returns 0, or -1 with *err set. */
+int   code_check_calls(Grammar *g, char **err);
+char *code_eval(Grammar *g, Rule *r, Bind *b, int nb, char **err);
 int   rule_has_hole(Rule *r, const char *name);
 int   code_mentions(Rule *r, const char *n);
 char *expand_text(Grammar *g, const char *src, size_t from,

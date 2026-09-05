@@ -59,6 +59,12 @@ afternoon of writing Pascal:
   works and is a structural hack.
 - `Result :=` exists because a rule cannot know which function it is inside.
 
+A fifth instance arrived from stage 2, in a code generator rather than a
+grammar, and it is the one that got answered: `examples/asm.pt` wrote the same
+two lines at eight operands, and `@template` now names them. **The common cause
+is that this tool could name a rule and nothing else**, and the four above are
+the pattern-shaped half of it — still open, as [ROADMAP.md](ROADMAP.md) 1.
+
 The first three want **named, reusable pattern fragments** — something like
 
 ```
@@ -282,12 +288,12 @@ reason.
    evaluation is eager, so it makes a calculator and not an interpreter. The
    falsification that mattered was not the one predicted, which is the ordinary
    case and the reason for building the cheap thing first.
-3. **Named fragments, of a pattern and of a template.** No longer a prediction:
-   stage 1 wanted the first and stage 2 wanted the second, independently, and
-   [ROADMAP.md](ROADMAP.md) 1 holds the case. The open question is whether they
-   are one mechanic or two — a pattern fragment is spliced at declaration, a
-   template fragment is called at expansion and needs arguments and a scope.
-   Falsified if the next non-trivial target does not repeat itself, which would
-   make the template half a property of code generation rather than of the tool.
+3. **Named fragments.** Half done: `@template` landed on 2026-09-05 and
+   `examples/asm.pt` uses it. They are **two mechanics, not one** — that was the
+   open question, and building the first answered it. A template fragment is
+   called at expansion, takes arguments, has a scope and can recurse; a pattern
+   fragment is spliced at declaration and has none of those, so one directive
+   covering both would be one word meaning two things. `@kind` is
+   [ROADMAP.md](ROADMAP.md) 1.
 4. **A declared environment.** Falsified if it cannot be made safe across `@use`,
    because rule locality is worth more than any single feature it would buy.

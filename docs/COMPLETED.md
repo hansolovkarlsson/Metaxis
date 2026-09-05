@@ -10,6 +10,55 @@ argued away.*
 
 Newest first.
 
+## `@template`: the first thing besides a rule that can be named
+
+```
+@template load(x) {
+    if level(x) == 1000 { emit "\tmov x0, #" + x + "\n…" } else { emit x }
+}
+
+@syntax a "+" b 60 => { load(a) load(b) emit "\tadd x0, x0, x1\n" }
+```
+
+`examples/asm.pt` had written that test out at every operand — eight times,
+identically — because this tool could name a rule and nothing else. It now
+writes it once.
+
+**Called as a statement, and that is the design decision.** A template emits
+into whatever called it rather than returning a value, because `emit` already
+writes to one place and a return would have needed a second mechanism for
+nothing. So a template call is a statement form, a builtin call stays an
+expression, and the two mistakes that invites each get their own message rather
+than a shared confusing one: `'level' is a builtin and gives a value — put it in
+an 'emit'`, and `'t' is a template — it is called as a statement`.
+
+**Its body sees its parameters and nothing else.** Not the caller's holes. That
+is what makes it readable on its own and checkable where it is written, and it
+is the difference between a named fragment and a macro. `'y' is not one of this
+template's parameters` is the whole of the scoping rule.
+
+**Calls resolve at seal**, for the third time this week and for the same reason
+the class-kind check and the collision rule do: a rule may call a template
+declared after it, or one that arrived through `@use`, and the order a file
+writes its directives in cannot change the answer.
+
+**What it actually bought, measured rather than asserted.** The rules section of
+`examples/asm.pt` went from 2458 bytes to 1473 — a little under half — and
+*gained three lines*, because eight copies of a hundred-character test became
+eight calls of eight characters plus a three-line declaration. The expansion is
+byte-identical to what the file emitted before, which is the proof that the
+refactor is one: `diff` against the recorded output is empty.
+
+**Two things found while building it.** A statement that is a bare word with no
+`(` is not assumed to be a call — saying which statement forms exist is more use
+than guessing at the one meant, so that message is repinned rather than
+narrowed. And parameters were capped at 8 in the evaluator with a silent
+truncation, which surfaced as `nothing here is called 'i'` for a parameter that
+was plainly declared; it is refused at declaration now.
+
+*Verified at 12 examples, 48 error cases, `tests/hygiene.sh`, `tests/pascal.sh`
+and `tests/asm.sh`; `make check` clean.*
+
 ## Stage 2: C in, arm64 assembly out, assembled and run
 
 `examples/asm.pt` reads a C subset and emits arm64 that `tests/asm.sh`

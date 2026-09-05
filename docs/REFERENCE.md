@@ -120,6 +120,7 @@ directive   = "@use"       string
             | "@comment"   string ( string | "eol" )
             | "@separator" string [ "=>" string ] [ "override" ]
             | "@syntax"    pattern [ level ] "=>" template { "terminated" | "override" }
+            | "@template"  name "(" [ name { "," name } ] ")" code [ "override" ]
             | "@end" .
 ```
 
@@ -140,7 +141,7 @@ applies — so `"0x[0-9a-fA-F]+|[0-9]+"` takes all of `0x0c` and not just the `0
   string literal would be declared, and how one is declared by accident.
 - **Redeclaring a name is refused** unless the second declaration says
   `override`, which replaces the pattern; rules already written against the
-  class keep working. §3.8.
+  class keep working. §3.9.
 - A class name may be used as a hole's kind (§4.3).
 - A bad pattern is `bad pattern for 'name': …` with the regex library's own
   words after it.
@@ -177,7 +178,7 @@ A separator that contains a newline makes **newline a token** instead of
 whitespace: a run of blank lines is one separator, and no separator is produced
 before the first token or after the last.
 
-**Declaring it twice is refused** unless the second says `override`. §3.8.
+**Declaring it twice is refused** unless the second says `override`. §3.9.
 Nothing may follow but `override`; anything else is `trailing text after
 @separator`.
 
@@ -213,7 +214,7 @@ brace is open, which is what lets the closing `}` sit at the left margin.
 separator is joined after it (§6.3). A code template can also **read** it off a
 hole — `terminated(h)` in §8.3 — which is how a rule decides whether what filled
 a hole needs punctuating. **`override`** says the rule means to displace an
-earlier one with the same pattern (§3.8). Either, both, in either order.
+earlier one with the same pattern (§3.9). Either, both, in either order.
 
 Both go **after the template**, which is the one place in a rule where a bare
 word cannot be anything else — a hole only appears in the pattern — so they
@@ -240,7 +241,7 @@ What it brings is what it declared. `examples/use.pt` takes its arithmetic from
 belong to the file being written and not to the arithmetic in it.
 
 Two used files that declare one thing are refused, and a file says which it
-meant. §3.8.
+meant. §3.9.
 
 ### 3.6 `@mode expression` · `@mode text`
 
@@ -252,10 +253,43 @@ one matches, and copies everything else through. §7.
 
 Ends the header. §2.2.
 
-### 3.8 `override` — two files declaring one thing
+### 3.8 `@template name(x, y) { … }`
 
-Three things can be declared twice: a rule's pattern, a `@token` class name, and
-`@separator`. **Unmarked, the second is an error naming both lines.** Marked
+Names a piece of template so it can be called from more than one rule. This is
+the only thing besides a rule that can be named.
+
+```
+@template load(x) {
+    if level(x) == 1000 { emit "\tmov x0, #" + x + "\n" } else { emit x }
+}
+
+@syntax a "+" b 60 => { load(a) load(b) emit "\tadd x0, x0, x1\n" }
+```
+
+- **It is called as a statement**, on a line of its own, and **emits into
+  whatever called it** — `emit` already writes to one place, so there is nothing
+  to return. Using one where a value is wanted is
+  `'load' is a template — it is called as a statement…`, and calling a *builtin*
+  as a statement is the same mistake the other way round.
+- **Its body sees its parameters and its own loop variables, and nothing else.**
+  Not the caller's holes: `'y' is not one of this template's parameters`. That
+  is what lets it be read on its own, and checked without knowing who calls it.
+- **Calls are resolved once the header has finished**, so a rule may call a
+  template declared after it, or one that arrived through `@use`, and the order
+  a file writes its directives in does not change the answer (§3.5, §3.8).
+- **A template may call a template**, itself included; 64 deep is
+  `templates called more than 64 deep`.
+- **Fresh names are shared with the caller.** `fresh("L")` inside a template is
+  the same name as `fresh("L")` in the rule that called it, which is what lets a
+  template finish a construct the rule started (§8.2).
+- At most **8 parameters**. Declaring the same name twice is refused unless the
+  second says `override`, as everything else is (§3.9).
+- `examples/asm.pt` is the customer: one `load` against eight call sites.
+
+### 3.9 `override` — two files declaring one thing
+
+Four things can be declared twice: a rule's pattern, a `@token` class name,
+`@separator`, and a `@template` name. **Unmarked, the second is an error naming both lines.** Marked
 `override`, the second wins and nothing is said — because it was said in the
 source.
 
@@ -653,7 +687,8 @@ scope. `examples/hygiene.pt` demonstrates both and `tests/hygiene.sh` runs them.
 code   = "{" { stmt } "}" .
 stmt   = "emit" expr
        | "if" expr code [ "else" code ]
-       | "for" [ name "," ] name "in" expr [ "sep" expr ] code .
+       | "for" [ name "," ] name "in" expr [ "sep" expr ] code
+       | name "(" [ expr { "," expr } ] ")" .    (* a template, §3.8 *)
 expr   = expr ( "and" | "or" ) expr
        | expr ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) expr
        | expr ( "+" | "-" ) expr              (* + joins or adds   *)
@@ -854,16 +889,27 @@ Every message the tool can produce, and what it means.
 | `'*' wants two numbers and was given 'x' and '2' — num(h) reads a hole as one` | §8.3; likewise `-`, `/`, `%` |
 | `'num' wants a number and was given 'x'` | §8.3 |
 | `'/' by zero` | §8.3; likewise `%` |
+| `expected 'emit', 'if', 'for' or a template call` | a statement that is none of those |
+| `no template called 'x'` | §3.8 |
+| `'t' takes 2 and was given 1 — declared at f:n` | §3.8 |
+| `'y' is not one of this template's parameters` | §3.8 — a template cannot see the caller's holes |
+| `'level' is a builtin and gives a value — put it in an 'emit'…` | §3.8 |
+| `'t' is a template — it is called as a statement…` | §3.8 |
+| `the template 't' is already declared at f:n` | §3.9 |
+| `'override', but no template 't' was declared before it` | §3.9 |
+| `expected a name after '@template'` · `expected '(' after a template's name` · `expected a parameter name` · `a template's body is a block` | §3.8 |
+| `a template takes at most 8 parameters` | §11 |
+| `templates called more than 64 deep — 't' calls itself without stopping` | §11 |
 | `loops nested more than 32 deep` | §11 |
 | `cannot open path` | `@use` |
 | `a used file holds directives and nothing else` | §3.5 |
 | `@use nested more than 64 deep` | §3.5 |
-| `this pattern is already declared at f:n — write 'override' after the template to mean it` | §3.8 |
-| `'override', but nothing with this pattern was declared before it` | §3.8 |
-| `the class 'x' is already declared at f:n — write 'override' to mean it` | §3.8 |
-| `'override', but no class 'x' was declared before it` | §3.8 |
-| `the separator is already declared at f:n — write 'override' to mean it` | §3.8 |
-| `'override', but no separator was declared before it` | §3.8 |
+| `this pattern is already declared at f:n — write 'override' after the template to mean it` | §3.9 |
+| `'override', but nothing with this pattern was declared before it` | §3.9 |
+| `the class 'x' is already declared at f:n — write 'override' to mean it` | §3.9 |
+| `'override', but no class 'x' was declared before it` | §3.9 |
+| `the separator is already declared at f:n — write 'override' to mean it` | §3.9 |
+| `'override', but no separator was declared before it` | §3.9 |
 | `trailing text after @token` · `trailing text after @separator` | a word after the directive that is not one of its own |
 
 ### In the body
@@ -888,6 +934,8 @@ Every message the tool can produce, and what it means.
 | `@use` nesting | 64 (and a file is read once, §3.5) |
 | group nesting | 16 |
 | loop nesting in a code template | 32 |
+| template call depth | 64 |
+| parameters of one template | 8 |
 | text-mode match attempts per rule | 200000 |
 | expression recursion | 400 |
 | text-mode expansion depth | 64 |

@@ -333,7 +333,7 @@ static char *p_rule(P *p, Rule *r, char *leftval, int leftlev, int leftterm)
 
     if (r->body) {
         char *err = NULL;
-        char *out = code_eval(r, b, nb, &err);
+        char *out = code_eval(p->g, r, b, nb, &err);
         if (!out) { p->err = err; return NULL; }
         return out;
     }
@@ -677,7 +677,7 @@ static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
     if (!tm_match(&t, r->el, r->nel, 0, i, NULL, 0, NULL)) return NULL;
     *end = t.end;
 
-    if (r->body) return code_eval(r, b, nb, err);
+    if (r->body) return code_eval(g, r, b, nb, err);
 
     P p = { g, NULL, 0, 0, 0, NULL };
     char *out = subst(&p, r, b, nb);

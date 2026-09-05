@@ -10,6 +10,17 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`@template name(x) { … }`** — a piece of template with a name, called as a
+statement from a code template and emitting into whatever called it. Its body
+sees its parameters and its own loop variables and nothing else, so it can be
+read on its own; calls resolve once the header has finished, so a rule may call
+one declared after it or brought in by `@use`; a template may call a template,
+64 deep. At most 8 parameters, and a duplicate name is refused unless it says
+`override`. `examples/asm.pt` has one `load` against eight call sites.
+
+A statement may now be a call, so `expected 'emit', 'if' or 'for'` is now
+`expected 'emit', 'if', 'for' or a template call`.
+
 **`fresh(label)` in a code template now gives one name per label per
 application**, which is what `{~label}` in a string template has always done and
 what this page and the reference had both said it did. It returned a new name on

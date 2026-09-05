@@ -370,8 +370,37 @@ static Stmt *block(C *c, int *nout)
             }
             s.body = block(c, &s.nbody);
             if (c->err) return NULL;
+        } else if (c->kind == C_NAME && !code_is_keyword(c->text)) {
+            /* A name with a `(` after it, where a statement was expected, is a
+               call to a named piece of template. Nothing else can appear here,
+               so no word had to be reserved for it. */
+            Expr *e = mk(E_CALL);
+            e->s = c->text;
+            cnext(c);
+            /* A word with no `(` after it is not a call and is not assumed to be
+               one: it is a statement this language has no form for, and saying
+               which forms exist is more use than guessing at the one meant. */
+            if (!take(c, C_PUNCT, "(")) {
+                cerr(c, "expected 'emit', 'if', 'for' or a template call");
+                return NULL;
+            }
+            if (!at(c, C_PUNCT, ")")) {
+                for (;;) {
+                    Expr *a = e_or(c);
+                    if (!a) return NULL;
+                    Expr **v = xmalloc(sizeof *v * (size_t)(e->nargs + 1));
+                    if (e->args) memcpy(v, e->args, sizeof *v * (size_t)e->nargs);
+                    v[e->nargs] = a;
+                    e->args = v;
+                    e->nargs++;
+                    if (!take(c, C_PUNCT, ",")) break;
+                }
+            }
+            if (!take(c, C_PUNCT, ")")) { cerr(c, "expected ')'"); return NULL; }
+            s.kind = S_CALL;
+            s.e = e;
         } else {
-            cerr(c, "expected 'emit', 'if' or 'for'");
+            cerr(c, "expected 'emit', 'if', 'for' or a template call");
             return NULL;
         }
         v = push(v, &n, s);
@@ -418,79 +447,94 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { NULL, 0, NULL }
 };
 
-static int check_expr(Rule *r, Expr *e, Scope *sc, char **err)
+static int check_expr(Rule *r, const char *where, Expr *e, Scope *sc, char **err)
 {
     if (!e) return 0;
     switch (e->kind) {
     case E_TEXT: case E_INT: return 0;
-    case E_NOT:  return check_expr(r, e->a, sc, err);
-    case E_BIN:  return check_expr(r, e->a, sc, err) || check_expr(r, e->b, sc, err);
+    case E_NOT:  return check_expr(r, where, e->a, sc, err);
+    case E_BIN:  return check_expr(r, where, e->a, sc, err) ||
+                 check_expr(r, where, e->b, sc, err);
     case E_NAME:
         for (int i = 0; i < sc->n_; i++) if (!strcmp(sc->n[i], e->s)) return 0;
-        if (rule_has_hole(r, e->s)) return 0;
-        *err = xfmt("%s:%d: the template uses '%s' and the pattern has no such hole",
-                    r->file, r->line, e->s);
+        if (r && rule_has_hole(r, e->s)) return 0;
+        if (!r) {
+            *err = xfmt("%s: '%s' is not one of this template's parameters",
+                        where, e->s);
+            return -1;
+        }
+        *err = xfmt("%s: the template uses '%s' and the pattern has no such hole",
+                    where, e->s);
         return -1;
     case E_CALL:
         for (int i = 0; BUILTIN[i].name; i++) {
             if (strcmp(BUILTIN[i].name, e->s)) continue;
             if (e->nargs != BUILTIN[i].args) {
-                *err = xfmt("%s:%d: '%s' takes %d and was given %d -- it gives %s",
-                            r->file, r->line, e->s, BUILTIN[i].args, e->nargs,
-                            BUILTIN[i].what);
+                *err = xfmt("%s: '%s' takes %d and was given %d -- it gives %s",
+                            where, e->s, BUILTIN[i].args, e->nargs, BUILTIN[i].what);
                 return -1;
             }
             for (int a = 0; a < e->nargs; a++)
-                if (check_expr(r, e->args[a], sc, err) < 0) return -1;
+                if (check_expr(r, where, e->args[a], sc, err) < 0) return -1;
             return 0;
         }
-        *err = xfmt("%s:%d: no such thing as '%s'", r->file, r->line, e->s);
-        return -1;
+        /* Not a builtin. It might be a template used where a value was wanted,
+           and templates are not all in yet, so this is settled at seal -- where
+           the difference between *no such thing* and *that is a statement* can
+           actually be told. */
+        for (int a = 0; a < e->nargs; a++)
+            if (check_expr(r, where, e->args[a], sc, err) < 0) return -1;
+        return 0;
     }
     return 0;
 }
 
-static int check_block(Rule *r, Stmt *v, int n, Scope *sc, char **err)
+static int check_block(Rule *r, const char *where, Stmt *v, int n, Scope *sc, char **err)
 {
     for (int i = 0; i < n; i++) {
-        if (check_expr(r, v[i].e, sc, err) < 0) return -1;
-        if (v[i].sep && check_expr(r, v[i].sep, sc, err) < 0) return -1;
+        /* A call statement's *name* is resolved at seal, when every template is
+           in and the order a file wrote them cannot change the answer. Its
+           arguments are ordinary expressions and are checked here. */
+        if (v[i].kind == S_CALL) {
+            for (int a = 0; a < v[i].e->nargs; a++)
+                if (check_expr(r, where, v[i].e->args[a], sc, err) < 0) return -1;
+        } else if (check_expr(r, where, v[i].e, sc, err) < 0) return -1;
+        if (v[i].sep && check_expr(r, where, v[i].sep, sc, err) < 0) return -1;
         if (v[i].kind == S_FOR) {
             if (sc->n_ >= 32) {
-                *err = xfmt("%s:%d: loops nested more than 32 deep", r->file, r->line);
+                *err = xfmt("%s: loops nested more than 32 deep", where);
                 return -1;
             }
             for (int w = 0; w < 2; w++) {
                 const char *nm = w ? v[i].idx : v[i].var;
                 if (!nm) continue;
                 if (rule_has_hole(r, nm)) {
-                    *err = xfmt("%s:%d: the loop variable '%s' is also a hole -- one of"
-                                " them has to be called something else",
-                                r->file, r->line, nm);
+                    *err = xfmt("%s: the loop variable '%s' is also a hole -- one of"
+                                " them has to be called something else", where, nm);
                     return -1;
                 }
             }
             if (v[i].idx && !strcmp(v[i].idx, v[i].var)) {
-                *err = xfmt("%s:%d: 'for %s, %s' names the position and the turn the"
-                            " same thing", r->file, r->line, v[i].idx, v[i].var);
+                *err = xfmt("%s: 'for %s, %s' names the position and the turn the"
+                            " same thing", where, v[i].idx, v[i].var);
                 return -1;
             }
             sc->n[sc->n_++] = v[i].var;
             if (v[i].idx) {
                 if (sc->n_ >= 32) {
-                    *err = xfmt("%s:%d: loops nested more than 32 deep", r->file, r->line);
+                    *err = xfmt("%s: loops nested more than 32 deep", where);
                     return -1;
                 }
                 sc->n[sc->n_++] = v[i].idx;
             }
-            int rc = check_block(r, v[i].body, v[i].nbody, sc, err);
+            int rc = check_block(r, where, v[i].body, v[i].nbody, sc, err);
             sc->n_--;
             if (v[i].idx) sc->n_--;
             if (rc < 0) return -1;
         } else {
-            if (check_block(r, v[i].body, v[i].nbody, sc, err) < 0) return -1;
+            if (check_block(r, where, v[i].body, v[i].nbody, sc, err) < 0) return -1;
         }
-        if (check_block(r, v[i].alt, v[i].nalt, sc, err) < 0) return -1;
+        if (check_block(r, where, v[i].alt, v[i].nalt, sc, err) < 0) return -1;
     }
     return 0;
 }
@@ -499,7 +543,7 @@ int code_check(Rule *r, char **err)
 {
     Scope sc;
     sc.n_ = 0;
-    return check_block(r, r->body, r->nbody, &sc, err);
+    return check_block(r, xfmt("%s:%d", r->file, r->line), r->body, r->nbody, &sc, err);
 }
 
 /* A fresh name must avoid the text a code template emits, exactly as it avoids
@@ -554,6 +598,8 @@ typedef struct Frame {
 } Frame;
 
 typedef struct {
+    Grammar *g;
+    int    depth;
     Rule  *r;
     Bind  *b;
     int    nb;
@@ -650,6 +696,13 @@ static char *replace_all(const char *s, const char *from, const char *to)
 }
 
 static int eval(Ev *ev, Expr *e, Val *out);
+
+static Tmpl *tmpl_find(Grammar *g, const char *name)
+{
+    for (int i = 0; i < g->ntmpl; i++)
+        if (!strcmp(g->tmpl[i].name, name)) return &g->tmpl[i];
+    return NULL;
+}
 
 static int call(Ev *ev, Expr *e, Val *out)
 {
@@ -826,6 +879,41 @@ static int run(Ev *ev, Stmt *v, int n)
             if (truthy(c)) { if (run(ev, s->body, s->nbody) < 0) return -1; }
             else           { if (run(ev, s->alt,  s->nalt)  < 0) return -1; }
             break;
+        case S_CALL: {
+            Tmpl *t = tmpl_find(ev->g, s->e->s);
+            if (!t) {   /* resolved at seal; unreachable unless that was skipped */
+                ev->err = xfmt("%s:%d: no template called '%s'",
+                               ev->r->file, ev->r->line, s->e->s);
+                return -1;
+            }
+            if (++ev->depth > 64) {
+                ev->err = xfmt("%s:%d: templates called more than 64 deep -- '%s'"
+                               " calls itself without stopping",
+                               ev->r->file, ev->r->line, t->name);
+                return -1;
+            }
+            /* Arguments are evaluated where the call is written; the body then
+               runs with *only* the parameters in scope, so a template cannot
+               reach into the rule that called it and can be read on its own. */
+            Frame  fr[8];
+            Val    av[8];
+            int    np = t->nparam < 8 ? t->nparam : 8;
+            for (int k = 0; k < np; k++)
+                if (eval(ev, s->e->args[k], &av[k]) < 0) return -1;
+            Frame *save = ev->env;
+            ev->env = NULL;
+            for (int k = 0; k < np; k++) {
+                fr[k].name = t->param[k];
+                fr[k].v    = av[k];
+                fr[k].up   = ev->env;
+                ev->env    = &fr[k];
+            }
+            int rc = run(ev, t->body, t->nbody);
+            ev->env = save;
+            ev->depth--;
+            if (rc < 0) return -1;
+            break;
+        }
         case S_FOR: {
             if (eval(ev, s->e, &c) < 0) return -1;
             char  *sep = NULL;
@@ -862,12 +950,94 @@ static int run(Ev *ev, Stmt *v, int n)
     return ev->err ? -1 : 0;
 }
 
-char *code_eval(Rule *r, Bind *b, int nb, char **err)
+char *code_eval(Grammar *g, Rule *r, Bind *b, int nb, char **err)
 {
     Ev ev;
     memset(&ev, 0, sizeof ev);
-    ev.r = r; ev.b = b; ev.nb = nb;
+    ev.g = g; ev.r = r; ev.b = b; ev.nb = nb;
     if (run(&ev, r->body, r->nbody) < 0) { *err = ev.err; return NULL; }
     if (!ev.out.p) buf_str(&ev.out, "");
     return ev.out.p;
+}
+
+/* ------------------------------------------------- resolving template calls */
+
+static int is_builtin(const char *n)
+{
+    for (int i = 0; BUILTIN[i].name; i++) if (!strcmp(BUILTIN[i].name, n)) return 1;
+    return 0;
+}
+
+/* A call in expression position must be a builtin. The two ways to get that
+   wrong are worth telling apart, because both are things somebody will write. */
+static int resolve_expr(Grammar *g, const char *where, Expr *e, char **err)
+{
+    if (!e) return 0;
+    if (e->kind == E_CALL && !is_builtin(e->s)) {
+        if (tmpl_find(g, e->s))
+            *err = xfmt("%s: '%s' is a template -- it is called as a statement on a"
+                        " line of its own and emits, so it has no value to use here",
+                        where, e->s);
+        else
+            *err = xfmt("%s: no such thing as '%s'", where, e->s);
+        return -1;
+    }
+    if (resolve_expr(g, where, e->a, err) < 0) return -1;
+    if (resolve_expr(g, where, e->b, err) < 0) return -1;
+    for (int i = 0; i < e->nargs; i++)
+        if (resolve_expr(g, where, e->args[i], err) < 0) return -1;
+    return 0;
+}
+
+static int resolve_block(Grammar *g, const char *where, Stmt *v, int n, char **err)
+{
+    for (int i = 0; i < n; i++) {
+        if (v[i].kind != S_CALL && resolve_expr(g, where, v[i].e, err) < 0) return -1;
+        if (resolve_expr(g, where, v[i].sep, err) < 0) return -1;
+        if (v[i].kind == S_CALL) {
+            for (int a = 0; a < v[i].e->nargs; a++)
+                if (resolve_expr(g, where, v[i].e->args[a], err) < 0) return -1;
+            if (is_builtin(v[i].e->s)) {
+                *err = xfmt("%s: '%s' is a builtin and gives a value -- put it in an"
+                            " 'emit', not on a line of its own", where, v[i].e->s);
+                return -1;
+            }
+            Tmpl *t = tmpl_find(g, v[i].e->s);
+            if (!t) {
+                *err = xfmt("%s: no template called '%s'", where, v[i].e->s);
+                return -1;
+            }
+            if (v[i].e->nargs != t->nparam) {
+                *err = xfmt("%s: '%s' takes %d and was given %d -- declared at %s:%d",
+                            where, t->name, t->nparam, v[i].e->nargs, t->file, t->line);
+                return -1;
+            }
+        }
+        if (resolve_block(g, where, v[i].body, v[i].nbody, err) < 0) return -1;
+        if (resolve_block(g, where, v[i].alt,  v[i].nalt,  err) < 0) return -1;
+    }
+    return 0;
+}
+
+int code_check_calls(Grammar *g, char **err)
+{
+    for (int i = 0; i < g->nrule; i++) {
+        Rule *r = &g->rule[i];
+        if (!r->body) continue;
+        if (resolve_block(g, xfmt("%s:%d", r->file, r->line), r->body, r->nbody, err) < 0)
+            return -1;
+    }
+    for (int i = 0; i < g->ntmpl; i++) {
+        Tmpl *t = &g->tmpl[i];
+        char *where = xfmt("%s:%d", t->file, t->line);
+        /* A template's body sees its parameters and nothing else, so it is
+           checked here in full rather than where it was declared -- the calls
+           in it need every other template to be in first. */
+        Scope sc;
+        sc.n_ = 0;
+        for (int k = 0; k < t->nparam && k < 32; k++) sc.n[sc.n_++] = t->param[k];
+        if (check_block(NULL, where, t->body, t->nbody, &sc, err) < 0) return -1;
+        if (resolve_block(g, where, t->body, t->nbody, err) < 0) return -1;
+    }
+    return 0;
 }

@@ -21,9 +21,14 @@
 ; cannot translate a string), so nothing turns `3` into `mov x0, #3`. What tells
 ; a literal from a subexpression is `level(h)`: every rule below declares a
 ; level, so `level(h) == 1000` means *nothing here produced this, it is a token
-; standing for itself*. Each operand is therefore loaded by hand, and that
-; two-line idiom repeated eight times is the cost. What would remove it is a way
-; to name a piece of template and call it -- see docs/ROADMAP.md.
+; standing for itself*.
+;
+; `@template load(x)` is that test, written once. The first version of this file
+; wrote it out at every operand -- eight times, identically -- and that
+; repetition is what asked for the directive: this tool could name a rule and
+; nothing else. A template is called as a statement, emits into whatever called
+; it, and sees its parameters and nothing else, so `load` can be read on its own
+; without knowing which rule is using it.
 ;
 ; A **label is needed twice**, at the branch and at the place it jumps to, and
 ; `fresh("L")` used to return a different name each call. It now returns one name
@@ -39,36 +44,42 @@
 @comment "//" eol
 @separator ";" => "\n"
 
+; Load an operand's value onto the stack: a literal becomes an immediate, and
+; anything a rule produced is already the code that pushes it.
+@template load(x) {
+    if level(x) == 1000 { emit "\tmov x0, #" + x + "\n\tstr x0, [sp, #-16]!\n" } else { emit x }
+}
+
 @syntax "(" e ")"  95
     => {
-        if level(e) == 1000 { emit "\tmov x0, #" + e + "\n\tstr x0, [sp, #-16]!\n" } else { emit e }
+        load(e)
     }
 
 @syntax a "*" b  70
     => {
-        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
-        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        load(a)
+        load(b)
         emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tmul x0, x0, x1\n\tstr x0, [sp, #-16]!\n"
     }
 
 @syntax a "+" b  60
     => {
-        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
-        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        load(a)
+        load(b)
         emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tadd x0, x0, x1\n\tstr x0, [sp, #-16]!\n"
     }
 
 @syntax a "-" b  60
     => {
-        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
-        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        load(a)
+        load(b)
         emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tsub x0, x0, x1\n\tstr x0, [sp, #-16]!\n"
     }
 
 @syntax a "<" b  40
     => {
-        if level(a) == 1000 { emit "\tmov x0, #" + a + "\n\tstr x0, [sp, #-16]!\n" } else { emit a }
-        if level(b) == 1000 { emit "\tmov x0, #" + b + "\n\tstr x0, [sp, #-16]!\n" } else { emit b }
+        load(a)
+        load(b)
         emit "\tldr x1, [sp], #16\n\tldr x0, [sp], #16\n\tcmp x0, x1\n\tcset x0, lt\n\tstr x0, [sp, #-16]!\n"
     }
 
@@ -78,17 +89,17 @@
 ; "jump"; the target does.
 @syntax c "?" t ":" f  30 right
     => {
-        if level(c) == 1000 { emit "\tmov x0, #" + c + "\n\tstr x0, [sp, #-16]!\n" } else { emit c }
+        load(c)
         emit "\tldr x0, [sp], #16\n\tcbz x0, " + fresh("Lelse") + "\n"
-        if level(t) == 1000 { emit "\tmov x0, #" + t + "\n\tstr x0, [sp, #-16]!\n" } else { emit t }
+        load(t)
         emit "\tb " + fresh("Lend") + "\n" + fresh("Lelse") + ":\n"
-        if level(f) == 1000 { emit "\tmov x0, #" + f + "\n\tstr x0, [sp, #-16]!\n" } else { emit f }
+        load(f)
         emit fresh("Lend") + ":\n"
     }
 
 @syntax "putn" "(" e ")"  95
     => {
-        if level(e) == 1000 { emit "\tmov x0, #" + e + "\n\tstr x0, [sp, #-16]!\n" } else { emit e }
+        load(e)
         emit "\tldr x0, [sp], #16\n\tbl _putn"
     }
 

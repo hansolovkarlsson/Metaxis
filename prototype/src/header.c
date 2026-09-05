@@ -519,6 +519,59 @@ static int directive(Grammar *g, D *d, const char *file, int line,
         g->sep_nl  = strchr(in, '\n') != NULL;
         return 0;
     }
+    if (!strcmp(name, "template")) {
+        char *n = dident(d);
+        if (!n) { derr(d, "expected a name after '@template'"); goto fail; }
+        if (!dtake(d, "(")) { derr(d, "expected '(' after a template's name"); goto fail; }
+        Tmpl t;
+        memset(&t, 0, sizeof t);
+        t.name = n;
+        t.file = xstrdup(file);
+        t.line = line;
+        if (!dat(d, ")")) {
+            for (;;) {
+                char *pn = dident(d);
+                if (!pn) { derr(d, "expected a parameter name"); goto fail; }
+                if (t.nparam >= 8) {
+                    derr(d, xfmt("a template takes at most 8 parameters, and '%s'"
+                                 " was given more", n));
+                    goto fail;
+                }
+                t.param = grow(t.param, t.nparam, sizeof *t.param);
+                t.param[t.nparam++] = pn;
+                if (!dtake(d, ",")) break;
+            }
+        }
+        if (!dtake(d, ")")) { derr(d, "expected ')'"); goto fail; }
+        dskip(d);
+        if (d->i >= d->end || d->s[d->i] != '{') {
+            derr(d, "a template's body is a block: '@template name(x) { … }'");
+            goto fail;
+        }
+        char *cerr = NULL;
+        t.body = code_parse(d->s, &d->i, d->end, d->file, &t.nbody, &cerr);
+        if (!t.body) { if (!d->err) d->err = cerr; goto fail; }
+        int over = dtake(d, "override");
+        if (dend(d, "@template") < 0) goto fail;
+        for (int i = 0; i < g->ntmpl; i++) {
+            if (strcmp(g->tmpl[i].name, n)) continue;
+            if (!over) {
+                derr(d, xfmt("the template '%s' is already declared at %s:%d"
+                             " -- write 'override' to mean it",
+                             n, g->tmpl[i].file, g->tmpl[i].line));
+                goto fail;
+            }
+            g->tmpl[i] = t;
+            return 0;
+        }
+        if (over) {
+            derr(d, xfmt("'override', but no template '%s' was declared before it", n));
+            goto fail;
+        }
+        g->tmpl = grow(g->tmpl, g->ntmpl, sizeof *g->tmpl);
+        g->tmpl[g->ntmpl++] = t;
+        return 0;
+    }
     if (!strcmp(name, "syntax")) {
         if (rule_syntax(g, d, line) < 0) goto fail;
         return 0;
@@ -807,6 +860,10 @@ static int rule_clash(Grammar *g, char **err)
 int grammar_seal(Grammar *g, char **err)
 {
     if (rule_clash(g, err) < 0) return -1;
+    /* Template calls resolve here rather than where they are written, so a rule
+       may call a template declared after it or in a file it `@use`d, and the
+       order a header is written in cannot change the answer. */
+    if (code_check_calls(g, err) < 0) return -1;
 
     for (int r = 0; r < g->nrule; r++)
         seal_elems(g, g->rule[r].el, g->rule[r].nel);

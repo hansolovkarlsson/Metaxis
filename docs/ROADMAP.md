@@ -63,43 +63,29 @@ we find out which.
 
 ---
 
-## 1 · A name for a piece of template
+## 1 · `@kind` — the other half of naming a fragment
 
-`examples/asm.pt` writes this eight times:
-
-```
-if level(x) == 1000 { emit "\tmov x0, #" + x + "\n\tstr x0, [sp, #-16]!\n" } else { emit x }
-```
-
-once per operand of every rule. It is the whole of *load this operand's value
-onto the stack*, it is identical every time, and there is no way to name it. The
-example is longer than the language it compiles, and almost all of the excess is
-that line.
-
-**What it wants is a template that can be called:**
+`@template` named a piece of *template* on 2026-09-05, because
+`examples/asm.pt` had written one out eight times. The pattern side is still
+unnamed: `examples/pascal.pt` and `examples/code.pt` each write
 
 ```
-@template load(x) { if level(x) == 1000 { emit … } else { emit x } }
-@syntax a "+" b 60 => { load(a) load(b) emit "\tadd x0, x0, x1\n" }
+[ p:name ":" "integer" ]* sep ";"
 ```
 
-**This is the second half of a prediction [direction.md](direction.md) already
-made.** That page says the structural gap is *named, reusable fragments*, and
-gives the pattern-side example — `[ p:name ":" "integer" ]*` written twice in
-`examples/pascal.pt` because there is no `@kind`. Stage 2 arrived at the same
-gap from the template side without looking for it, which is the strongest
-evidence either has. Both are one idea: **this tool cannot name anything except
-a rule.**
+twice, once in `procedure` and once in `function`, because there is no way to
+say it once. `@kind params = …` is that, spliced where it is named.
 
-Whether they are one mechanic or two is the open question. A pattern fragment is
-spliced at declaration; a template fragment is called at expansion and needs
-arguments, a scope and a recursion story. They may share a directive and they
-may not, and building one will say which.
+**They turned out to be two mechanics and not one**, which was the open question
+when `@template` was built. A template fragment is *called at expansion*, takes
+arguments, has a scope and can recurse; a pattern fragment is *spliced at
+declaration* and has none of those — it is nearer to a macro over pattern text
+than to a function. Sharing a directive between them would have meant one word
+meaning two unrelated things.
 
-**What would settle it against:** if the repetition turns out to be a property of
-code generation rather than of the tool — if the next non-trivial target does not
-repeat itself — then one example wanting it is not enough, and `@kind` is the
-half worth having.
+What is not yet known is whether the pattern side wants parameters too —
+`@kind list(sep) = …` — and there is no customer for that, so the answer is
+probably no until there is one.
 
 ## 2 · Stage 1 — what Pascal→C still owes
 

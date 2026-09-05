@@ -145,7 +145,7 @@ expect "the loop variable 'a' is also a hole" <<'EOF'
 @syntax "f" [ a:name ]+ => { for a in a { emit a } }
 EOF
 
-expect "expected 'emit', 'if' or 'for'" <<'EOF'
+expect "expected 'emit', 'if', 'for' or a template call" <<'EOF'
 @token name "[a-z]+"
 @syntax "f" a => { a }
 EOF
@@ -260,6 +260,42 @@ expect "'/' by zero" <<'EOF'
 @syntax "f" a => { emit num(a) / 0 }
 @end
 f 5
+EOF
+
+# A template is resolved once the header has finished, so a rule may call one
+# declared after it. These are the ways that can still be wrong.
+expect "no template called 'nope'" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { nope(a) }
+EOF
+
+expect "'t' takes 2 and was given 1" <<'EOF'
+@token number "[0-9]+"
+@template t(x, y) { emit x }
+@syntax "f" a => { t(a) }
+EOF
+
+expect "is not one of this template's parameters" <<'EOF'
+@token number "[0-9]+"
+@template t(x) { emit y }
+@syntax "f" a => { t(a) }
+EOF
+
+expect "'level' is a builtin and gives a value" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { level(a) }
+EOF
+
+expect "'t' is a template" <<'EOF'
+@token number "[0-9]+"
+@template t(x) { emit x }
+@syntax "f" a => { emit t(a) }
+EOF
+
+expect "the template 't' is already declared" <<'EOF'
+@token number "[0-9]+"
+@template t(x) { emit x }
+@template t(x) { emit x }
 EOF
 
 if [ $fail -eq 0 ]; then
