@@ -35,7 +35,10 @@ means — directives, patterns, groups, kinds, levels, templates, both modes, th
 command line and every error message. [docs/notation.md](docs/notation.md) says
 why it is shaped that way and what it cost.
 [docs/ROADMAP.md](docs/ROADMAP.md) says what is not built and what would have to
-be true for it to land.
+be true for it to land. [docs/prior-art.md](docs/prior-art.md) surveys the tools
+that do something like this — TXL, Stratego, Rascal, Comby, Ohm, Coq's
+`Notation`, Seed7, and META II in 1964 — and says what they have that this does
+not.
 
 ## Build
 
@@ -145,6 +148,7 @@ tests/limit.sh           a wall-clock limit, so a hang is reported and not waite
 docs/REFERENCE.md        every part of a .pt file, exhaustively
 docs/notation.md         the one rule, what falls out of it, and what it costs
 docs/direction.md        what this could become, and which futures are declined
+docs/prior-art.md        what else does this, and what they have that we do not
 docs/ROADMAP.md          what is not built, and what would settle it
 ```
 

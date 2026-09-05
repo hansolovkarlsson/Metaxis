@@ -261,15 +261,35 @@ Reading a *subset* of either, to demonstrate that the notation reaches, is
 worth doing and is what the stages in [ROADMAP.md](ROADMAP.md) are for. Claiming
 the whole language is not.
 
-## What is actually different about it
+## What is actually different about it — **rewritten 2026-09-05, second pass**
 
-One property, and no other tool here has it:
+*This section used to read "One property, and no other tool here has it: the
+language definition and the program that uses it live in the same file and are
+read in one pass." That claim was surveyed against the tools that actually
+exist and **four of them falsify it** — Seed7, Coq's `Notation`, Prolog's
+`op/3` and Katahdin all put a syntax declaration in the file and use it on the
+next line, and Prolog has done so since 1972. The survey, the evidence and what
+survives are [prior-art.md](prior-art.md) § 2. The property is restated below
+with the clause that was missing, and the smaller claim is the more interesting
+one, because it says what the tool is for rather than what it is first at.*
+
+One property, and it is a conjunction rather than a single fact:
 
 > **The language definition and the program that uses it live in the same file
-> and are read in one pass.**
+> and are read in one pass — and neither the language read nor the language
+> written is the tool's own.**
 
-No grammar to compile, no build step, no second tool, no artefact between the
-idea and the run. The loop from *what if the syntax were this* to *here is what
+Every tool that shares the first half declares syntax **for its own host
+language**, so a declaration means something only against that host's semantics.
+Seed7 declares Seed7. Coq declares notation for Coq terms. Katahdin extends
+Katahdin. None of them is a rewriter and none can be pointed at Pascal on Monday
+and arm64 on Tuesday. A Prototype directive means *this shape becomes that text*
+and nothing more, which is why one tool reads `examples/poem.pt` and
+`examples/asm.pt`.
+
+And what follows from the first half is unchanged, because it was never the
+part in dispute: no grammar to compile, no build step, no second tool, no
+artefact between the idea and the run. The loop from *what if the syntax were this* to *here is what
 it does* is one command and a few seconds. That is what the name says, and it is
 what the architecture is genuinely good at: **inventing notations, quickly**.
 

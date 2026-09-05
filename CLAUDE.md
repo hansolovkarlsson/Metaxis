@@ -47,10 +47,11 @@ In `docs/`: `work-journal/` (why, in order — **one file per working day**),
 `ROADMAP.md` (what exists and what does not — an item moves when it is settled,
 including settled against), `CHANGELOG.md` (when).
 
-Three more are about the thing rather than the work: `REFERENCE.md` states what
+Four more are about the thing rather than the work: `REFERENCE.md` states what
 every part of a `.pt` file means, `notation.md` argues for why it is shaped that
-way and what it costs, and `direction.md` argues for where it could go and which
-futures are being declined. Where any of them disagrees with the code, the code
+way and what it costs, `direction.md` argues for where it could go and which
+futures are being declined, and `prior-art.md` surveys the tools that do
+something like this and scores this one against them. Where any of them disagrees with the code, the code
 is right.
 
 Each of those opens with a note stating its own job. That note is the
