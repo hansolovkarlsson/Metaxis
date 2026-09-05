@@ -110,7 +110,46 @@ each was killed by what it *returns*.
 | | `genlex` | free · free · free | **OCaml's `Genlex` stdlib module**: *"a generic lexical analyzer… parameterized by the set of keywords of your language."* Not merely the same domain — **nearly the same function** as `prototype/src/lex.c` |
 | | `gensyn` | free · free · taken | Gensyn, a funded ML-compute company |
 | | `genera` | free · taken · taken | **Symbolics Genera**, the Lisp Machine OS |
+| **survivor** | **`metaxis`** | **free · free · free** | nothing in software. Greek **μεταξύ**, Plato's *in-betweenness*; in Augusto Boal's theatre, **"the state of belonging completely and simultaneously to two different autonomous worlds."** § 2 of this page states the tool's property as *neither the language read nor the language written is the tool's own* — **that is metaxis, literally.** `meta-` also primes a programmer toward metacompilation and `-xis` echoes *syntaxis*, so it reads native without asserting anything in the field |
 | **survivor** | **`protaxis`** | **free · free · free** | nothing in software. A real dictionary word — New Latin `prot-` + `axis`, a geology term from 1890 for *the line of initial uplift in a mountain range*. **Its apparent etymology is wrong and worth recording as wrong**: it is not `pro-` + `taxis`, though it scans that way to anyone who knows `syntax` is `syn-` + `taxis`, which is why it sounds native to this field while asserting nothing in it |
+
+### Two pools, and only one of them is open
+
+A fifth round tried the two pools that name things after **people** and after
+**myth**. The result is the cleanest data on this page.
+
+| pool | candidates | crates / npm / PyPI |
+| --- | --- | --- |
+| **myth — closed** | `thoth`, `seshat`, `ogma`, `nabu`, `kvasir`, `bragi`, `ratatoskr`, `proteus` | **taken · taken · taken, eight for eight** |
+| **surnames — open** | `schorre`, `landin`, `strachey`, `naur` | **free · free · free, four for four** |
+
+**Mythology is the most thoroughly mined naming pool in software**, and the names
+with the best meanings for *this* tool are in-domain disasters rather than merely
+occupied: **Babel** is the JavaScript compiler, **Hermes** is Meta's JavaScript
+engine, **Janus** is both a reversible programming language and the WebRTC
+server, and **Odin** is a programming language. A god of writing, a translator or
+a shapeshifter is the obvious reach for a tool like this, and every one of them
+is spoken for.
+
+Surnames are the opposite, and searching rather than only checking registries
+confirmed it: **neither `schorre` nor `landin` is used as a product name
+anywhere.** Each appears only as attribution inside repositories implementing
+that person's work — `tangentforks/meta-ii`, `diegospd/iswim`. That is the ideal
+state for a name: already pointing at the right idea, owned by nobody.
+
+The two that matter here, and why:
+
+- **Schorre** — D. V. Schorre, META II, 1964. § 2 of this page establishes with
+  evidence that META II is **this tool's premise, both halves**: a quoted string
+  is a literal input token, a bare name is a nonterminal, output is emitted from
+  inside quotes. The name would be a citation rather than a label. Its cost is
+  that nobody knows how to pronounce it.
+- **Landin** — Peter Landin, and three connections where Schorre has one.
+  *"The Next 700 Programming Languages"* (1966) is a language **schema**
+  instantiated per problem, which is the pitch. **The off-side rule is his**, and
+  `@separator "\n" indent` is an implementation of it. And he coined **syntactic
+  sugar**, which is what a rule here produces. Its cost is that it primes toward
+  functional programming — ISWIM, SECD, the ML lineage — which this tool is not.
 
 **And the conclusion the four rounds actually produced**, which is worth more
 than any candidate on this page:

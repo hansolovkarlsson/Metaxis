@@ -336,19 +336,35 @@ they are worth more than the list itself:
 
 | | | why | against it |
 | --- | --- | --- | --- |
-| **Ostracon** — `ost`, `.ost` | **recommended** | A potsherd: the cheap, throwaway surface drafts were written on because papyrus was expensive. Literally *the thing you write a draft on* — the honest half of the description, without the word, and without its defect: **the surface is cheap, not the result**. Outside the software domain entirely, so it is searchable, and it asserts nothing about rewriting, evaluating or interpreting, so it survives every row of the table above including the one that has not landed | eight letters, and nobody knows it (*OS-truh-kon*) — the same cost Spoofax, Katahdin and Coccinelle pay deliberately. `npm` is taken; crates.io and PyPI are free |
-| **Protaxis** — `ptx`, `.ptx` | **recommended** | Free on all three registries and returning nothing in software. A real word — New Latin `prot-` + `axis`, a geology term from 1890 for the line of initial uplift in a mountain range — which **scans** as `pro-` + `taxis` to anyone who knows `syntax` is `syn-` + `taxis`, so it sounds native to this field while asserting nothing in it. The `pro-` reads as Greek rather than as *prototype*, so it escapes the door above | the apparent etymology is **wrong**, and anyone who looks it up finds a mountain range. Eight letters. It means nothing here, which is the price of never going stale |
-| **Incip** — `incip`, `.incip` | third | An *incipit* is the opening words by which a manuscript is identified: the header saying how to read what follows, which is exactly true here. **Free on all three registries**, and five letters | reads as a truncation, looks like a typo for *incipient*, and nobody will say it with confidence |
-| **Maquette** | **declined** | the best pure synonym for *prototype* | and that is the objection. It hard-codes *preliminary*, so it closes the same door `Prototype` does, only more elegantly. Also a virtual DOM library |
+| **Metaxis** — `mx`, `.mx` | **recommended** | Greek **μεταξύ**, Plato's *in-betweenness*; in Boal's theatre, **"the state of belonging completely and simultaneously to two different autonomous worlds."** This page's own corrected claim is that *neither the language read nor the language written is the tool's own* — **the name is that sentence in one word.** Free on all three registries, returns nothing in software, and `meta-` primes toward metacompilation while `-xis` echoes *syntaxis*, so it reads native to the field without asserting anything in it | `meta-` is a loaded prefix in 2026 and invites a company association it does not mean. Two spellings exist in the literature, *metaxis* and *metaxy* |
+| **Schorre** — `schorre`, `.m2` | strong second, and a **citation** | D. V. Schorre, META II, 1964. [prior-art.md](prior-art.md) § 2 establishes with evidence that META II is **this tool's premise, both halves**: a quoted string is a literal input token, a bare name is a nonterminal, output is emitted from inside quotes. Naming it Schorre is an attribution rather than a label, **and it matches the house**: Futamura is already a tool named for the person whose idea it instantiates. Primes toward metacompilers, which is exactly right | **nobody knows how to pronounce it.** A name people must be told how to say is a tax the other three do not charge |
+| **Landin** — `landin`, `.iswim` | third | Peter Landin, and three connections where Schorre has one: *"The Next 700 Programming Languages"* is a schema instantiated per problem, which is the pitch; **the off-side rule is his**, and `@separator "\n" indent` implements it; and he coined **syntactic sugar**, which is what a rule here produces. Unambiguous to say | primes toward functional programming — ISWIM, SECD, the ML lineage — which this tool is not. Precise priming is most of what a name is for here |
+| **Ostracon** — `ost`, `.ost` | fourth | A potsherd: the cheap, throwaway surface drafts were written on because papyrus was expensive. **The surface is cheap, not the result** — the honest half of the description without the word | eight letters, needs a sentence of explanation, taken on npm, and it still faintly implies *draft*, which is the door this section is trying to keep open |
+| **Protaxis** | **withdrawn** | was recommended for scanning as `pro-` + `taxis` | **and its etymology is `prot-` + `axis`, a geology term from 1890** — the appealing story was wrong, and `metaxis` is the same sound with a meaning that is real and exactly right. Kept here as a correction, not an option |
+| **Incip** | fifth | free on all three registries, five letters, and an *incipit* is the opening that identifies a manuscript | reads as a truncation, looks like a typo for *incipient* |
+| **Maquette** | **declined** | the best pure synonym for *prototype* | which is the objection: it hard-codes *preliminary* and closes the same door, only more elegantly. Also a virtual DOM library |
 
-**Two survivors, and the choice between them is one question.** *Ostracon* takes
-its meaning from outside software and needs a sentence of explanation; *Protaxis*
-sounds native to language tooling and needs none, because it means nothing here.
-Both are eight letters. `Protaxis` is free on all three registries where
-`Ostracon` is taken on npm. **Everything else tried in four rounds lands on
-somebody**, and the branches that closed — `-lingua`, `proto-`, `genesis` — are
-recorded with their reasons in [prior-art.md](prior-art.md) § 1, dated, so that
-reopening this decision is choosing rather than searching.
+**The two at the top are the two kinds of answer**, and choosing between them is
+one question: *should the name carry a meaning, or carry an attribution?*
+**Metaxis** names what the tool **is** — a thing belonging wholly to two
+languages, neither of them its own. **Schorre** names who got there **first**,
+and matches the house: Proto, Phoenix, Futamura and Solveig are a myth, a
+scientist and a literary figure, and **`Prototype` is the only descriptive name
+among them.**
+
+**And one pool is closed rather than unlucky.** Eight mythological candidates —
+`thoth`, `seshat`, `ogma`, `nabu`, `kvasir`, `bragi`, `ratatoskr`, `proteus` —
+are taken on all three registries, eight for eight, and the ones with the best
+meanings are in-domain disasters: **Babel** is the JavaScript compiler,
+**Hermes** is Meta's JavaScript engine, **Janus** is a reversible programming
+language *and* the WebRTC server, **Odin** is a programming language. Surnames
+are the opposite: four for four free, and used nowhere as product names. Phoenix
+already holds the myth slot in the house in any case.
+
+Everything tried across five rounds that is not in the table above landed on
+somebody, and the branches that closed — `-lingua`, `proto-`, `genesis`, myth —
+are recorded with their reasons in [prior-art.md](prior-art.md) § 1, dated, so
+that reopening this decision is choosing rather than searching.
 
 **And `.pt` should change whichever way this goes.** It is PyTorch's checkpoint
 extension, it is the collision a reader meets before they meet the name, and it
