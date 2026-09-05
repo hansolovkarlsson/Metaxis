@@ -99,17 +99,22 @@ directive   = "@use"       string
             | "@comment"   string ( string | "eol" )
             | "@separator" string [ "=>" string ] [ "override" ]
             | "@syntax"    pattern [ level ] "=>" template
+                                      { "terminated" | "override" }
+            | "@template"  name "(" [ name { "," name } ] ")" code [ "override" ]
+            | "@fragment"  name [ "override" ] "=" pattern
             | "@end" .
 
 pattern     = element { element } .
-element     = string | hole | group .
+element     = string | hole | group | splice .
 hole        = name [ ":" kind ] .
 kind        = "expr" | "stmts" | "text" | a class named by @token .
 group       = "[" element { element } "]" [ rep ] .
 rep         = ( "*" | "+" ) [ "sep" string ] [ "join" string ] .
+splice      = "@" a name declared by @fragment .
 level       = integer [ "left" | "right" ] .
 template    = string, with "{" name "}" splices, "{~" name "}" fresh names,
-              and "{{" "}}" for a literal brace .
+              and "{{" "}}" for a literal brace
+            | code, a block in Prototype's own language .
 ```
 
 Every string above is a Prototype string: `"…"` with `\"` `\\` `\n` `\t` `\r`
@@ -132,6 +137,21 @@ beside the file that used it, holds directives and nothing else, is read once
 however many times it is reached, and stops at 64 deep. `examples/use.pt` takes
 its arithmetic from `lib/arith.pt` and keeps its own comment and separator,
 which is the division that file is for.
+
+**`@template`** and **`@fragment`** are the only things besides a rule that can
+be named — a piece of template and a piece of pattern. They are two directives
+because they are two mechanics: a template is *called* at expansion, takes
+arguments and has a scope; a fragment is *spliced* at declaration, brings its
+own holes and takes nothing. One word for both would have been one word meaning
+two things.
+
+That distinction is also why a fragment is spliced with `@name` rather than
+written where a hole's kind goes, which was the first spelling proposed for it.
+A kind says what *one hole* holds. A fragment says what *sequence of elements*
+goes here, and arrives carrying holes of its own. Putting both after a `:` would
+have made one position mean two unrelated things, and it would have capped a
+fragment at a single hole — which the next customer for one, a parameter list
+whose type varies, already breaks.
 
 **`@end`** ends the header. Without it the header ends at the first line that
 does not begin a directive. Either way it is one-way: below it nothing is a
@@ -359,6 +379,23 @@ place a bare word cannot be mistaken for a hole is *after* the template, where
 syntax rather than being bent around it, which is the case it is supposed to
 earn its keep on; the cost is that a word about the declaration reads at the far
 end of the line from the declaration it is about.
+
+**And on `@fragment` the same premise put the same word at the opposite end.**
+A fragment's pattern runs to the end of the directive, so there is no *after* —
+a trailing `override` would sit exactly where the notation says a bare word is a
+hole, and would be silently read as one. So it goes before the `=`:
+
+```
+@fragment params override = "(" [ p:name ":" "integer" ]* sep ";" ")"
+```
+
+Which is worth recording as a cost rather than a curiosity. **One word now
+appears at two ends of two directives, and neither position was chosen** — both
+were forced by the same rule, applied to two shapes. A notation that derives its
+syntax from one premise gets consistency where the shapes agree and this where
+they do not, and the honest description is that `override` goes wherever a bare
+word cannot be a hole, which is a rule about the reader's parse and not a place
+on the line.
 
 ## Not done
 
