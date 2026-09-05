@@ -6,11 +6,16 @@ file states behaviour and does not argue for it — the reasons and the costs ar
 [ROADMAP.md](ROADMAP.md)'s, and where any of the three disagrees with the code
 the code is right and the page is wrong.*
 
-Section headings are stable. **Every example here emits C or Pascal**, so that
-reading one asks nothing of the reader beyond the language they came here
-knowing. §1 is a whole file and is `examples/first.pt`, run by `make check`
-against the output printed beside it; the rest are fragments written for this
-page, and where one names a file it is lifted from that file.
+Section headings are stable. The examples deliberately read and write
+**several different languages**, because a page about a language-agnostic tool
+that only ever showed one would be arguing the opposite of what it says. The one
+constraint on them is that **the output is always a language the reader already
+has** — C, Pascal, JavaScript, HTML — so that reading an example costs nothing
+but the notation it is there to explain.
+
+§1 is a whole file and is `examples/first.pt`, run by `make check` against the
+output printed beside it; the rest are fragments written for this page, and
+where one names a file it is lifted from that file.
 
 ---
 
