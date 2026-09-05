@@ -1,0 +1,54 @@
+# check.yml -- `make check`, on a machine that is not the author's.
+#
+# Everything this suite is for depends on it actually running, and until this
+# file existed it had only ever run on one laptop. That is the same gap
+# docs/POSTMORTEM.md 16 and 17 are both about: a claim with no instrument behind
+# it drifts, and "it builds clean" was such a claim.
+#
+# The matrix is two rows because they exercise different halves:
+#
+#   ubuntu-latest   x86_64, gcc, dash as /bin/sh. This is the row that runs the
+#                   code on a compiler and a shell it has never seen, and it is
+#                   the only place tests/asm.sh's skip branch is taken -- that
+#                   branch has existed since stage 2 and has never once been
+#                   observed to work, because the author's machine is arm64.
+#
+#   macos-latest    arm64, clang. tests/asm.sh assembles, links and runs the
+#                   arm64 it emits, exactly as it does locally, but from a clean
+#                   checkout with nothing left over from a previous build.
+#
+# LIMIT is raised to 30. A shared runner is a loaded machine, and tests/limit.sh
+# reports a timeout as a failure -- 10s is the local default and generous there,
+# not here. See the note above LIMIT in the Makefile.
+
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Printed so the log says which half of tests/asm.sh this row took.
+      - name: what this machine is
+        run: |
+          uname -srm
+          ${CC:-cc} --version | head -1
+          python3 --version
+
+      - name: build
+        run: make
+
+      - name: check
+        run: make check LIMIT=30

@@ -1,5 +1,7 @@
 # Metaxis
 
+[![check](https://github.com/hansolovkarlsson/Metaxis/actions/workflows/check.yml/badge.svg)](https://github.com/hansolovkarlsson/Metaxis/actions/workflows/check.yml)
+
 A language-agnostic rewriter and **evaluator for expressions**: a file declares
 its own grammar in its header and is then read with it, in one pass, with
 neither the language read nor the language written built in. `.mx` in, `.out`
@@ -58,6 +60,11 @@ make            # bin/mx
 make check      # every example against the .out beside it, then the five
                 # scripts in tests/ -- four of which run what they produced
 ```
+
+`make check` runs on every push, on Linux and macOS, through
+[.github/workflows/check.yml](.github/workflows/check.yml). The two rows are not
+redundant: `tests/asm.sh` assembles and runs its arm64 on macOS and takes its
+skip branch on x86 Linux, so both halves are exercised.
 
 C11 and `make`, plus POSIX `<regex.h>` for `@token`.
 
