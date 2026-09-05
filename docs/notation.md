@@ -8,7 +8,8 @@ Everything on this page is implemented and is exercised by `examples/`.
 What is not is under [Not done](#not-done), at the bottom.
 
 **This page argues; [REFERENCE.md](REFERENCE.md) states; [ROADMAP.md](ROADMAP.md)
-says what to do about what is missing.** Every directive,
+says what to do about what is missing; [direction.md](direction.md) says where
+the whole thing could go and what it would stop being.** Every directive,
 kind, level, template form, lexer decision and error message is there,
 exhaustively. Read that one to write a `.pt`; read this one to know why it is
 shaped the way it is, and what it cost.

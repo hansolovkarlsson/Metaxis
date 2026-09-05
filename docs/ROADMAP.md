@@ -4,7 +4,9 @@
 land. An item moves out of here when it is settled — **including settled
 against**, which is a result and stays written down with its reason.
 [notation.md](notation.md)'s "Not done" is the same list seen from the other
-side: what the notation admits it cannot do. This file is what to do about it.*
+side: what the notation admits it cannot do; [direction.md](direction.md) is the
+longer horizon, and says what these items are **for**. This file is what to do
+about it.*
 
 **Stages** below says which translator the work is being driven by, and the
 items are ordered by that first and by how much is wanted after — not by size
@@ -26,6 +28,9 @@ on introducing new mechanics and test them out properly.*
 | **1 · now** | Pascal | C | the mechanics that exist, finished and made testable |
 | **2 · next** | C | assembly | output that is not an expression tree — labels, order, a machine |
 | **3 · later** | Python | C | a language whose blocks are indentation |
+
+[direction.md](direction.md) says what the stages are ultimately *for*, and why
+stage 2 is assembly rather than another expression language.
 
 **This is a rule about where new mechanics come from, not a restriction on the
 tool.** A `.pt` file still declares any language in and writes any language out;
@@ -52,7 +57,55 @@ we find out which.
 
 ---
 
-## 1 · Stage 1 — what Pascal→C still owes
+## 1 · Does a file that evaluates read as well as one that translates?
+
+An experiment, deliberately small, and the cheapest question in
+[direction.md](direction.md): can a `.pt` file stop translating its language and
+start **running** it?
+
+It is first on this page because it is the most wanted thing here that is not
+stage-1 cleanup. It is **second** in direction.md's order, behind stage 2, and
+that is not a disagreement: stage 2 is a stage rather than an item, and C →
+assembly is worth doing first because it is the honest test of whether the
+output side generalises past targets shaped like the input.
+
+```
+@syntax a "+" b 60 => { emit num(a) + num(b) }
+@syntax a "*" b 70 => { emit num(a) * num(b) }
+@end
+2 + 3 * 4
+```
+```
+14
+```
+
+**Two things are missing and both are small.** `+` in a code template is
+concatenation and always has been — `v_text(xfmt("%s%s", …))` — and there is no
+way to read a hole's text back as a number. Everything else is already there:
+the code template has integers, booleans, lists, comparison, `if` and `for`, and
+comparison already goes numeric when both sides are numbers, so the rule to
+follow is written down in the file that needs changing.
+
+**The wrinkle is `+`.** Making it arithmetic when both sides are integers is
+consistent with what comparison already does and is one line. It is also a
+behaviour change: `count(a) + count(b)` writes `12` today for 1 and 2, and would
+write `3`. Nothing in `examples/` does that, and it is closer to a bug than a
+feature, but it is a change and should be recorded as one rather than slipped in.
+The alternative is a second spelling for arithmetic, which is uglier and cannot
+be got wrong.
+
+**What would settle it is not whether it works.** It will work; the machinery is
+there. The question is whether a rule that *means* something reads as well as a
+rule that *writes* something — whether `=> { emit num(a) + num(b) }` is a
+notation anybody would want, or whether evaluation wants a spelling of its own.
+That is a question about reading, so the answer is a file: a small calculator,
+then a small language with variables, and a look at both.
+
+If it reads well, Prototype is an interpreter generator and
+[direction.md](direction.md) says what that is worth. If it does not, that is a
+result too, and the arithmetic is still worth having.
+
+## 2 · Stage 1 — what Pascal→C still owes
 
 **Where it got to.** `examples/pascal.pt` and `examples/code.pt` read `program`,
 a `var` section with comma-separated declarations, `integer` and `boolean`, and
@@ -106,7 +159,7 @@ a word in it, which is what `code.pt` does inside `writeln`. That is the one
 thing between `pascal.out` and a program that runs, it is recorded in the file's
 own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
 
-## 2 · Stage 3 — a block that is an indentation
+## 3 · Stage 3 — a block that is an indentation
 
 Python ends a block by out-denting, and there is no way to say that here. Three
 things stand in the way, and only the first is obvious:
@@ -135,7 +188,7 @@ y`, calls, subscripts — need none of this and read correctly today. That is wo
 knowing but is not worth an example on its own: a file that says Python and
 cannot write an `if` claims more than it does.
 
-## 3 · A class named after a kind
+## 4 · A class named after a kind
 
 `@token expr "…"` declares a class that can never be used, because `x:expr` is
 resolved as the *kind* `expr` and the class is never consulted — silently, and
@@ -147,7 +200,7 @@ Refusing the three names at `@token` is about two lines and the message writes
 itself. Found while writing a Python example whose string class was called
 `text`.
 
-## 4 · A budget for expression-mode backtracking
+## 5 · A budget for expression-mode backtracking
 
 Candidates under one leading word are retried with the cursor restored, and the
 only thing that stops it is a recursion depth of 400. Text mode was in the same
@@ -162,7 +215,7 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
-## 5 · `@mode` declared twice
+## 6 · `@mode` declared twice
 
 `@token`, `@separator` and a rule's pattern are all refused when declared twice
 without `override` (REFERENCE.md §3.8). `@mode` is the one global that is not:
@@ -176,7 +229,7 @@ question is whether `@mode expression` after `@mode text` is a thing a file
 could ever mean, or whether a second `@mode` should simply be an error with no
 `override` at all.
 
-## 6 · Source maps
+## 7 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -185,7 +238,7 @@ this far down.
 
 ---
 
-## 7 · Alternation inside a pattern — explored, not wanted yet
+## 8 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

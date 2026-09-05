@@ -134,8 +134,10 @@ lib/                     files meant to be @use'd
 examples/                .pt beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong
 tests/hygiene.sh         what a template that is a string cannot do, run
+tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
 docs/REFERENCE.md        every part of a .pt file, exhaustively
 docs/notation.md         the one rule, what falls out of it, and what it costs
+docs/direction.md        what this could become, and which futures are declined
 docs/ROADMAP.md          what is not built, and what would settle it
 ```
 
