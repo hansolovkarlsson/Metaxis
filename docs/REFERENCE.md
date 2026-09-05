@@ -1,6 +1,6 @@
 # Reference
 
-*What every part of a `.pt` file means, exhaustively and in one place. This
+*What every part of a `.mx` file means, exhaustively and in one place. This
 file states behaviour and does not argue for it — the reasons and the costs are
 [notation.md](notation.md)'s job and what is not built is
 [ROADMAP.md](ROADMAP.md)'s, and where any of the three disagrees with the code
@@ -13,7 +13,7 @@ constraint on them is that **the output is always a language the reader already
 has** — C, Pascal, JavaScript, HTML — so that reading an example costs nothing
 but the notation it is there to explain.
 
-§1 is a whole file and is `examples/first.pt`, run by `make check` against the
+§1 is a whole file and is `examples/first.mx`, run by `make check` against the
 output printed beside it; the rest are fragments written for this page, and
 where one names a file it is lifted from that file.
 
@@ -21,7 +21,7 @@ where one names a file it is lifted from that file.
 
 ## 1 · A first file
 
-`examples/first.pt`, whole:
+`examples/first.mx`, whole:
 
 ```
 @token  name   "[A-Za-z_][A-Za-z0-9_]*"
@@ -38,18 +38,18 @@ twice x + 2;
 ```
 
 ```
-$ pt examples/first.pt
+$ pt examples/first.mx
 x = 1;
 (add(x, 2) * 2)
 ```
 
-A `.pt` file is a **header** of directives and a **body** of foreign text. The
+A `.mx` file is a **header** of directives and a **body** of foreign text. The
 header says what the body's syntax is; nothing is built in. The body is read
 with that syntax and rewritten into whatever the templates say.
 
 The one rule everything below follows: **anything a directive says about the
 body's text, or about the output's, is inside a string.** Outside the strings a
-directive is written in Prototype's own fixed vocabulary, which no file can
+directive is written in Metaxis's own fixed vocabulary, which no file can
 change, which is why a directive can never be read as the thing it declares.
 
 ---
@@ -82,7 +82,7 @@ was not a directive.
 
 ### 2.3 Comments in the header
 
-`;` to the end of the line is Prototype's own and **always works**, in every
+`;` to the end of the line is Metaxis's own and **always works**, in every
 file, whatever the file declares. A `@comment` opener **joins** it from the line
 after the declaration rather than replacing it, so this is legal and does what
 it looks like:
@@ -102,7 +102,7 @@ it looks like:
 It can afford to, because everything a directive says about foreign text is
 inside a string and this rule applies outside the strings.
 
-### 2.4 Prototype strings
+### 2.4 Metaxis strings
 
 `"…"`, with exactly five escapes: `\"` `\\` `\n` `\t` `\r`. Any other backslash
 is an error (`unknown escape`); a newline inside one is an error
@@ -236,7 +236,7 @@ earlier one with the same pattern (§3.10). Either, both, in either order.
 Both go **after the template**, which is the one place in a rule where a bare
 word cannot be anything else — a hole only appears in the pattern — so they
 reserve nothing and a hole may still be called `terminated` or `override`.
-`examples/reserved.pt` has a rule that is both.
+`examples/reserved.mx` has a rule that is both.
 
 ### 3.5 `@use "path"`
 
@@ -251,10 +251,10 @@ A used file holds **directives and nothing else**; a statement in one is
 files that both use a third, and one file that uses both — costs nothing and
 cannot make a declaration collide with itself, and a cycle ends rather than
 failing. Identity is the resolved path, so two spellings of one file are one
-file. `lib/vector.pt` uses `lib/arith.pt`, and `examples/use.pt` uses both.
+file. `lib/vector.mx` uses `lib/arith.mx`, and `examples/use.mx` uses both.
 
-What it brings is what it declared. `examples/use.pt` takes its arithmetic from
-`lib/arith.pt` and declares its own `@comment` and `@separator`, because those
+What it brings is what it declared. `examples/use.mx` takes its arithmetic from
+`lib/arith.mx` and declares its own `@comment` and `@separator`, because those
 belong to the file being written and not to the arithmetic in it.
 
 Two used files that declare one thing are refused, and a file says which it
@@ -302,12 +302,12 @@ only things besides a rule that can be named.
   template finish a construct the rule started (§8.2).
 - **A list passes through a parameter unchanged.** A hole inside a repeated
   group is a list (§4.4), and handing it to a template gives a parameter that
-  `count` and `for` see as one — `examples/code.pt` shares one `subprogram`
+  `count` and `for` see as one — `examples/code.mx` shares one `subprogram`
   between `procedure` and `function` that way.
 - At most **8 parameters**. Declaring the same name twice is refused unless the
   second says `override`, as everything else is (§3.10).
-- `examples/asm.pt` is the customer: one `load` against eight call sites, and
-  `examples/code.pt` is the second: one `subprogram` against two.
+- `examples/asm.mx` is the customer: one `load` against eight call sites, and
+  `examples/code.mx` is the second: one `subprogram` against two.
 
 ### 3.9 `@fragment name = pattern`
 
@@ -355,7 +355,7 @@ not one, for the reasons below.
   trailing `override` would be read as a hole of that name. Before the `=` it is
   a modifier on the declaration, which is what it always was. Rules already
   spliced from the earlier declaration keep what they copied.
-- `examples/pascal.pt` and `examples/code.pt` are the customers: each wrote one
+- `examples/pascal.mx` and `examples/code.mx` are the customers: each wrote one
   parameter list twice, once in `procedure` and once in `function`.
 
 ### 3.10 `override` — two files declaring one thing
@@ -366,14 +366,14 @@ Five things can be declared twice: a rule's pattern, a `@token` class name,
 source.
 
 ```
-@use "ops.pt"                             ; which declares  a "/" b  70
+@use "ops.mx"                             ; which declares  a "/" b  70
 @syntax a "/" b 70 => "idiv({a}, {b})" override
 ```
 
-`examples/use.pt` does exactly this to the `/` it took from `lib/arith.pt`.
+`examples/use.mx` does exactly this to the `/` it took from `lib/arith.mx`.
 
 ```
-b.pt:1: this pattern is already declared at a.pt:3
+b.mx:1: this pattern is already declared at a.mx:3
         -- write 'override' after the template to mean it
 ```
 
@@ -389,7 +389,7 @@ b.pt:1: this pattern is already declared at a.pt:3
 - **Two rules that merely share a leading word do not collide.** That is the
   candidate mechanism, not an accident: `"if" c "then" t` and
   `"if" c "then" t "else" f` coexist, `"-" a` and `a "-" b` coexist, and
-  `examples/poem.pt` declares `-`, `--` and `---`. §4.2, §5.
+  `examples/poem.mx` declares `-`, `--` and `---`. §4.2, §5.
 - **The rule check runs once the header has finished**, so the order a file
   writes `@mode`, `@syntax` and `@use` in does not change the answer, and a
   rule that came in through `@use` is named at the line in the file that wrote
@@ -496,7 +496,7 @@ deliberate. Every other thing a pattern matches is text somebody wrote, so
 quoting is what tells a mention from a declaration. An indent is not text; a
 string naming one would be quoting something the source does not contain, and
 the rule this notation rests on would be kept in letter and spent in meaning.
-So it is spelled the way Prototype spells its own vocabulary: outside the
+So it is spelled the way Metaxis spells its own vocabulary: outside the
 quotes. [notation.md](notation.md) argues it; [COMPLETED.md](COMPLETED.md)
 records the two spellings that were declined and why.
 
@@ -519,7 +519,7 @@ by itself.**
 
 ### 4.4 Groups
 
-`[ … ]` is Prototype's own bracket. It lives outside the strings, so it can
+`[ … ]` is Metaxis's own bracket. It lives outside the strings, so it can
 never be confused with a bracket the body writes — one of those is quoted, and
 this one cannot be.
 
@@ -587,7 +587,7 @@ A hole that is **not last** is read at 0. It is delimited by the word after it
 rather than by precedence. So is every hole inside a group (§4.4), whether or
 not the group is last.
 
-A useful ladder, from `lib/arith.pt`:
+A useful ladder, from `lib/arith.mx`:
 
 ```
 @syntax a "=" b   10 right
@@ -687,7 +687,7 @@ closes it.
 language being read and the second about the language being written, and this
 tool is not entitled to assume they agree.
 
-`examples/clike.pt` and `examples/groups.pt` both read C's braces and disagree
+`examples/clike.mx` and `examples/groups.mx` both read C's braces and disagree
 about the output. The first writes a language that wants a separator between two
 statements *however the one before ended* — so it declares nothing, and a
 separator is joined after a `}` like anywhere else. The second writes
@@ -717,7 +717,7 @@ else is copied through unchanged.
   as in expression mode (§4.4). A hole inside a repeated group is a list, which
   a code template can loop over.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
-  between two of the same length and decides nothing else — `examples/poem.pt`
+  between two of the same length and decides nothing else — `examples/poem.mx`
   declares `-`, `--` and `---` in that order and `---` still wins.
 - **Every hole is text** and takes the shortest run that lets the rest of the
   pattern match. A hole with nothing after it takes the rest of the enclosing
@@ -741,7 +741,7 @@ else is copied through unchanged.
   in its pattern, groups looked into. In `"[[" t "|" u "]]"`, a `]]` reached
   before the `|` means the construct has already ended, so the rule fails and
   the next one is tried, rather than `t` swallowing the close and the search
-  running on to whatever `|` appears later in the file. `examples/poem.pt` pins
+  running on to whatever `|` appears later in the file. `examples/poem.mx` pins
   it, and [POSTMORTEM.md](POSTMORTEM.md) 4 says what it cost to find.
 - **A hole's text is expanded in its turn**, so `**a //slanted// claim**` nests.
   Depth is capped at 64 (`a text rule expands into itself`).
@@ -815,12 +815,12 @@ application**, so two `fresh("L")` in one template are one name and
 `fresh("Lelse")` beside it is another. It draws from the same counter, so a
 string template and a code template in one file never collide. Until 2026-09-05
 it returned a new name on every call, which is [POSTMORTEM.md](POSTMORTEM.md) 10;
-`examples/asm.pt` is what needed a label in two places and found it.
+`examples/asm.mx` is what needed a label in two places and found it.
 
 This closes the half of hygiene where a template **introduces** a name. It does
 not touch the half where a template **reaches out** for one the caller shadowed:
 there is nothing to invent there, and **neither** kind of template can see a
-scope. `examples/hygiene.pt` demonstrates both and `tests/hygiene.sh` runs them.
+scope. `examples/hygiene.mx` demonstrates both and `tests/hygiene.sh` runs them.
 
 ### 8.3 The code template
 
@@ -842,8 +842,8 @@ expr   = expr ( "and" | "or" ) expr
 
 `emit` is the only way out: what a rule expands to is everything it emitted, in
 order. Statements need no separator; a `;` between them is allowed and ignored.
-Strings in a code template are **Prototype strings**, spelled Prototype's way,
-exactly as `@syntax`'s own words are — the language is Prototype's, so it lives
+Strings in a code template are **Metaxis strings**, spelled Metaxis's way,
+exactly as `@syntax`'s own words are — the language is Metaxis's, so it lives
 outside the strings and the foreign text it emits lives inside them.
 
 **Its own words are `emit`, `if`, `else`, `for`, `in`, `sep`, `not`, `and` and
@@ -863,7 +863,7 @@ are two parallel lists** and nothing else pairs them:
     }
 ```
 
-`examples/code.pt` is that rule; `examples/pascal.pt` cannot write it and folds
+`examples/code.mx` is that rule; `examples/pascal.mx` cannot write it and folds
 the pair into one hole with an infix rule instead.
 
 **What is in scope**: every hole the pattern declares, and the loop variables
@@ -882,7 +882,7 @@ it meant one. `+` is the exception and follows comparison's rule: it **adds**
 when both sides are already numbers and **joins** when they are not. Division or
 remainder by zero is an error.
 
-A rule whose template computes rather than writes is what `examples/calc.pt` is:
+A rule whose template computes rather than writes is what `examples/calc.mx` is:
 `=> { emit num(a) * num(b) }` puts a number back into the parse as the value of
 that subexpression. **Evaluation is eager** — a hole is filled before the
 template runs — so a rule can select between two already-computed values but
@@ -905,7 +905,7 @@ Everything in a code template is checked at the `@syntax` that wrote it: a name
 that is neither a hole nor a loop variable, a builtin nobody has, the wrong
 number of arguments, a loop variable that is also a hole.
 
-`examples/code.pt` is `examples/pascal.pt` with every rule rewritten in this
+`examples/code.mx` is `examples/pascal.mx` with every rule rewritten in this
 form and the body left alone, so `diff examples/pascal.out examples/code.out` is
 what the second form is for:
 
@@ -940,7 +940,7 @@ and no `@syntax` can reach it, because a rule cannot match a bare token.
 ## 9 · The command line
 
 ```
-pt [-o output] [-g] file.pt
+mx [-o output] [-g] file.mx
 ```
 
 | | |
@@ -955,7 +955,7 @@ standard error as `pt: file:line: …` and exit 1; a bad command line exits 2.
 `-g` is the way to see what a header actually built:
 
 ```
-$ pt -g examples/use.pt
+$ mx -g examples/use.mx
 mode       expression
 separator  declared
 token      number   [0-9]+
@@ -972,7 +972,7 @@ infix     a "/" b [70]
 ```
 
 The last two lines are the point of that file: `<x, y>` came in through
-`lib/vector.pt`, and `/` is the rule the file declared `override` for, so only
+`lib/vector.mx`, and `/` is the rule the file declared `override` for, so only
 one `/` is listed.
 
 ---
@@ -1106,7 +1106,7 @@ The tool allocates and never frees. It reads one file and exits.
 
 Both take a file that declares its own grammar. Where they part:
 
-| | Proto | Prototype |
+| | Proto | Metaxis |
 | --- | --- | --- |
 | what a directive quotes | nothing — operators and pattern words are bare, holes are `<x>` | every mention of foreign text |
 | rule directives | `@infix`, `@infixr`, `@prefix`, `@syntax` | `@syntax` |

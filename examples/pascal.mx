@@ -1,4 +1,4 @@
-; pascal.pt -- Pascal in, C out. The point of this one is that neither
+; pascal.mx -- Pascal in, C out. The point of this one is that neither
 ; language is the tool's, and the tool's own strings are unaffected by either.
 ;
 ; Pascal's comments are `{ }` and `(* *)`, its strings are `'…'` with a doubled
@@ -69,7 +69,7 @@
 ; group of `[ v ":" s ]`, which is two holes and therefore two parallel lists;
 ; a string template splices each of them joined and has no way to interleave
 ; them. So the arm is a *rule* instead, folding the pair into one value before
-; the group ever sees it. examples/code.pt keeps the two holes and walks them
+; the group ever sees it. examples/code.mx keeps the two holes and walks them
 ; with `for i, x in v` and `at(s, i)`, which is what that pair of additions was
 ; built for.
 ;
@@ -112,7 +112,7 @@
 ; A branch is braced whether or not it needs to be. C's `if (c) x = 1; else`
 ; wants a semicolon that C's `if (c) {{ … }} else` must not have, and which of
 ; the two a branch is depends on the rule that filled the hole. A code template
-; asks -- `terminated(t)`, which examples/code.pt uses to write neither brace
+; asks -- `terminated(t)`, which examples/code.mx uses to write neither brace
 ; nor stray semicolon. A string template cannot ask anything, so it braces
 ; every branch and is right either way. This is the same trade as the
 ; parentheses one line of rules up, in the other punctuation.
@@ -137,7 +137,7 @@
 ; is where that happens: `join ", int "` puts the word back between the turns
 ; and the template writes the first one.
 ;
-; That used to come out identical to the loop examples/code.pt uses, and this
+; That used to come out identical to the loop examples/code.mx uses, and this
 ; note used to say so and add that `join` "stops being enough the moment two
 ; parameters have different types". It does. `Scale(n: integer; k: real)` is in
 ; the program below, and this file writes
@@ -149,14 +149,14 @@
 ; one word in front of every turn and cannot write a different one per turn, so
 ; the type hole `t` in the fragment above is read and then thrown away, because
 ; a string template splices each list joined and has no way to interleave two.
-; examples/code.pt walks the two lists in step and gets `double k` right.
+; examples/code.mx walks the two lists in step and gets `double k` right.
 ;
 ; So the parameter list, which was the one place in these two files where the
 ; code template bought nothing, is now the clearest place it buys something.
 ;
 ; `procedure` and `function` want the identical list, and before `@fragment`
 ; there was no way to say it once -- the two lines below were written out twice,
-; and this file and examples/code.pt each did it. The fragment is spliced with
+; and this file and examples/code.mx each did it. The fragment is spliced with
 ; `@params` where the list goes, and what the rules see afterwards is what they
 ; would have seen written by hand: the holes come with it, so the templates
 ; still splice `{p}`.
@@ -176,7 +176,7 @@
 
 @end
 
-{ Everything below is Pascal. Nothing below is Prototype's. }
+{ Everything below is Pascal. Nothing below is Metaxis's. }
 
 program Fizz;
 
@@ -260,7 +260,7 @@ end.
    It cannot be fixed where it stands, either. A rule cannot match a bare token,
    so there is no @syntax that rewrites a string wherever one appears; the
    translation has to happen in a rule that has a word in it, which is what
-   examples/code.pt does inside `writeln`. This is a string template being
+   examples/code.mx does inside `writeln`. This is a string template being
    honest: the tool moved the token, it did not understand it.
 
    The second is the type in a parameter list. `Scale(n: integer; k: real)`

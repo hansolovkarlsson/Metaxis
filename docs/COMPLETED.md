@@ -24,7 +24,7 @@ transformation-system family that reads anything and charges a grammar artefact
 and a build step (TXL, Stratego, Rascal, ANTLR, JastAdd, Silver), and an
 extensible-language family that puts the declaration in the file and always
 declares syntax **for its own host language** (Racket, Seed7, Coq, Prolog,
-Katahdin, SugarJ). Prototype is the third's placement with the second's
+Katahdin, SugarJ). Metaxis is the third's placement with the second's
 agnosticism, and that is the combination that did not turn up.
 
 **What it cost the tree.** One false claim, corrected:
@@ -35,8 +35,8 @@ scored by evidence from outside the repository.
 
 **What it found that is worth keeping.** META II wrote quoted literals on the
 pattern side and quoted output inside `.OUT` in 1964, which is this notation's
-premise, both halves, on a machine with 8K of six-bit memory. `examples/code.pt`
-is 272 lines duplicated from `examples/pascal.pt` and that is a maintenance cost
+premise, both halves, on a machine with 8K of six-bit memory. `examples/code.mx`
+is 272 lines duplicated from `examples/pascal.mx` and that is a maintenance cost
 rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 6. And **collection
 attributes** (JastAdd, Silver) are a better-shaped answer to
 [direction.md](direction.md)'s declared environment than the key/value store it
@@ -83,7 +83,7 @@ never uses with nothing checking that it did. That keeps the letter of the one
 rule and spends its meaning, and it cannot be taken back: once a quoted word can
 name a token nobody wrote, quoting has stopped being the thing that tells a
 mention from a declaration. A bare word outside the quotes is how this notation
-already says *this one is Prototype's*, and it says it here.
+already says *this one is Metaxis's*, and it says it here.
 
 A third spelling — letting a `stmts` hole with no stop word mean *to the dedent*
 under a nesting separator — was declined for costing an error: a rule ending in
@@ -149,7 +149,7 @@ of in a scratch directory that no clone has.
   `begin … end`, which is what stops the `}` closing over an unterminated one.
 
 **And a test that does something no other one here does.** The body of
-`examples/python.pt` is Python — not Python-shaped, Python, which `python3`
+`examples/python.mx` is Python — not Python-shaped, Python, which `python3`
 runs. So `tests/python.sh` compiles the C *and* runs the source, and compares
 the two answers. A translation that is wrong the same way on both sides of an
 operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
@@ -171,7 +171,7 @@ not to do it.
 ## A suite that can report a hang
 
 ```
-FAILED  examples/x.pt: did not finish in 10s, and was killed.
+FAILED  examples/x.mx: did not finish in 10s, and was killed.
         A hang is the one failure a recorded .out cannot show,
         so it is reported here rather than waited on.
 ```
@@ -185,7 +185,7 @@ not go red, it stopped.
 to kill it, which is what GNU `timeout` uses. macOS has no `timeout(1)` and this
 tree takes no dependencies, so it is the portable shape: start the command, race
 it against a sleeper, and let whichever finishes first decide. **Every place the
-suite runs `pt` goes through it** — the Makefile's `check` and `record` loops and
+suite runs `mx` goes through it** — the Makefile's `check` and `record` loops and
 one or two calls in each test script. `make check LIMIT=30` raises it for a
 loaded machine.
 
@@ -247,7 +247,7 @@ and C's `typedef`, reached from the type side.
 one word in front of every turn and cannot vary it, and a string template
 splices each list joined with no way to interleave two — the same limitation the
 `case` arms met, but with no workaround available, because the two lists have to
-come back apart in the output. So `examples/pascal.pt` emits `int k` for a
+come back apart in the output. So `examples/pascal.mx` emits `int k` for a
 parameter declared `real`: output that compiles, links, runs and is wrong.
 
 **It is recorded and pinned.** `examples/pascal.out` carries it and
@@ -306,7 +306,7 @@ Verified at 12 examples byte-identical, 62 error cases, `tests/hygiene.sh`,
 @syntax "function"  f:name @params ":" "integer" ";" b => { … }
 ```
 
-`examples/pascal.pt` and `examples/code.pt` each wrote that parameter list
+`examples/pascal.mx` and `examples/code.mx` each wrote that parameter list
 twice, once in `procedure` and once in `function`, because this tool could name
 a rule and a piece of template and nothing else. Each now writes it once, and
 both files expand byte-identically to what they expanded to before — which is
@@ -366,7 +366,7 @@ Verified at 12 examples byte-identical, 59 error cases, `tests/hygiene.sh`,
 @syntax a "+" b 60 => { load(a) load(b) emit "\tadd x0, x0, x1\n" }
 ```
 
-`examples/asm.pt` had written that test out at every operand — eight times,
+`examples/asm.mx` had written that test out at every operand — eight times,
 identically — because this tool could name a rule and nothing else. It now
 writes it once.
 
@@ -389,7 +389,7 @@ declared after it, or one that arrived through `@use`, and the order a file
 writes its directives in cannot change the answer.
 
 **What it actually bought, measured rather than asserted.** The rules section of
-`examples/asm.pt` went from 2458 bytes to 1473 — a little under half — and
+`examples/asm.mx` went from 2458 bytes to 1473 — a little under half — and
 *gained three lines*, because eight copies of a hundred-character test became
 eight calls of eight characters plus a three-line declaration. The expansion is
 byte-identical to what the file emitted before, which is the proof that the
@@ -407,7 +407,7 @@ and `tests/asm.sh`; `make check` clean.*
 
 ## Stage 2: C in, arm64 assembly out, assembled and run
 
-`examples/asm.pt` reads a C subset and emits arm64 that `tests/asm.sh`
+`examples/asm.mx` reads a C subset and emits arm64 that `tests/asm.sh`
 assembles, links against a four-line runtime and runs on the CPU it is written
 for. `2 + 3 * 4` prints 14, `1 < 2 ? 10 : 20` prints 10, and the conditional
 jumps to labels the input never mentions.
@@ -433,7 +433,7 @@ rule, which is what keeps the rules composable at all.
 so nothing turns it into `mov x0, #3`. What distinguishes a literal from a
 subexpression is `level(h)`: every rule in the file declares a level, so
 `level(h) == 1000` means *nothing here produced this*. That works, and it is the
-same limitation `examples/pascal.pt` meets when it cannot translate a string
+same limitation `examples/pascal.mx` meets when it cannot translate a string
 literal — met from the opposite direction, at the leaves of a code generator
 instead of inside a call.
 
@@ -462,7 +462,7 @@ whole text or none of it, so `'12abc'` is an error rather than 12. `+` now
 **adds** when both sides are already numbers and **joins** when they are not,
 which is the rule comparison has always used; nothing else about it changed.
 
-`examples/calc.pt` is the first file here with no target language:
+`examples/calc.mx` is the first file here with no target language:
 
 ```
 @syntax a "*" b 70 => { emit num(a) * num(b) }
@@ -486,7 +486,7 @@ rather than a silent zero.
 
 **And it failed a test nobody had written down, which is the result worth
 having.** [ROADMAP.md](ROADMAP.md) and [direction.md](direction.md) both said
-this would make Prototype an interpreter generator. It does not:
+this would make Metaxis an interpreter generator. It does not:
 
 ```
 if 1 then 10 else (1 / 0)      →      pt: '/' by zero
@@ -516,7 +516,7 @@ nothing could use: `[ v ":" s ]*` gives two **parallel lists**, and neither kind
 of template could put them back together. A string one splices each of them
 joined; a code one's `for` walked a single list with no way to say *where* it
 was. So the pair had to be folded into one value by an infix rule before the
-group ever saw it — which is what `examples/pascal.pt` still does for its `case`
+group ever saw it — which is what `examples/pascal.mx` still does for its `case`
 arms, and what it now says it is doing.
 
 ```
@@ -546,8 +546,8 @@ tree's recorded outputs cannot express: there is no `.out` for *did not
 terminate*.
 
 **What it cost the two example files is a fifth difference**, and the sharpest
-one on the page. `examples/code.pt` writes the arms as the grammar describes
-them; `examples/pascal.pt` declares an infix `a ":" s` meaning *case arm*, which
+one on the page. `examples/code.mx` writes the arms as the grammar describes
+them; `examples/pascal.mx` declares an infix `a ":" s` meaning *case arm*, which
 then applies to every colon not already claimed by a longer pattern, and is
 correct only because `a ":" "integer"` happens to be declared above it. That is
 a rule whose correctness depends on the order of the file, and it is what the
@@ -601,7 +601,7 @@ walks into it.
 **`repeat` needed nothing at all**, which is what the prediction was right
 about: a `stmts` hole stopping at `until`, and `group(c, 80)` in the code
 template to bracket the condition only when C's `!` would otherwise take it
-apart. `examples/pascal.pt` brackets unconditionally and `while (!(1))` is what
+apart. `examples/pascal.mx` brackets unconditionally and `while (!(1))` is what
 that costs.
 
 *Verified at 10 examples, 36 error cases, `tests/hygiene.sh` and
@@ -636,7 +636,7 @@ usable as an ordinary name everywhere else.
 **The parameter list is the one place the code template bought nothing**, and
 the first draft of both files claimed otherwise. Pascal writes
 `(a: integer; b: integer)` and C wants the type once per parameter;
-`examples/code.pt` loops over the list, and `examples/pascal.pt` gets *identical*
+`examples/code.mx` loops over the list, and `examples/pascal.mx` gets *identical*
 text from `join ", int "`, because every turn needs the same word in front of
 it. The comment in each file now says so. `join` stops being enough the moment
 two parameters have different types, which is where the loop earns its place and
@@ -671,7 +671,7 @@ statement*, so a template can decide whether to **punctuate** it.
 
 C wants `if (c) x = 1; else …` and forbids `if (c) { … }; else …`, and which of
 the two a branch is depends entirely on the rule that filled the hole. Before
-this, `examples/code.pt` braced every branch unconditionally — correct either
+this, `examples/code.mx` braced every branch unconditionally — correct either
 way, and noise around every single statement.
 
 **Nothing had to be computed; something had to stop being thrown away.** The
@@ -698,7 +698,7 @@ until `tests/pascal.sh` started compiling, and one of them predates this change.
 
 **It does not help a string template**, and an earlier note here said it would.
 A string template has no way to emit conditionally, so this is a code-template
-builtin exactly as `level` and `group` are. `examples/pascal.pt` still braces
+builtin exactly as `level` and `group` are. `examples/pascal.mx` still braces
 every branch, and the recorded diff between the two files now shows three
 differences rather than two — parentheses, punctuation, and the literal — one
 for each thing a template can ask that a string cannot.
@@ -708,15 +708,15 @@ for each thing a template can ask that a string cannot.
 
 ## Stage 1 begins: Pascal declares its variables, and a compiler checks the C
 
-`examples/pascal.pt` and `examples/code.pt` now read `program`, a `var` section
+`examples/pascal.mx` and `examples/code.mx` now read `program`, a `var` section
 with comma-separated declarations, `integer` and `boolean`, and an outer
-`begin … end.` that becomes `main`. What comes out of `code.pt` is a whole C
+`begin … end.` that becomes `main`. What comes out of `code.mx` is a whole C
 program, `#include` and all, and `tests/pascal.sh` compiles it, runs it, and
 checks the number it prints.
 
 ```
 ok      pascal.sh: the C compiles, runs, and computes 39
-            pascal.pt still cannot spell C's quotes -- as recorded
+            pascal.mx still cannot spell C's quotes -- as recorded
 ```
 
 **The number is the point.** Every other example is pinned to a recorded `.out`,
@@ -750,7 +750,7 @@ what lets one `var` cover a section the way Pascal writes it. Everything else
 stage 1 still wants — `procedure`, `function`, `repeat`, `case` — is the same
 kind of work.
 
-**The half that stays wrong is pinned too.** `pascal.pt` cannot translate
+**The half that stays wrong is pinned too.** `pascal.mx` cannot translate
 `'it''s'` into `"it's"`, and its output is the one in this tree expected *not*
 to compile. `tests/pascal.sh` fails if it ever starts, so whoever fixes it has
 to edit the test and the file's closing note in the same commit — the same
@@ -767,7 +767,7 @@ lines, unless it says `override`, in which case it wins and nothing is said —
 because it was said in the source.
 
 ```
-@use "../lib/arith.pt"
+@use "../lib/arith.mx"
 @syntax a "/" b 70 => "{a}:idiv({b})" override
 ```
 
@@ -806,7 +806,7 @@ either order, and a hole may still be called either.
 same order, same words, same hole kinds, same group shapes. Hole names are not
 part of it, since `a "+" b` and `x "+" y` match the same text. Levels are not
 either. Two rules that merely share a leading word do not collide — that is the
-candidate mechanism, and `if`/`if…else` and `examples/poem.pt`'s `-`/`--`/`---`
+candidate mechanism, and `if`/`if…else` and `examples/poem.mx`'s `-`/`--`/`---`
 depend on it.
 
 The rule check runs at seal, like the class-kind check below it, so directive
@@ -814,8 +814,8 @@ order cannot let one through and a rule that arrived through `@use` is named at
 the line that wrote it. A class and a separator are checked where they are
 written, because a later one replaces the earlier in place.
 
-`examples/use.pt` is the recorded evidence: it uses `lib/arith.pt` and a new
-`lib/vector.pt` that uses `lib/arith.pt` too — a diamond — and overrides
+`examples/use.mx` is the recorded evidence: it uses `lib/arith.mx` and a new
+`lib/vector.mx` that uses `lib/arith.mx` too — a diamond — and overrides
 arith's `/`.
 
 **And one thing found while testing it.** `@token name "…" garbage` and
@@ -862,7 +862,7 @@ the form, which is why no recorded output changed.
 
 ## Groups in text mode, and the matcher that made them possible
 
-`[ … ]`, `[ … ]*` and `[ … ]+` work in `@mode text`. `examples/poem.pt` writes a
+`[ … ]`, `[ … ]*` and `[ … ]+` work in `@mode text`. `examples/poem.mx` writes a
 markdown image whose title is optional and a shortcode whose argument list is
 not, one rule each, and both use a code template because both need to ask
 something — whether the optional part was there, and what each turn was.
@@ -886,7 +886,7 @@ arrival means this construct has ended.
 
 A search costs more than a scan, so it was measured rather than assumed: 113KB
 of markdown, 2000 lines, through the `**`, `[[…]]` and dash rules of
-`examples/poem.pt`, in 60ms, correct. The budget is per attempted match and does
+`examples/poem.mx`, in 60ms, correct. The budget is per attempted match and does
 not accumulate across a document.
 
 *Verified at 9 examples, 27 error cases, `tests/hygiene.sh`; `make check` clean.*
@@ -900,17 +900,17 @@ and nothing is joined after it.
 
 **The cheap answer would have been wrong, and wrong in both directions.**
 Looking at the last character emitted and skipping the separator after a `}`
-fails for `examples/clike.pt`, which reads C's braces and emits Solveig — where
+fails for `examples/clike.mx`, which reads C's braces and emits Solveig — where
 a `.` is wanted between two statements however the one before ended — and it
-fails the other way for C's own `struct { … };`. `examples/groups.pt` reads the
-same braces as clike.pt and emits JavaScript, where the brace does end a
+fails the other way for C's own `struct { … };`. `examples/groups.mx` reads the
+same braces as clike.mx and emits JavaScript, where the brace does end a
 statement. So the input rule and the output rule are about two different
 languages and had to stay two rules. Guessing is what this tool declines to do
 about precedence and about scopes, and it declined here for the same reason.
 
 The word sits **after the template**, which is the one place in a rule where a
 bare word cannot be anything else, since a hole only appears in the pattern. So
-it reserves nothing: `examples/reserved.pt` has a rule whose hole is called
+it reserves nothing: `examples/reserved.mx` has a rule whose hole is called
 `terminated` and which is itself `terminated`, four words apart.
 
 This was the fifth of the code template's five customers, and the one that did
@@ -929,7 +929,7 @@ at, and builds text with `emit`.
 It cost nothing to tell the two apart. A template had always been a string and a
 string never starts with a brace, so one character after the `=>` decides, with
 no lookahead, nothing reserved, and no file written before it changing meaning.
-And it keeps the one rule rather than bending it: the language is Prototype's
+And it keeps the one rule rather than bending it: the language is Metaxis's
 own, so it lives outside the strings, and the foreign text it emits lives inside
 them.
 
@@ -947,7 +947,7 @@ The fifth, a rule that says it needs no separator after it, is not a property of
 a template and did not come with the others; it landed as `terminated` in the
 entry above.
 
-`examples/code.pt` is `examples/pascal.pt` with every rule rewritten in the new
+`examples/code.mx` is `examples/pascal.mx` with every rule rewritten in the new
 form and the body left character for character alone, so the diff between the
 two recorded outputs is the whole argument:
 
@@ -973,14 +973,14 @@ would not and is the one prediction there that held.
 `sep "s"` saying how turns are told apart on the way in and `join "j"` how they
 are put back together on the way out.
 
-The brackets are Prototype's own vocabulary and live outside the strings, which
+The brackets are Metaxis's own vocabulary and live outside the strings, which
 is what makes them safe: a file that wants `[` and `]` in its own language
-quotes them. `examples/clike.pt` declares `a "[" i "]"` for an index in the same
+quotes them. `examples/clike.mx` declares `a "[" i "]"` for an index in the same
 tool that reads `[ x ]* sep ","`.
 
 Proto declined repetition and optional parts three times, on the grounds that no
 program had asked. A language-agnostic tool has argument lists everywhere and
-asks on the first file: `examples/groups.pt` writes one call rule covering every
+asks on the first file: `examples/groups.mx` writes one call rule covering every
 arity there is.
 
 Every hole is bound whether or not its group matched, so a template never has to
@@ -1010,7 +1010,7 @@ it: `swap: 2 1`, `bump: 105 0`.*
 
 ## The reference
 
-[REFERENCE.md](REFERENCE.md) states what every part of a `.pt` file means —
+[REFERENCE.md](REFERENCE.md) states what every part of a `.mx` file means —
 directives, patterns, groups, kinds, levels, templates, both modes, the command
 line, every error message the tool can produce, and the limits. It states and
 does not argue; [notation.md](notation.md) argues.
@@ -1023,9 +1023,9 @@ memory, and two of them were wrong. See [POSTMORTEM.md](POSTMORTEM.md) 2.
 C11 and `make`, plus POSIX `<regex.h>` for `@token` — the only thing here that
 Proto does not also need, and the price of letting a file say what a literal is.
 
-`prototype/src/header.c` is the fixed half: the directive grammar, which no file
-can reach. `prototype/src/lex.c` is the lexer the header wrote.
-`prototype/src/expand.c` is Pratt with backtracking, templates and text mode.
+`metaxis/src/header.c` is the fixed half: the directive grammar, which no file
+can reach. `metaxis/src/lex.c` is the lexer the header wrote.
+`metaxis/src/expand.c` is Pratt with backtracking, templates and text mode.
 
 Six things quoting does not decide by itself were settled here, each written
 down in [notation.md](notation.md) under a heading of its own: a hole's kind is
@@ -1040,7 +1040,7 @@ word.
 ## The notation
 
 Everything a directive says about text — the text it recognises and the text it
-emits — is inside a string, and everything outside a string is Prototype's own
+emits — is inside a string, and everything outside a string is Metaxis's own
 fixed vocabulary.
 
 Two things fell out of it rather than being designed in. Four rule directives
@@ -1050,5 +1050,5 @@ a hole is a led rule while one beginning with a word is a nud rule, which is the
 Pratt distinction read off instead of declared. And the lexer stopped being a
 fixed budget, because the header is read before the body.
 
-`examples/clike.pt` writes all six things Proto's `lib/clike.pro` lists as
+`examples/clike.mx` writes all six things Proto's `lib/clike.pro` lists as
 impossible.

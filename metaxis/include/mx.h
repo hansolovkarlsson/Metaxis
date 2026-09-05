@@ -1,7 +1,7 @@
-/* pt.h -- Prototype: a file declares its grammar, then is read with it.
+/* mx.h -- Metaxis: a file declares its grammar, then is read with it.
  *
  * The one rule this implements: everything a directive says about foreign
- * text is inside a string, and everything outside a string is Prototype's.
+ * text is inside a string, and everything outside a string is Metaxis's.
  * So the header has a fixed grammar that no file can reach, and the body has
  * no grammar at all until the header has finished speaking.
  */
@@ -52,7 +52,7 @@ struct Elem {
 /* ------------------------------------------------- interpreted templates */
 
 /* The second kind of template: `=> { … }` rather than `=> "…"`. It is
-   Prototype's own language, so it lives *outside* the strings, and the foreign
+   Metaxis's own language, so it lives *outside* the strings, and the foreign
    text it emits lives inside them -- the same rule the whole notation rests on,
    read once more. */
 

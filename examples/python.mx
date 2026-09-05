@@ -1,4 +1,4 @@
-; python.pt -- stage 3. A language whose blocks are an indentation, into C.
+; python.mx -- stage 3. A language whose blocks are an indentation, into C.
 ;
 ; Everything below the header is Python. It runs under python3 and prints the
 ; same three numbers this file's C prints, which is what tests/python.sh checks
@@ -33,7 +33,7 @@
 ; A code template is handed the group's turns as a *list* and joins them
 ; itself, which is what `for … sep` is for; `join` is the string template's
 ; half of the same job and is left off here because nothing would read it.
-; examples/code.pt writes `emit a + "(" + x + ")"` for the same pattern and
+; examples/code.mx writes `emit a + "(" + x + ")"` for the same pattern and
 ; gets its commas from an infix `,` rule that Pascal's declarations needed
 ; anyway -- Python has no such rule, so this one does the joining in the open.
 @syntax f "(" [ x ]* sep "," ")"               95
@@ -57,7 +57,7 @@
 @syntax a "or"  b                 25           => { emit group(a, 25) + " || " + group(b, 26) }
 
 ; A module maps to a header, one quoted rule per module, for the reason
-; examples/code.pt gives about a Pascal type: a hole would splice the module's
+; examples/code.mx gives about a Pascal type: a hole would splice the module's
 ; own name and C's header is not called that. Python's `print` writes to
 ; `sys.stdout`, so this mapping is the honest one rather than a stand-in.
 @syntax "import" "sys"                         => { emit "#include <stdio.h>" } terminated
@@ -73,7 +73,7 @@
 @syntax "return" e                             => { emit "return " + e }
 @syntax "print" "(" x ")"                      => { emit "printf(\"%d\\n\", " + x + ")" }
 
-; The three block rules. `terminated(b)` is the same question examples/code.pt
+; The three block rules. `terminated(b)` is the same question examples/code.mx
 ; asks of `begin … end`: @separator puts a `;` *between* two statements and
 ; never after the last, so the `}` would otherwise close over an unterminated
 ; one. A block answers for its last statement, exactly as a `stmts` hole does.

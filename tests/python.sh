@@ -5,7 +5,7 @@
 # instead of a changed one. This one does that and then does something the
 # suite has not done before: **it runs the source language too.**
 #
-# The body of examples/python.pt is Python. Not Python-shaped -- Python, which
+# The body of examples/python.mx is Python. Not Python-shaped -- Python, which
 # python3 will run. So the same text can be executed twice, once by the
 # interpreter it was written for and once as the C this tree translated it
 # into, and the two answers compared. A translation that is *self-consistently*
@@ -20,11 +20,11 @@
 # The Python half is skipped, loudly, where python3 is not installed. The C
 # half is not skippable: it is the test.
 
-PT="${1:-./bin/pt}"
+MX="${1:-./bin/mx}"
 CC="${CC:-cc}"
 LIMIT="${LIMIT:-10}"
 
-TMP="${TMPDIR:-/tmp}/pt-python.$$"
+TMP="${TMPDIR:-/tmp}/mx-python.$$"
 mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 
@@ -36,14 +36,14 @@ WANT="40
 80
 50"
 
-if ! sh tests/limit.sh "$LIMIT" "$PT" examples/python.pt > "$TMP/py.c" 2> "$TMP/err"; then
-    echo "FAILED  python.sh: examples/python.pt did not expand"
+if ! sh tests/limit.sh "$LIMIT" "$MX" examples/python.mx > "$TMP/py.c" 2> "$TMP/err"; then
+    echo "FAILED  python.sh: examples/python.mx did not expand"
     cat "$TMP/err"
     exit 1
 fi
 
 if ! "$CC" -o "$TMP/py" "$TMP/py.c" 2> "$TMP/cc.err"; then
-    echo "FAILED  python.sh: the C from examples/python.pt does not compile"
+    echo "FAILED  python.sh: the C from examples/python.mx does not compile"
     echo "        Stage 3 is that this compiles. A block that closed in the"
     echo "        wrong place is a brace in the wrong place, and nothing but a"
     echo "        compiler would say so."
@@ -61,7 +61,7 @@ fi
 
 # ------------------------------------------------------- and the same text,
 # ------------------------------------------------------- run as what it is.
-sed -n '/^@end$/,$p' examples/python.pt | tail -n +2 > "$TMP/body.py"
+sed -n '/^@end$/,$p' examples/python.mx | tail -n +2 > "$TMP/body.py"
 
 if ! command -v python3 > /dev/null 2>&1; then
     echo "ok      python.sh: the C compiles, runs, and computes 40 80 50"
@@ -74,7 +74,7 @@ fi
 pygot=$(sh tests/limit.sh "$LIMIT" python3 "$TMP/body.py" 2> "$TMP/py.err")
 pyrc=$?
 if [ "$pyrc" -ne 0 ]; then
-    echo "FAILED  python.sh: the body of examples/python.pt is not valid Python."
+    echo "FAILED  python.sh: the body of examples/python.mx is not valid Python."
     echo "        It is supposed to be a program, not an illustration of one."
     echo "        If the grammar now reads something Python does not, that is a"
     echo "        dialect and this file should stop claiming otherwise."

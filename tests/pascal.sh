@@ -10,7 +10,7 @@
 # It runs the pair, because they fail in different places and each failure says
 # something:
 #
-#   code.pt    must compile and print what the Pascal computes. If the
+#   code.mx    must compile and print what the Pascal computes. If the
 #              arithmetic, the precedence, `mod`, the loop or the branches were
 #              translated wrongly, the number is wrong and nothing else has to
 #              notice. It is also the only place `terminated(h)` is checked
@@ -18,7 +18,7 @@
 #              `begin … end` and one that is not, so a rule that punctuated
 #              either of them wrongly would not build.
 #
-#   pascal.pt  must NOT compile, and the reason must be the string literal. It
+#   pascal.mx  must NOT compile, and the reason must be the string literal. It
 #              must also still write `int k` for a parameter declared `real`,
 #              which *does* compile and is wrong -- the second kind of failure,
 #              and the one nothing but this line would ever catch.
@@ -29,11 +29,11 @@
 #              forgotten. When somebody translates the literal, this half fails
 #              and has to be edited in the same commit.
 
-PT="${1:-./bin/pt}"
+MX="${1:-./bin/mx}"
 CC="${CC:-cc}"
 LIMIT="${LIMIT:-10}"
 
-TMP="${TMPDIR:-/tmp}/pt-pascal.$$"
+TMP="${TMPDIR:-/tmp}/mx-pascal.$$"
 mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 
@@ -48,7 +48,7 @@ trap 'rm -rf "$TMP"' EXIT
 #
 # Scale is the one that earns its place here rather than in a diff: its C
 # signature is `void Scale(int n, double k)`, which only a translator that
-# reads the type of each parameter separately can write. examples/pascal.pt
+# reads the type of each parameter separately can write. examples/pascal.mx
 # writes `int k` for the same Pascal and is recorded doing it.
 WANT="it's middling
 40
@@ -58,15 +58,15 @@ WANT="it's middling
 7
 42"
 
-# ---------------------------------------------------------------- code.pt
-if ! sh tests/limit.sh "$LIMIT" "$PT" examples/code.pt > "$TMP/code.c" 2> "$TMP/err"; then
-    echo "FAILED  pascal.sh: examples/code.pt did not expand"
+# ---------------------------------------------------------------- code.mx
+if ! sh tests/limit.sh "$LIMIT" "$MX" examples/code.mx > "$TMP/code.c" 2> "$TMP/err"; then
+    echo "FAILED  pascal.sh: examples/code.mx did not expand"
     cat "$TMP/err"
     exit 1
 fi
 
 if ! "$CC" -o "$TMP/code" "$TMP/code.c" 2> "$TMP/cc.err"; then
-    echo "FAILED  pascal.sh: the C from examples/code.pt does not compile"
+    echo "FAILED  pascal.sh: the C from examples/code.mx does not compile"
     echo "        Stage 1 is that this compiles. Nothing else in the suite"
     echo "        would have told you."
     cat "$TMP/cc.err"
@@ -82,25 +82,25 @@ if [ "$got" != "$WANT" ]; then
     exit 1
 fi
 
-# ---------------------------------------------------------------- pascal.pt
-if ! sh tests/limit.sh "$LIMIT" "$PT" examples/pascal.pt > "$TMP/pascal.c" 2> "$TMP/err"; then
-    echo "FAILED  pascal.sh: examples/pascal.pt did not expand"
+# ---------------------------------------------------------------- pascal.mx
+if ! sh tests/limit.sh "$LIMIT" "$MX" examples/pascal.mx > "$TMP/pascal.c" 2> "$TMP/err"; then
+    echo "FAILED  pascal.sh: examples/pascal.mx did not expand"
     cat "$TMP/err"
     exit 1
 fi
 
 if "$CC" -o "$TMP/pascal" "$TMP/pascal.c" > /dev/null 2>&1; then
-    echo "FAILED  pascal.sh: the C from examples/pascal.pt compiles now."
+    echo "FAILED  pascal.sh: the C from examples/pascal.mx compiles now."
     echo "        That is the good news and this half is now wrong. A string"
     echo "        template had no way to translate 'it''s' into \"it's\", which"
-    echo "        is what that file's closing note says and what code.pt exists"
+    echo "        is what that file's closing note says and what code.mx exists"
     echo "        to contrast with. Rewrite both, and this test, in the commit"
     echo "        that did it."
     exit 1
 fi
 
 if ! grep -q "it''s" "$TMP/pascal.c"; then
-    echo "FAILED  pascal.sh: examples/pascal.pt no longer emits the Pascal"
+    echo "FAILED  pascal.sh: examples/pascal.mx no longer emits the Pascal"
     echo "        literal, so whatever stopped it compiling is something else."
     echo "        Find out what before touching this file."
     exit 1
@@ -112,15 +112,15 @@ fi
 # for the same reason the literal is: so it cannot be quietly fixed, and cannot
 # be quietly forgotten.
 if ! grep -q "void Scale(int n, int k)" "$TMP/pascal.c"; then
-    echo "FAILED  pascal.sh: examples/pascal.pt no longer writes 'int k' for a"
+    echo "FAILED  pascal.sh: examples/pascal.mx no longer writes 'int k' for a"
     echo "        parameter declared 'real'. If a string template can now write"
     echo "        a different type per turn, that is a real result -- say so in"
-    echo "        that file's closing note, in examples/code.pt's contrast, and"
+    echo "        that file's closing note, in examples/code.mx's contrast, and"
     echo "        here, in the commit that did it."
     exit 1
 fi
 
 echo "ok      pascal.sh: the C compiles, runs, and computes 4 44 80 7 42"
-echo "            pascal.pt still cannot spell C's quotes -- as recorded"
+echo "            pascal.mx still cannot spell C's quotes -- as recorded"
 echo "            and still writes 'int k' for a 'real' -- as recorded"
 exit 0

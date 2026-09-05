@@ -1,5 +1,5 @@
-/* pt.c -- pt [-o out] file.pt */
-#include "pt.h"
+/* mx.c -- mx [-o out] file.mx */
+#include "mx.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +7,7 @@
 
 static void usage(void)
 {
-    fputs("usage: pt [-o output] file.pt\n"
+    fputs("usage: mx [-o output] file.mx\n"
           "       -g   print the grammar the header declared, and stop\n", stderr);
     exit(2);
 }
@@ -67,16 +67,16 @@ int main(int argc, char **argv)
 
     char *err = NULL;
     char *src = read_file(in, &err);
-    if (!src) { fprintf(stderr, "pt: %s\n", err); return 1; }
+    if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }
 
     Grammar *g = grammar_new();
     size_t body = 0;
     if (header_read(g, src, in, &body, &err) < 0) {
-        fprintf(stderr, "pt: %s\n", err);
+        fprintf(stderr, "mx: %s\n", err);
         return 1;
     }
     if (grammar_seal(g, &err) < 0) {
-        fprintf(stderr, "pt: %s\n", err);
+        fprintf(stderr, "mx: %s\n", err);
         return 1;
     }
 
@@ -88,16 +88,16 @@ int main(int argc, char **argv)
     } else {
         Toks tk;
         if (lex(g, src, body, in, &tk, &err) < 0) {
-            fprintf(stderr, "pt: %s\n", err);
+            fprintf(stderr, "mx: %s\n", err);
             return 1;
         }
         out = expand_expr(g, &tk, &err);
     }
-    if (!out) { fprintf(stderr, "pt: %s\n", err); return 1; }
+    if (!out) { fprintf(stderr, "mx: %s\n", err); return 1; }
 
     FILE *f = stdout;
     if (outpath && !(f = fopen(outpath, "wb"))) {
-        fprintf(stderr, "pt: cannot write %s\n", outpath);
+        fprintf(stderr, "mx: cannot write %s\n", outpath);
         return 1;
     }
     fputs(out, f);

@@ -14,7 +14,7 @@ way in.
 
 ## What this is
 
-A language-agnostic rewriter in the shape of Proto: a `.pt` file declares its
+A language-agnostic rewriter in the shape of Proto: a `.mx` file declares its
 own grammar in its header and is then read with it, and the output is whatever
 the templates say. Its one premise is that **every mention of foreign text
 inside a directive is a string** — quoted words on the pattern side, a quoted
@@ -48,7 +48,7 @@ In `docs/`: `work-journal/` (why, in order — **one file per working day**),
 including settled against), `CHANGELOG.md` (when).
 
 Four more are about the thing rather than the work: `REFERENCE.md` states what
-every part of a `.pt` file means, `notation.md` argues for why it is shaped that
+every part of a `.mx` file means, `notation.md` argues for why it is shaped that
 way and what it costs, `direction.md` argues for where it could go and which
 futures are being declined, and `prior-art.md` surveys the tools that do
 something like this and scores this one against them. Where any of them disagrees with the code, the code

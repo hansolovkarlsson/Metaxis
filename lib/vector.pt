@@ -1,9 +1,0 @@
-; vector.pt -- a pair, written on top of the arithmetic it is made of.
-;
-; It uses arith.pt because its components are expressions. A file that uses
-; both this and arith.pt therefore meets arith.pt twice -- a diamond -- and
-; reads it once, so nothing in it collides with itself.
-
-@use "arith.pt"
-
-@syntax "<" x "," y ">"  => "vec({x}, {y})"

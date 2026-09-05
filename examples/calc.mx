@@ -1,4 +1,4 @@
-; calc.pt -- a file that does not translate its language. It runs it.
+; calc.mx -- a file that does not translate its language. It runs it.
 ;
 ; Every other example here rewrites one notation into another and the output is
 ; text in some target. This one has no target: each rule computes a number, the

@@ -10,18 +10,18 @@ plans is worse than no page.*
 
 ---
 
-## What Prototype is, said accurately
+## What Metaxis is, said accurately
 
-A `.pt` file declares a grammar in its header and is then read with it. In
+A `.mx` file declares a grammar in its header and is then read with it. In
 expression mode that grammar is a Pratt parser — leading words, binding powers,
 candidates tried longest-first with the cursor restored. In text mode it is a
 backtracking search. Either way, **a rule takes the values its children produced
 and combines them into its own**, and that value is text.
 
-Which is to say: Prototype is a **bottom-up attribute grammar in which the
+Which is to say: Metaxis is a **bottom-up attribute grammar in which the
 attribute type is fixed at text**.
 
-`examples/asm.pt` is the sharpest demonstration of that, because there the text
+`examples/asm.mx` is the sharpest demonstration of that, because there the text
 is not the output language at all — it is *the code that computes the
 subexpression*, accumulated upward, and the tool needed no change to carry it.
 
@@ -36,13 +36,13 @@ see nothing but its own pattern.
 
 ## It is not short of grammar
 
-The obvious complaint is that Prototype has no EBNF and therefore does not know
+The obvious complaint is that Metaxis has no EBNF and therefore does not know
 how a language fits together above the level of one rule. That is the wrong
 diagnosis, and acting on it would be the most expensive mistake available.
 
 A Pratt grammar is a real grammar. It handles the dangling `else`, right
 associativity, mixfix, and prefix-versus-infix on the same word, and it does so
-in `examples/pascal.pt` today without a special case anywhere. EBNF is not more
+in `examples/pascal.mx` today without a special case anywhere. EBNF is not more
 powerful there; it is differently shaped — a *recogniser*, read top-down, where
 this is a *rewrite*, read bottom-up.
 
@@ -53,7 +53,7 @@ afternoon of writing Pascal:
   in `function`, because there is no way to name a pattern fragment and use it
   in two places.
 - The arms of `case` could not be `[ v ":" s ]` in a string template, so
-  `examples/pascal.pt` declares an infix `a ":" s` rule meaning *case arm* and
+  `examples/pascal.mx` declares an infix `a ":" s` rule meaning *case arm* and
   folds the pair into one value before the group sees it. **A parameter list
   whose types differ is the same limitation with no workaround**: the two lists
   have to come back apart in the output, so folding cannot help, and that file
@@ -64,7 +64,7 @@ afternoon of writing Pascal:
 - `Result :=` exists because a rule cannot know which function it is inside.
 
 A fifth instance arrived from stage 2, in a code generator rather than a
-grammar: `examples/asm.pt` wrote the same two lines at eight operands, and
+grammar: `examples/asm.mx` wrote the same two lines at eight operands, and
 `@template` now names them. **The common cause is that this tool could name a
 rule and nothing else** — and both halves of that are now built.
 
@@ -121,7 +121,7 @@ and language-agnostic, and it is downstream of the premise — a directive
 mentions foreign text only inside strings, so a rule is a closed statement about
 a shape, with nowhere for a reference to the rest of the program to live.
 
-But it does mean that Prototype as it stands cannot be a serious C or Python
+But it does mean that Metaxis as it stands cannot be a serious C or Python
 front end, and that no amount of grammar would change it. Adding EBNF to fix
 that list would be adding structure to solve a context problem.
 
@@ -133,7 +133,7 @@ grow, and they are the two halves of an attribute grammar.
 ### 1 · Let what flows up be a value — **done, and it stopped short of the name**
 
 Built 2026-09-05: `-`, `*`, `/`, `%`, `num(h)`, and a `+` that adds when both
-sides are numbers and joins when they are not. `examples/calc.pt` is the first
+sides are numbers and joins when they are not. `examples/calc.mx` is the first
 file here that runs its notation instead of translating it. It reads well, and
 **it is a calculator and not an interpreter**, because a hole is expanded before
 the template that uses it runs — so a rule can select between computed values and
@@ -173,30 +173,30 @@ and it will want the same kind of answer that `override` was.
 | --- | --- | --- |
 | **Phoenix** | EBNF, top-down, recogniser | a compiler |
 | **Futamura** | a description of a machine | a VM, by the first projection |
-| **Prototype** | bottom-up attribute grammar, declared in the file that uses it | *see below* |
+| **Metaxis** | bottom-up attribute grammar, declared in the file that uses it | *see below* |
 
-The answer to *what is left for Prototype* is not a third compiler generator. It
+The answer to *what is left for Metaxis* is not a third compiler generator. It
 is the thing the other two consume.
 
 **A definitional interpreter is exactly what Futamura's projections operate on.**
 Specialise an interpreter with respect to a program and the result is a compiled
-program; specialise the specialiser and the result is a compiler. If Prototype
+program; specialise the specialiser and the result is a compiler. If Metaxis
 generates interpreters, it does not compete with Futamura — it feeds it, and the
 pair covers ground neither does alone: invent a notation in an afternoon, get an
 interpreter for it immediately, and project it into a machine when it is worth
 keeping.
 
-That is the strongest available answer to *could Prototype go further than the
+That is the strongest available answer to *could Metaxis go further than the
 first projection*. Not by performing projections, which Futamura already does,
 but by producing the artefact they need from a notation that did not exist that
 morning.
 
-## What to call it — the description scored, the name still open
+## What to call it — the description scored, the name chosen
 
 *This section is about two things that were run together for a day and are
 better kept apart: **the description** — what sentence introduces the tool — and
 **the name**. The description is below and was scored. The name is at the foot,
-was surveyed on the same day, and is **open**.*
+was surveyed on the same day, and was **decided**.*
 
 ### The description
 
@@ -206,13 +206,13 @@ was true, so that it could be scored rather than drifted into. It was scored
 within hours, and it moved, so it is rewritten here rather than added to.
 
 **What held.** *Meant to prototype* is the honest half and the strongest thing
-about the tool. One word widened: **notation**, not language — `examples/poem.pt`
+about the tool. One word widened: **notation**, not language — `examples/poem.mx`
 turns prose into HTML, which is a notation without an `if` in it, and the broader
 word covers the DSL, the config format and the markup too.
 
 **What this section got wrong.** It said the other half was *exactly one roadmap
 item* away, and that arithmetic would make it true. Arithmetic landed and it did
-not. `examples/calc.pt` runs its language rather than translating it, and stops
+not. `examples/calc.mx` runs its language rather than translating it, and stops
 precisely at the point where an interpreter begins: a hole is expanded before
 the template that uses it runs, so a rule can select between computed values but
 cannot leave one uncomputed. `if 1 then 10 else (1 / 0)` divides by zero.
@@ -224,7 +224,7 @@ So the three descriptions, kept apart, with the middle one newly earned:
 | | |
 | --- | --- |
 | **before 2026-09-05** | a language-agnostic rewriter; the grammar is declared in the header of the file it reads |
-| **now** | that, and an **evaluator for expressions** — a `.pt` file can compute rather than emit, bottom-up and eagerly |
+| **now** | that, and an **evaluator for expressions** — a `.mx` file can compute rather than emit, bottom-up and eagerly |
 | **not yet** | a generic interpreter generator for prototyping notations |
 
 **What the third row now costs is deferral, not an operator.** A hole that can be
@@ -234,7 +234,7 @@ date is being put on it, because the estimate here has already been wrong once
 in the direction of *too near*.
 
 **The phrase is still worth aiming at**, and for the reason it always was: it
-completes the set. Phoenix makes a compiler, Futamura makes a machine, Prototype
+completes the set. Phoenix makes a compiler, Futamura makes a machine, Metaxis
 would make the interpreter, and the section above says why the three then compose
 rather than overlap. What has changed is only the distance, and knowing the
 distance is worth more than the phrase was.
@@ -247,134 +247,64 @@ ordinary case rather than a surprise, and it is the argument for building the
 cheap thing rather than reasoning about it, which is the same argument
 [POSTMORTEM.md](POSTMORTEM.md) 9 makes about the staging.
 
-### The name — surveyed 2026-09-05, and open
+### The name — **decided 2026-09-05: Metaxis**
 
-**Hans, 2026-09-05:** *so how about the name? Is it used as a programming tool
-already?*
+**Hans, 2026-09-05:** *rename it to Metaxis.* And, on reading it back:
+*Meta as in meta-compiler, Taxis as in order, metaxis as in between. It fits.*
 
-`README.md` has said **Working name** since the first commit, so nothing has to
-be undone here — only chosen. The evidence is
-[prior-art.md](prior-art.md) § 1; this is what it costs and what it buys.
+The tool was called **Prototype** for its first two days and is now **Metaxis**,
+`mx` on the command line, `.mx` on a file. `README.md` had said *working name*
+since the first commit, so nothing had to be undone — only chosen. This
+subsection is rewritten rather than added to, as this page requires of itself;
+the evidence for every candidate, and the four branches that closed, are in
+[prior-art.md](prior-art.md) § 1, dated, so that none of it needs re-deriving.
 
-**What is genuinely wrong with it is searchability, and nothing else.** There is
-**no language tool, compiler, parser generator or transformation system named
-Prototype** — the survey looked and found none, so this tool would not be
-confused for a peer. What it collides with is a dormant JavaScript framework
-that still holds the domain and the org, and — the larger problem — a word that
-in a programming context already means five other things: C's function
-prototypes, JavaScript's `Object.prototype`, the object model of Self and Io,
-the GoF pattern, and Spring's bean scope. *Prototype parser* and *prototype
-grammar* return the paradigm. And `.pt` is PyTorch's checkpoint extension, which
-a reader meets before they meet the name at all.
+**Why this one.** Greek **μεταξύ** — Plato's *in-betweenness*, and in Augusto
+Boal's theatre *"the state of belonging completely and simultaneously to two
+different autonomous worlds."* The property this page states as the tool's own
+is that **neither the language read nor the language written is the tool's own**:
+a thing belonging wholly to two languages and owning neither. **The name is that
+sentence in one word**, and the sentence was written some hours before the name
+was proposed by someone who was not looking at it.
 
-**The field's own habit says the same thing from the other side.** Stratego,
-Spoofax, Rascal, Ohm, Comby, Katahdin, Coccinelle, Seed7, Nanopass; TXL, ANTLR,
-SDF, DMS, META II. Almost nothing here is named after a common word from its own
-domain, and the exceptions carry a qualifier that does the work — ast-grep,
-Semgrep, OpenRewrite, tree-sitter. A tool in this field is found by its name and
-by nothing else, because there is no catalogue to browse.
+**It carries three readings and only one of them is the dictionary's**, which is
+worth writing down in that order rather than blurring them:
 
-**What the name buys, and it is not nothing.** It states the purpose, and the
-purpose is the half of the description above that **held** when the other half
-was scored and failed. *Meant to prototype a notation* is the strongest true
-sentence about this tool, and a name that says it is worth more than a name that
-merely indexes well. The section above spent a day learning that the honest half
-is the half to keep; renaming to something opaque would be trading the one word
-that is already honest for one that has to be explained.
+| reading | | |
+| --- | --- | --- |
+| **between** | μεταξύ, *metaxú* | **the dictionary one.** Plato, then Voegelin, then Boal |
+| **meta-** | as in *metacompiler* | true of the tool, and what a programmer sees first |
+| **-taxis** | as in *order*, *arrangement* | **constructed, and productive.** `syntax` really is `syn-` + `taxis`, so a reader in this field will parse `metaxis` the same way and be right about the tool. But μεταξύ is not `meta` + `taxis`, and this reading is apt rather than etymological |
 
-**So the decision is genuinely balanced, and it is not being taken here.** What
-is written down instead is the shape of it, so that whoever takes it is not
-re-deriving the evidence:
+That distinction is kept because the round before it was lost. `Protaxis` was
+recommended here for *scanning* as `pro-` + `taxis`; its actual derivation is
+`prot-` + `axis`, a geology term from 1890, and the reason had been built after
+the sound was liked. Metaxis survives the same test: **the meaning is real, the
+third reading is labelled as constructed, and the name does not depend on it.**
 
-- **Keeping it costs discoverability and nothing else.** Nothing is
-  functionally blocked: crates.io is free, and npm and PyPI hold stubs rather
-  than live projects. A qualified form — the way the field's own exceptions are
-  built — recovers most of the search profile while keeping the word that is
-  true.
-- **Changing it costs the one honest word**, and the replacement has to earn
-  back what *prototype* says for free. An opaque name is a promise to explain
-  the tool every time it is mentioned.
-- **`.pt` is separable from the name** and may be the cheaper half to change,
-  since the PyTorch collision is the one a reader actually hits and the
-  extension is spelled in every example, test and document here.
+**What it beat, in one line each.** `Schorre` — a citation, since META II is this
+tool's premise both halves ([prior-art.md](prior-art.md) § 2), and it matches the
+house, but nobody can pronounce it. `Landin` — the 700 languages, the off-side
+rule, *syntactic sugar*; primes toward functional programming, which this is not.
+`Ostracon` — a cheap surface for drafts; still faintly implies *draft*.
+`Maquette` — declined for closing the same door `Prototype` did.
 
-#### The shortlist — three candidates, checked 2026-09-05
+**And the door that closed is the real reason the old name had to go.** The
+searchability was the loud problem — a dormant JavaScript framework, five other
+meanings of the word in this field, and `.pt` already being PyTorch's checkpoint
+extension. The deep problem was that **`Prototype` means the small model made
+before the real thing**, and the third row of the table above aims at a tool that
+makes real interpreters: the name was a claim that would have had to be abandoned
+precisely when the project succeeded. `Metaxis` asserts nothing that can go
+stale.
 
-**Three findings narrowed the field more than any individual candidate did**, and
-they are worth more than the list itself:
-
-1. **Every real word in the semantic field is already taken.** *argot* is an
-   option parser, *idiolect* is three GitHub projects, *maquette* is a virtual
-   DOM library, *hapax* is an AI-infrastructure tool, and *rubric* and
-   *cartouche* are occupied on all three registries. That is not bad luck. It is
-   why this field's tools are called Stratego, Spoofax, Comby, Katahdin,
-   Coccinelle and Rascal: **borrowing from outside the domain is not taste, it is
-   the only thing that works.**
-2. **A near-word is worse than a far-word.** `foretext` is free on every registry
-   and was nearly the recommendation — the header *is* the text before the text.
-   It sits one letter from `pretext`, a JavaScript text-layout library, and from
-   **PreTeXt**, an authoring language for textbooks. A name misheard as an
-   existing tool **in the same domain** is worse than one nobody knows yet.
-3. **A name with meaning has to come from outside software entirely, or it has
-   to be effectively invented — there is no third option.** Four rounds of
-   candidates produced this and it is the most useful thing on the page. The
-   current name, then the `pro`/`syn`/`lingua` morphemes, then `genesis`: every
-   meaning-bearing word in or near this domain came back occupied, and the three
-   that were free on every registry were killed by what they *return* —
-   `foretext` by PreTeXt, `genlex` by **OCaml's `Genlex` module**, a generic
-   lexer parameterised by your language's keywords, and the whole `-lingua`
-   branch by **Lingua Franca**, a published coordination language whose pitch is
-   *polyglot*. [prior-art.md](prior-art.md) § 1 has all three branches with what
-   closed each. **A clean registry sweep is not evidence of anything.**
-4. **A descriptive name has to be scored, and this page has already shown what
-   that costs.** The description above was written and refuted inside a day. A
-   name that encodes the current stage inherits exactly that. **Which is the real
-   case against `Prototype`, and it has nothing to do with searchability:** it
-   means *the small model made before the real thing*, and the third row of the
-   table above is aiming at a tool that makes real interpreters. The name would
-   have to be abandoned precisely when the project succeeded.
-
-| | | why | against it |
-| --- | --- | --- | --- |
-| **Metaxis** — `mx`, `.mx` | **recommended** | Greek **μεταξύ**, Plato's *in-betweenness*; in Boal's theatre, **"the state of belonging completely and simultaneously to two different autonomous worlds."** This page's own corrected claim is that *neither the language read nor the language written is the tool's own* — **the name is that sentence in one word.** Free on all three registries, returns nothing in software, and `meta-` primes toward metacompilation while `-xis` echoes *syntaxis*, so it reads native to the field without asserting anything in it | `meta-` is a loaded prefix in 2026 and invites a company association it does not mean. Two spellings exist in the literature, *metaxis* and *metaxy* |
-| **Schorre** — `schorre`, `.m2` | strong second, and a **citation** | D. V. Schorre, META II, 1964. [prior-art.md](prior-art.md) § 2 establishes with evidence that META II is **this tool's premise, both halves**: a quoted string is a literal input token, a bare name is a nonterminal, output is emitted from inside quotes. Naming it Schorre is an attribution rather than a label, **and it matches the house**: Futamura is already a tool named for the person whose idea it instantiates. Primes toward metacompilers, which is exactly right | **nobody knows how to pronounce it.** A name people must be told how to say is a tax the other three do not charge |
-| **Landin** — `landin`, `.iswim` | third | Peter Landin, and three connections where Schorre has one: *"The Next 700 Programming Languages"* is a schema instantiated per problem, which is the pitch; **the off-side rule is his**, and `@separator "\n" indent` implements it; and he coined **syntactic sugar**, which is what a rule here produces. Unambiguous to say | primes toward functional programming — ISWIM, SECD, the ML lineage — which this tool is not. Precise priming is most of what a name is for here |
-| **Ostracon** — `ost`, `.ost` | fourth | A potsherd: the cheap, throwaway surface drafts were written on because papyrus was expensive. **The surface is cheap, not the result** — the honest half of the description without the word | eight letters, needs a sentence of explanation, taken on npm, and it still faintly implies *draft*, which is the door this section is trying to keep open |
-| **Protaxis** | **withdrawn** | was recommended for scanning as `pro-` + `taxis` | **and its etymology is `prot-` + `axis`, a geology term from 1890** — the appealing story was wrong, and `metaxis` is the same sound with a meaning that is real and exactly right. Kept here as a correction, not an option |
-| **Incip** | fifth | free on all three registries, five letters, and an *incipit* is the opening that identifies a manuscript | reads as a truncation, looks like a typo for *incipient* |
-| **Maquette** | **declined** | the best pure synonym for *prototype* | which is the objection: it hard-codes *preliminary* and closes the same door, only more elegantly. Also a virtual DOM library |
-
-**The two at the top are the two kinds of answer**, and choosing between them is
-one question: *should the name carry a meaning, or carry an attribution?*
-**Metaxis** names what the tool **is** — a thing belonging wholly to two
-languages, neither of them its own. **Schorre** names who got there **first**,
-and matches the house: Proto, Phoenix, Futamura and Solveig are a myth, a
-scientist and a literary figure, and **`Prototype` is the only descriptive name
-among them.**
-
-**And one pool is closed rather than unlucky.** Eight mythological candidates —
-`thoth`, `seshat`, `ogma`, `nabu`, `kvasir`, `bragi`, `ratatoskr`, `proteus` —
-are taken on all three registries, eight for eight, and the ones with the best
-meanings are in-domain disasters: **Babel** is the JavaScript compiler,
-**Hermes** is Meta's JavaScript engine, **Janus** is a reversible programming
-language *and* the WebRTC server, **Odin** is a programming language. Surnames
-are the opposite: four for four free, and used nowhere as product names. Phoenix
-already holds the myth slot in the house in any case.
-
-Everything tried across five rounds that is not in the table above landed on
-somebody, and the branches that closed — `-lingua`, `proto-`, `genesis`, myth —
-are recorded with their reasons in [prior-art.md](prior-art.md) § 1, dated, so
-that reopening this decision is choosing rather than searching.
-
-**And `.pt` should change whichever way this goes.** It is PyTorch's checkpoint
-extension, it is the collision a reader meets before they meet the name, and it
-is spelled in every example, test and document here — separable from the naming
-question, more expensive to change, and more likely to be worth it.
-
-**And there is nothing to build either way, which is why this is not on
-[ROADMAP.md](ROADMAP.md).** A name is settled by deciding, not by working, and
-the page that holds it should be this one. When it is decided, this subsection
-is rewritten rather than added to, as the rest of the page is.
+**What the rename touched, and what it deliberately did not.** The code, the
+build, the examples, the tests and the present-tense records all say Metaxis and
+`.mx`. **The work journal, `CHANGELOG.md` and `POSTMORTEM.md` were left alone**,
+because they are dated accounts of what happened and the tool really was called
+Prototype when they were written — rewriting them would make yesterday's entries
+claim a name that did not exist. [work-journal/README.md](work-journal/README.md)
+says so at the top.
 
 ## What it should not become
 
@@ -389,7 +319,7 @@ the lexer. Both are context, and both are the wall.
 should.** The lexer *was* the hard part and the lexer is what got the state, so
 blocks read. What did not follow, and was not made to: `elif` is a rule per arm
 count, a wrapped call is not read at all, and the C types come off Python's own
-annotations because nothing here can infer one. `examples/python.pt` says all
+annotations because nothing here can infer one. `examples/python.mx` says all
 three in its own closing note. That is what "a subset, and it says so" looks
 like in practice, and it is the difference between reaching and claiming.
 
@@ -419,9 +349,9 @@ Every tool that shares the first half declares syntax **for its own host
 language**, so a declaration means something only against that host's semantics.
 Seed7 declares Seed7. Coq declares notation for Coq terms. Katahdin extends
 Katahdin. None of them is a rewriter and none can be pointed at Pascal on Monday
-and arm64 on Tuesday. A Prototype directive means *this shape becomes that text*
-and nothing more, which is why one tool reads `examples/poem.pt` and
-`examples/asm.pt`.
+and arm64 on Tuesday. A Metaxis directive means *this shape becomes that text*
+and nothing more, which is why one tool reads `examples/poem.mx` and
+`examples/asm.mx`.
 
 And what follows from the first half is unchanged, because it was never the
 part in dispute: no grammar to compile, no build step, no second tool, no

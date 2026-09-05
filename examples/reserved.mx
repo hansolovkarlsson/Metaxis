@@ -1,8 +1,8 @@
-; reserved.pt -- nothing is reserved, including Prototype's own spellings.
+; reserved.mx -- nothing is reserved, including Metaxis's own spellings.
 ;
 ; The point of the quoting rule is that a directive cannot be read as the thing
 ; it declares. The test of it is to declare, one at a time, every character
-; Prototype uses to write a directive with.
+; Metaxis uses to write a directive with.
 
 @comment ";" eol
 @token name "[A-Za-z_][A-Za-z0-9_]*"

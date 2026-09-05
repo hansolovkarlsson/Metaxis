@@ -1,10 +1,10 @@
-; code.pt -- the same Pascal as examples/pascal.pt, through the other kind of
+; code.mx -- the same Pascal as examples/pascal.mx, through the other kind of
 ; template.
 ;
 ;     diff examples/pascal.out examples/code.out
 ;
 ; is the whole argument for this file existing. The body below is character for
-; character the body of pascal.pt. Every rule is the same rule. The only
+; character the body of pascal.mx. Every rule is the same rule. The only
 ; difference is that a template here is `=> { … }` rather than `=> "…"`, and
 ; two things pascal.out is recorded as getting wrong come out right:
 ;
@@ -17,7 +17,7 @@
 ;                    a `string` hole splices the source text it matched. Here
 ;                    the rule translates it.
 ;
-; The language is Prototype's own, so it lives outside the strings; the foreign
+; The language is Metaxis's own, so it lives outside the strings; the foreign
 ; text it emits lives inside them. That is the same rule the pattern side
 ; follows, which is why `{` after the `=>` was enough to tell the two forms
 ; apart and nothing had to be reserved.
@@ -87,7 +87,7 @@
     } terminated
 
 ; `group(c, 80)` again: C's `!` binds tighter than any comparison, so the
-; condition needs brackets unless it is an atom. examples/pascal.pt writes them
+; condition needs brackets unless it is an atom. examples/pascal.mx writes them
 ; unconditionally, and `while (!(1))` is what that costs.
 @syntax "repeat" b:stmts "until" c
     => {
@@ -101,7 +101,7 @@
 ;
 ; The arm is `[ v ":" s ]` -- **two** holes in one repeated group, which is two
 ; parallel lists. `for i, x in v` walks the labels with their position and
-; `at(s, i)` takes the matching body. examples/pascal.pt cannot do this: a
+; `at(s, i)` takes the matching body. examples/pascal.mx cannot do this: a
 ; string template splices each list joined and has no way to interleave them,
 ; so it declares an infix `a ":" s` rule to fold the pair into one value before
 ; the group sees it, and that rule then means *case arm* everywhere a colon is
@@ -126,7 +126,7 @@
 ; semicolon that C's `if (c) { … } else` must not have, and which of the two a
 ; branch is depends on the rule that filled the hole -- exactly what a rule
 ; says when it declares itself `terminated`, and exactly what a hole now
-; remembers. examples/pascal.pt cannot ask, so it braces every branch
+; remembers. examples/pascal.mx cannot ask, so it braces every branch
 ; unconditionally and the recorded diff shows what that costs.
 ; A rule punctuates *inside* itself and never at its end: the semicolon before
 ; an `else` is C's and has to be written here, and the one that ends the whole
@@ -163,7 +163,7 @@
 ; `for i, x in p` and `at(t, i)`. That is what lets `Scale(n: integer; k: real)`
 ; come out as `void Scale(int n, double k)`.
 ;
-; examples/pascal.pt cannot. `join ", int "` writes one word in front of every
+; examples/pascal.mx cannot. `join ", int "` writes one word in front of every
 ; turn and cannot vary it, and a string template splices each list joined with
 ; no way to interleave two -- so that file writes `int k` for a `real` and its
 ; recorded output carries the wrong type on purpose. This used to be the one
@@ -196,13 +196,13 @@
 @syntax "function" f:name @params ":" rt ";" b
     => { subprogram(rt, f, p, t, b) } terminated
 
-; Free Pascal's `Result`, for the reason examples/pascal.pt gives.
+; Free Pascal's `Result`, for the reason examples/pascal.mx gives.
 @syntax "Result" ":=" e                        => { emit "return " + e }
 
 @end
 
-{ Everything below is Pascal. Nothing below is Prototype's.
-  It is the body of examples/pascal.pt, unchanged. }
+{ Everything below is Pascal. Nothing below is Metaxis's.
+  It is the body of examples/pascal.mx, unchanged. }
 
 program Fizz;
 

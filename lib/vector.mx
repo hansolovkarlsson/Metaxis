@@ -1,0 +1,9 @@
+; vector.mx -- a pair, written on top of the arithmetic it is made of.
+;
+; It uses arith.mx because its components are expressions. A file that uses
+; both this and arith.mx therefore meets arith.mx twice -- a diamond -- and
+; reads it once, so nothing in it collides with itself.
+
+@use "arith.mx"
+
+@syntax "<" x "," y ">"  => "vec({x}, {y})"

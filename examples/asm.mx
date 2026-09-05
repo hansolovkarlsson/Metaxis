@@ -1,4 +1,4 @@
-; asm.pt -- C in, arm64 assembly out. Stage 2, and the first target here that
+; asm.mx -- C in, arm64 assembly out. Stage 2, and the first target here that
 ; is not shaped like its input.
 ;
 ; A Pascal expression becomes a C expression one node at a time: the output
@@ -17,7 +17,7 @@
 ; **Two things this file had to work around, and both are findings.**
 ;
 ; A **literal is not code**. `3` is a bare token, and a rule cannot match a bare
-; token (the limitation examples/pascal.pt meets from the other side, where it
+; token (the limitation examples/pascal.mx meets from the other side, where it
 ; cannot translate a string), so nothing turns `3` into `mov x0, #3`. What tells
 ; a literal from a subexpression is `level(h)`: every rule below declares a
 ; level, so `level(h) == 1000` means *nothing here produced this, it is a token

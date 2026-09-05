@@ -29,11 +29,11 @@ LIMIT="$1"
 shift
 [ "$#" -gt 0 ] || { echo "limit.sh: no command given" >&2; exit 2; }
 
-mark="${TMPDIR:-/tmp}/pt-limit.$$.$LIMIT"
+mark="${TMPDIR:-/tmp}/mx-limit.$$.$LIMIT"
 rm -f "$mark"
 
 # Job control, so that the command becomes a process *group* leader and the
-# watchdog can kill the group rather than the one process. `pt` spawns nothing,
+# watchdog can kill the group rather than the one process. `mx` spawns nothing,
 # so for the suite as it stands this is belt and braces -- but a killed command
 # that leaves children behind is exactly the orphan this file exists because of,
 # and a check that leaks the thing it is policing would be a poor joke. `set +m`

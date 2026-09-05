@@ -10,7 +10,7 @@
  * text happens to be `div`, and a rule that wants the word compares text.
  * `divisor` is a longer class match than the word and never splits.
  */
-#include "pt.h"
+#include "mx.h"
 
 #include <string.h>
 

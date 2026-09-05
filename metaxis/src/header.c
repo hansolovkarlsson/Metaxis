@@ -1,10 +1,10 @@
 /* header.c -- the fixed half.
  *
- * Every string below is a Prototype string, spelled Prototype's way, in every
+ * Every string below is a Metaxis string, spelled Metaxis's way, in every
  * file, whatever the file declares. That is what stops a directive from ever
  * being read as the thing it is declaring.
  */
-#include "pt.h"
+#include "mx.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -102,7 +102,7 @@ static int dend(D *d, const char *what)
 
 static int ident_ch(int c) { return isalnum((unsigned char)c) || c == '_'; }
 
-/* A Prototype string: "..." with \" \\ \n \t \r and nothing else. */
+/* A Metaxis string: "..." with \" \\ \n \t \r and nothing else. */
 static char *dstring(D *d)
 {
     dskip(d);
@@ -161,7 +161,7 @@ static int dnumber(D *d, int *out)
 static const char *KINDS[]  = { "expr", "stmts", "text", "block", NULL };
 static const int   KINDKS[] = { K_EXPR,  K_STMTS, K_TEXT, K_BLOCK };
 
-/* A pattern element, and a group of them. `[ … ]` is Prototype's vocabulary and
+/* A pattern element, and a group of them. `[ … ]` is Metaxis's vocabulary and
    lives outside the strings, so it can never be mistaken for the body's own
    brackets -- those would be quoted. */
 static Elem *parse_elems(Grammar *g, D *d, Rule *r, int *nout, int depth);
@@ -761,7 +761,7 @@ fail:
 
 /* ------------------------------------------------------------- header lines */
 
-/* Skips whitespace, `;` comments -- which are Prototype's own and always
+/* Skips whitespace, `;` comments -- which are Metaxis's own and always
    work -- and any comment the header has declared for itself so far. */
 static size_t skip_trivia(Grammar *g, const char *s, size_t i)
 {

@@ -1,4 +1,4 @@
-; arith.pt -- ordinary arithmetic, for a file that would rather not restate it.
+; arith.mx -- ordinary arithmetic, for a file that would rather not restate it.
 ;
 ; A used file holds directives and nothing else, and is looked for beside the
 ; file that used it. It declares no comment and no separator: those belong to

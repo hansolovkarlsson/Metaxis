@@ -1,6 +1,6 @@
-; groups.pt -- a part that repeats, and a part that need not be there.
+; groups.mx -- a part that repeats, and a part that need not be there.
 ;
-; `[ … ]` is Prototype's own bracket and lives outside the strings, so it can
+; `[ … ]` is Metaxis's own bracket and lives outside the strings, so it can
 ; never be mistaken for a bracket the body writes -- one of those would be
 ; quoted, and this one cannot be. Three forms:
 ;
@@ -51,7 +51,7 @@
 //
 // Both of these are `terminated`: what they emit is a JavaScript block, and
 // JavaScript wants no `;` after one. That is a statement about the output and
-// not about the input -- see the note at the foot of examples/clike.pt, which
+// not about the input -- see the note at the foot of examples/clike.mx, which
 // reads the same braces and declines the word for the opposite reason.
 @syntax "loop" n "times" "{" b:stmts "}" [ "or" "{" e:stmts "}" ]
     => "for (let {~i} = 0; {~i} < {n}; {~i}++) {{\n{b};\n}}\nif (!{n}) {{\n{e};\n}}"

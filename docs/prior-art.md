@@ -1,8 +1,8 @@
 # Prior art
 
-*What else does this, what it has that Prototype does not, and which of those
+*What else does this, what it has that Metaxis does not, and which of those
 are worth wanting. This page is a **survey**, not a plan: it describes tools
-that exist and scores Prototype against them, and where it names a feature it
+that exist and scores Metaxis against them, and where it names a feature it
 says who has it, what it would cost here, and — the part that decides
 everything — **whether anything in this tree has asked for it**.
 [ROADMAP.md](ROADMAP.md) is what to build next and only holds items with a
@@ -17,7 +17,7 @@ or paper, and the sources are at the foot.*
 ## 1 · The neighbourhood, in three families
 
 Nothing surveyed is the same tool. The useful thing is that they fail to be
-the same tool in **three different directions**, and Prototype sits inside two
+the same tool in **three different directions**, and Metaxis sits inside two
 of the three at once, which is the whole of what is unusual about it.
 
 | family | what a tool in it is | examples |
@@ -30,17 +30,23 @@ of the three at once, which is the whole of what is unusual about it.
 thirty languages because it ships a small delimiter description for each, and
 it cannot read a notation invented this morning. **B** can read anything and
 charges a build step and a second artefact for it. **C** puts the declaration in
-the file, which is Prototype's shape exactly — and every member of C declares
+the file, which is Metaxis's shape exactly — and every member of C declares
 syntax **for its own host language**, so the thing being read and the thing
 being written are the same language, and the tool knows it.
 
-Prototype is C's placement with B's agnosticism: **the declaration is in the
+Metaxis is C's placement with B's agnosticism: **the declaration is in the
 file, and neither the input language nor the output language is the tool's.**
 That combination is what did not turn up anywhere in this survey.
 
 ### And what they are called
 
-Worth noticing while the list is in front of us, because this project's name is
+*Settled 2026-09-05: the tool is **Metaxis**, and everything below is the
+evidence that chose it. `Prototype` in this subsection means **the former name**,
+never the tool. [direction.md](direction.md)'s "What to call it" has the
+decision and the reasoning; this is the survey it rested on, kept whole so that
+reopening the question is choosing rather than searching.*
+
+Worth noticing while the list is in front of us, because this project's name was
 recorded as a working one and the field has an unmistakable habit.
 
 **Almost none of these tools is named after a common word from its own domain.**
@@ -107,7 +113,7 @@ each was killed by what it *returns*.
 | **`-lingua`** | `prolingua`, `protolingua`, `synlingua` | free · free · free | [**Lingua Franca**](https://www.lf-lang.org/), an active reactor-oriented coordination language from Berkeley and TU Dresden whose tagline is *"intuitive concurrent programming in any language"* — **a published language project whose pitch is polyglot**, which is next door in meaning to *language-agnostic* |
 | **`proto-`** | `protoglot`, `protax`, `protogenesis` | free except `protoglot` on npm | not a collision but a **claim**: `proto-` keeps the assertion that this makes the model *before* the real thing, which is the deep objection to the current name and survives renaming |
 | **`genesis`** | `genesis`, `genesys` | taken · taken · taken | four active software meanings — a financial-markets low-code platform, the WordPress parent-theme framework, the Genesys contact-centre company, and the console. **More contested than `prototype`, which has one** |
-| | `genlex` | free · free · free | **OCaml's `Genlex` stdlib module**: *"a generic lexical analyzer… parameterized by the set of keywords of your language."* Not merely the same domain — **nearly the same function** as `prototype/src/lex.c` |
+| | `genlex` | free · free · free | **OCaml's `Genlex` stdlib module**: *"a generic lexical analyzer… parameterized by the set of keywords of your language."* Not merely the same domain — **nearly the same function** as `metaxis/src/lex.c` |
 | | `gensyn` | free · free · taken | Gensyn, a funded ML-compute company |
 | | `genera` | free · taken · taken | **Symbolics Genera**, the Lisp Machine OS |
 | **survivor** | **`metaxis`** | **free · free · free** | nothing in software. Greek **μεταξύ**, Plato's *in-betweenness*; in Augusto Boal's theatre, **"the state of belonging completely and simultaneously to two different autonomous worlds."** § 2 of this page states the tool's property as *neither the language read nor the language written is the tool's own* — **that is metaxis, literally.** `meta-` also primes a programmer toward metacompilation and `-xis` echoes *syntaxis*, so it reads native without asserting anything in the field |
@@ -168,8 +174,8 @@ than a coincidence — a tool here is found by its name, the near words are gone
 and so the field reaches outside its own domain and takes a board game, a
 mountain or a ladybird.
 
-[direction.md](direction.md)'s "What to call it" carries what that costs, what
-the name buys in exchange, and a shortlist of three. This page holds only the
+**The decision went to `metaxis`**, and the reasoning is in
+[direction.md](direction.md)'s "What to call it". This page holds only the
 evidence.
 
 ## 2 · The uniqueness claim, scored
@@ -204,8 +210,8 @@ Seed7 declares Seed7's syntax. Coq declares notation for Coq terms. Prolog
 declares operators over Prolog terms. Katahdin extends Katahdin. Every one of
 them needs a host semantics for the declaration to mean anything, which is why
 none is a *rewriter* and none can be pointed at Pascal on Monday and arm64 on
-Tuesday. Prototype's directive means nothing but *this shape becomes that text*,
-which is why the same tool reads `examples/poem.pt` and `examples/asm.pt`.
+Tuesday. Metaxis's directive means nothing but *this shape becomes that text*,
+which is why the same tool reads `examples/poem.mx` and `examples/asm.mx`.
 
 **That is a smaller claim and a true one.** It is also the more interesting
 one, because it says what the tool is *for* rather than what it is first at.
@@ -219,16 +225,16 @@ expr = term $( '+' term .OUT('ADD') / '-' term .OUT('SUB') );
 ```
 
 A quoted string is a literal token of the input. A bare name is a nonterminal.
-Output is emitted from inside `.OUT(' … ')` — quoted. **That is Prototype's
+Output is emitted from inside `.OUT(' … ')` — quoted. **That is Metaxis's
 premise, both halves of it, sixty-two years early**, on a machine with 8K of
 six-bit memory. TREE-META added *unparse rules*: patterns over the tree it had
 built, each with an output template.
 
-The convergence is worth writing down rather than hiding. What Prototype has
+The convergence is worth writing down rather than hiding. What Metaxis has
 that META II did not is the level number in the directive rather than a rule
 per precedence tier, holes named and spliced rather than an output stack, and
 the declaration living in the same file as the thing it reads. What META II had
-that Prototype does not is **alternation** (`/`), which is [ROADMAP.md](ROADMAP.md) 8,
+that Metaxis does not is **alternation** (`/`), which is [ROADMAP.md](ROADMAP.md) 8,
 and which every tool in this survey has.
 
 ## 3 · What they have that this does not
@@ -247,15 +253,15 @@ split its selling point: *"a translator may be retargeted by swapping in a new
 view (set of templates) — all without recompiling the translator."*
 
 **The customer is in this repository and it is 272 lines.**
-`examples/code.pt` opens by saying so: *"The body below is character for
-character the body of pascal.pt. Every rule is the same rule. The only
+`examples/code.mx` opens by saying so: *"The body below is character for
+character the body of pascal.mx. Every rule is the same rule. The only
 difference is that a template here is `=> { … }` rather than `=> "…"`."* Two
 files, 280 and 272 lines, differing only after the arrow. Every pattern, every
 level, every `@token`, every group is written twice, and a fix to the Pascal
 grammar has to be made twice or the diff stops meaning what it is for.
 
 **`@use` does not solve it and cannot.** A used file holds directives and
-nothing else, so `pascal.pt` cannot be used — it has a body. And `override`
+nothing else, so `pascal.mx` cannot be used — it has a body. And `override`
 re-declares the *whole rule*, pattern included (§3.10), so overriding a
 template means writing the pattern again, which is the thing being avoided.
 
@@ -268,9 +274,9 @@ one chosen at the command line:
     => { emit group(a, 70) + " * " + group(b, 71) }   as tight
 ```
 
-`pt -b tight examples/pascal.pt`. The tag namespace is new; nothing else is,
+`mx -b tight examples/pascal.mx`. The tag namespace is new; nothing else is,
 and the flag letters here are illustrative — `-b` and `-t` below are simply two
-that `pt` has not spent.
+that `mx` has not spent.
 
 **And it makes the demonstration better rather than worse** — today the
 argument for the code template is a diff between two files that a reader has to
@@ -291,7 +297,7 @@ against that: they want the same patterns exactly, and the file says so.
 written in OCaml or Python.
 
 **What it is.** A condition evaluated *during* matching, whose failure rejects
-the candidate rather than producing wrong output. Prototype has nothing of the
+the candidate rather than producing wrong output. Metaxis has nothing of the
 kind: a code template runs **after** the match is committed, and its only exit
 is `emit`. There is no way to write *this rule applies only when the hole looks
 like this.*
@@ -331,23 +337,23 @@ parsing by construction: it knows brackets, strings and comments, and nothing
 else about any of its thirty languages, which is exactly why it works on all of
 them.
 
-**Prototype already has this, on one side of the tool.** `@mode text` *"scans
+**Metaxis already has this, on one side of the tool.** `@mode text` *"scans
 the body, fires a rule where one matches, and copies everything else through"*
-(§3.6). That is an island grammar, and `examples/poem.pt` is one. Expression
+(§3.6). That is an island grammar, and `examples/poem.mx` is one. Expression
 mode is the opposite by construction: anything unmatched is an error.
 
 **What it would buy is the thing [direction.md](direction.md) says must not be
 attempted.** That page's "What it should not become" declines a serious C or
 Python front end, correctly, because *"the honest answer to 'can it read C' is
 not without becoming a different tool"*. An island rule dissolves the question:
-**you never need the whole language if the rest passes through.** A `.pt` file
+**you never need the whole language if the rest passes through.** A `.mx` file
 declares the twenty constructs it wants to rewrite, and everything else in the
 file arrives at the output unchanged. That is what every tool in family A does
 for a living, and it is the reason they are useful on real code while family B
 needs a complete grammar first.
 
 It is also the honest version of what the stages have been doing by hand.
-`examples/python.pt` reads a subset and *says so in its closing note*; the
+`examples/python.mx` reads a subset and *says so in its closing note*; the
 subset is enforced by the input being written to fit. With an island rule the
 subset is enforced by the tool, and what falls outside it is visible in the
 output instead of stopping the run.
@@ -402,16 +408,16 @@ Rule locality survives, because a rule still says only *what it contributes*,
 never what anyone else did.
 
 It is also the direction the tool already flows. [direction.md](direction.md)
-establishes that Prototype is a bottom-up attribute grammar with the attribute
+establishes that Metaxis is a bottom-up attribute grammar with the attribute
 fixed at text; a collection attribute is *still synthesised*, still upward, and
 still needs no rule to see another rule. **It is the one context mechanism that
 does not want the thing this tool refuses to have.**
 
-**A customer, and it is small.** `examples/code.pt` emits `#include <stdio.h>`
+**A customer, and it is small.** `examples/code.mx` emits `#include <stdio.h>`
 unconditionally, because nothing can say *this file needs stdio because a
 `writeln` fired*. Under a collection the `writeln` rule contributes the include,
 the program rule splices the aggregate, and a program with no output gets no
-include. `examples/asm.pt` has the same shape for a data section, and so does
+include. `examples/asm.mx` has the same shape for a data section, and so does
 every code generator that ever wanted a prologue determined by its body.
 
 **What it costs, named honestly.** The aggregate is not known until the last
@@ -420,7 +426,7 @@ contribution is made, and the rule that wants to splice it usually runs
 be a splice; it has to be a placeholder resolved after expansion, which is a
 second pass over the output text and a new thing in a tool that has one pass.
 That is the real price, it is not hidden by any of the systems above (they have
-a whole tree in memory and Prototype does not), and it is what would have to be
+a whole tree in memory and Metaxis does not), and it is what would have to be
 designed before this is a roadmap item rather than a note.
 
 **What would falsify it.** If the placeholder pass turns out to need to know
@@ -441,7 +447,7 @@ a formatter.
 **Where it bites here.** Every nested output in `examples/` is indented by hand
 with `\n` and literal spaces inside the template, and the indentation is wrong
 as soon as a rule nests inside another — the inner template does not know how
-deep it was spliced. `examples/code.pt`'s C output and `examples/asm.pt`'s
+deep it was spliced. `examples/code.mx`'s C output and `examples/asm.mx`'s
 listing both pay this.
 
 **And the joke is worth stating.** Stage 3 taught the *lexer* to read
@@ -465,25 +471,25 @@ syntax translations are the same idea. SDF3's template productions generate the
 pretty-printer from the grammar.
 
 **What it would buy, and it is a test rather than a feature.** If a rule could
-run backwards, a `.pt` file would come with a formatter for the notation it
+run backwards, a `.mx` file would come with a formatter for the notation it
 declares — and, more valuably, with the strongest test a grammar can be given:
 **print then re-read, and check you got the same tree.** This tree's tests are
 already unusually serious about this — four of five scripts run what they
 produced rather than diffing it — and a round-trip check is the same instinct
 applied to the grammar itself rather than to the translation.
 
-**Why it is declined, at least as stated.** A Prototype template is a string of
+**Why it is declined, at least as stated.** A Metaxis template is a string of
 foreign text. Running it backwards means *parsing the output language*, which
 the tool by construction does not know — it knows the input grammar and nothing
 about the target. Bidirectionality would be available only for the degenerate
-case where output and input are the same language, which is the case Prototype
+case where output and input are the same language, which is the case Metaxis
 is least interested in.
 
 **But it explains something.** `examples/pascal.out`'s parenthesis noise is
 recorded as *"the cost of agnosticism showing itself"*, and that is right, but
 the sharper name is available: it is a **pretty-printing** problem, and every
 system that solved it did so by knowing the *output* language's precedences.
-`group(h, n)` in the code template is Prototype's version and it is honest
+`group(h, n)` in the code template is Metaxis's version and it is honest
 about its limit — it asks the operand what level the **input** grammar parsed it
 at, which is the right answer exactly when the two languages agree about
 precedence and a plausible-looking wrong one when they do not.
@@ -498,7 +504,7 @@ editor for the language as you define it. Every tool in family B treats
 *watching the parse* as part of the job, because a grammar under construction
 is the normal state.
 
-**Prototype has `-g`**, which prints the grammar the header built, and nothing
+**Metaxis has `-g`**, which prints the grammar the header built, and nothing
 that prints the parse it attempted. When expression mode says `no rule reads
 'X' here`, it does not say which candidates were tried, in what order, or how
 far each got before the cursor was restored. Candidates ordered longest-first
@@ -511,7 +517,7 @@ claims the tool is for** — *"inventing notations, quickly"*, the loop from
 level or a candidate order is the commonest way that loop stalls, and there is
 currently no instrument for it.
 
-**Cost: small.** `pt -t` printing each candidate tried, its pattern, and the
+**Cost: small.** `mx -t` printing each candidate tried, its pattern, and the
 token it failed on, indented by depth. **And it is two features for one price**:
 [ROADMAP.md](ROADMAP.md) 3 wants a *measurement* of expression-mode
 backtracking before a budget is picked, and says so — *"a budget picked without
@@ -526,7 +532,7 @@ modularly describe a language's syntax, generating a parser, a pretty printer,
 and basic editor features such as syntactic code completion and syntax
 highlighting."* One definition, several artefacts.
 
-**`pt -g` already proves the information is there** — token classes as regexes,
+**`mx -g` already proves the information is there** — token classes as regexes,
 comment delimiters, and the complete word list, which is precisely a syntax
 highlighter's input. `pt --highlight` emitting a `.tmLanguage` or a Vim syntax
 file is a couple of hundred lines of no new thinking, and it makes a notation
@@ -540,13 +546,13 @@ that a surface does not grow without one. Filed, not proposed.
 ### 3.9 More than one error per run — *small, no customer*
 
 ANTLR's error recovery reports every error in a file rather than the first.
-`pt` stops at the first. For a grammar under construction that is the wrong
+`mx` stops at the first. For a grammar under construction that is the wrong
 number, and for everything else it is right. Nothing has asked; `tests/errors.sh`
 covers 69 cases one at a time and is not made worse by the current behaviour.
 
 ---
 
-## 4 · What Prototype has that they do not
+## 4 · What Metaxis has that they do not
 
 The comparison is only worth having if it runs both ways.
 
@@ -555,8 +561,8 @@ OpenRewrite): they cannot read a notation that did not exist this morning. Every
 one of them matches *fragments of a language whose grammar the tool ships* —
 Comby's thirty delimiter descriptions, tree-sitter's grammar set, Coccinelle's
 C. Their patterns are code with holes punched in it, and there is no code to
-punch holes in until somebody has written a grammar for the language. Prototype
-declares the language in the file and then reads it. **`examples/tour.pt` is
+punch holes in until somebody has written a grammar for the language. Metaxis
+declares the language in the file and then reads it. **`examples/tour.mx` is
 not expressible in any tool in family A**, because the language it reads has
 no grammar anywhere.
 
@@ -579,7 +585,7 @@ are about their own terms.
 quotation brackets `|[ … ]|` and antiquotation `~x` and a paper on
 *disambiguating* the result. TXL, Rascal and SDF put the object grammar in a
 separate artefact partly so the two vocabularies cannot collide. Comby spends
-`:[…]` and hopes. Prototype spends the one delimiter every reader already
+`:[…]` and hopes. Metaxis spends the one delimiter every reader already
 agrees on and gets `for` with two `;` inside its pattern in a file whose body
 ends statements with `;`, with nothing to disambiguate.
 
@@ -587,11 +593,11 @@ ends statements with `;`, with nothing to disambiguate.
 
 **Whole-tree, in-place operation.** Comby, ast-grep, OpenRewrite and
 `spatch -dir` all run over a codebase and edit files where they sit; that is
-what a codemod is. Prototype is one file that carries its own grammar, and the
-unit is right: a `.pt` file *is* the grammar, so "run it over a tree" would mean
+what a codemod is. Metaxis is one file that carries its own grammar, and the
+unit is right: a `.mx` file *is* the grammar, so "run it over a tree" would mean
 running one invented notation over files that are not written in it. The tools
 that do this can only do it because the grammar belongs to the tool. **This is
-the axis Prototype is not competing on, and it should stay that way.**
+the axis Metaxis is not competing on, and it should stay that way.**
 
 **A recogniser grammar over the top.** EBNF, a start symbol, a top-down parse.
 [direction.md](direction.md) already refuses this and gives the reason —
@@ -613,10 +619,10 @@ ones that could become one without inventing a reason.
 
 | | | customer | cost |
 | --- | --- | --- | --- |
-| 1 | **A second backend without a second grammar**, `pt -b` (§3.1) | `examples/code.pt`, 272 duplicated lines, stated in the file | small — a tag namespace and a flag |
-| 2 | **A parse trace, `pt -t`** (§3.7) | grammar-under-construction; and [ROADMAP.md](ROADMAP.md) 3 wants the measurement | small |
+| 1 | **A second backend without a second grammar**, `mx -b` (§3.1) | `examples/code.mx`, 272 duplicated lines, stated in the file | small — a tag namespace and a flag |
+| 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and [ROADMAP.md](ROADMAP.md) 3 wants the measurement | small |
 | 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/` | small, and the spelling is the decision |
-| 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.pt` | medium — wants a second pass over the output, which the tool does not have |
+| 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx` | medium — wants a second pass over the output, which the tool does not have |
 | 5 | **An island rule** (§3.3) | none yet, and it would change what the tool can be pointed at | medium, and it can make grammar bugs silent |
 | 6 | **A guard on a rule** (§3.2) | thin — two candidates, neither strong | very small; the backtracking is already there |
 | 7 | Editor mode from the header (§3.8) | none | small |

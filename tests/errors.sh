@@ -2,12 +2,12 @@
 # errors.sh -- what a file gets told when it is wrong.
 #
 # An error message is a surface like any other and goes stale the same way, so
-# each one here is pinned to the text it is meant to produce. `pt` must exit
+# each one here is pinned to the text it is meant to produce. `mx` must exit
 # non-zero and say the fragment.
 
-PT="${1:-./bin/pt}"
+MX="${1:-./bin/mx}"
 LIMIT="${LIMIT:-10}"
-TMP="${TMPDIR:-/tmp}/pt-errors.$$"
+TMP="${TMPDIR:-/tmp}/mx-errors.$$"
 mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 
@@ -17,9 +17,9 @@ n=0
 expect() {
     want="$1"; shift
     n=$((n + 1))
-    f="$TMP/case$n.pt"
+    f="$TMP/case$n.mx"
     cat > "$f"
-    got=$(sh tests/limit.sh "$LIMIT" "$PT" "$f" 2>&1)
+    got=$(sh tests/limit.sh "$LIMIT" "$MX" "$f" 2>&1)
     rc=$?
     if [ $rc -eq 124 ]; then
         echo "FAILED  errors.sh case $n: did not finish in ${LIMIT}s -- killed."
@@ -175,7 +175,7 @@ expect "trailing text after the template" <<'EOF'
 EOF
 
 expect "cannot open" <<'EOF'
-@use "no-such-file.pt"
+@use "no-such-file.mx"
 EOF
 
 # The mode is named after the rule on purpose: this is checked once the header

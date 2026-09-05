@@ -31,13 +31,13 @@ on introducing new mechanics and test them out properly.*
 | **2 · done** | C | arm64 | output that is not an expression tree — labels, order, a machine |
 | **3 · done** | Python | C | a language whose blocks are indentation |
 
-Stage 2 landed on 2026-09-05 as `examples/asm.pt` and `tests/asm.sh`. **The
+Stage 2 landed on 2026-09-05 as `examples/asm.mx` and `tests/asm.sh`. **The
 output side generalises**, which was the question: a rule's value became *the
 code that computes the phrase* rather than the phrase, and nothing in the tool
 had to change for that. What it cost was `@template`, which is built, and what
 it found is [POSTMORTEM.md](POSTMORTEM.md) 10.
 
-Stage 3 landed on 2026-09-05 as `examples/python.pt` and `tests/python.sh`.
+Stage 3 landed on 2026-09-05 as `examples/python.mx` and `tests/python.sh`.
 **The tool took its first delimiter**, which was the question:
 `@separator "\n" indent` gives the lexer an indent stack and the `block` kind
 reads what it emits. The premise held — a `block` hole is spelled outside the
@@ -47,7 +47,7 @@ nothing. What it cost is in [COMPLETED.md](COMPLETED.md); what the estimate
 taught is [POSTMORTEM.md](POSTMORTEM.md) 15.
 
 Its test does something no other one here does: **the body of
-`examples/python.pt` is run by `python3` as well as compiled as C**, and the two
+`examples/python.mx` is run by `python3` as well as compiled as C**, and the two
 answers compared. A translation that is wrong the same way on both sides of an
 operator passes a diff and passes `tests/pascal.sh`, and fails that.
 
@@ -64,7 +64,7 @@ plainly that it does not. **When the next mechanic is wanted, the thing to pick
 first is the translator that would ask for it** — not the mechanic.
 
 **This is a rule about where new mechanics come from, not a restriction on the
-tool.** A `.pt` file still declares any language in and writes any language out;
+tool.** A `.mx` file still declares any language in and writes any language out;
 `examples/` deliberately holds several, and REFERENCE.md's do too. What the
 staging fixes is where the *pressure* comes from: one translator at a time, taken
 far enough to be compiled and run, so that every feature added has a customer
@@ -90,17 +90,17 @@ we find out which.
 
 ## 1 · Stage 1 — what Pascal→C still owes
 
-**Where it got to.** `examples/pascal.pt` and `examples/code.pt` read `program`,
+**Where it got to.** `examples/pascal.mx` and `examples/code.mx` read `program`,
 a `var` section with comma-separated declarations, `integer` and `boolean`, and
-an outer `begin … end.` that becomes `main`. `tests/pascal.sh` expands `code.pt`,
+an outer `begin … end.` that becomes `main`. `tests/pascal.sh` expands `code.mx`,
 compiles the C, runs it and checks the number, so the arithmetic, the
 precedence, `mod`, the loop and the branches are checked by a compiler and a
-result rather than by `diff`. `pascal.pt` is expected **not** to compile, and
+result rather than by `diff`. `pascal.mx` is expected **not** to compile, and
 that half is pinned too.
 
 **The mechanic this stage asked for is built.** `terminated(h)` — a code
 template reading back the flag a rule declares about itself — is what decides
-whether a branch needs its semicolon, and `code.pt` now emits idiomatic C
+whether a branch needs its semicolon, and `code.mx` now emits idiomatic C
 without bracing single statements. See COMPLETED.md.
 
 **`procedure` and `function` are in**, with parameter lists, calls, and Free
@@ -109,15 +109,15 @@ with `sep ";"` is the parameter list, a `stmts` hole stopping at `end` is the
 body, and a led `"(" … ")"` at 95 is the call.
 
 **`repeat … until` and `case … of` are in**, and the mechanic `case` turned out
-to need — `for i, x in h` with `at(h, n)` — is built. `examples/code.pt` writes
+to need — `for i, x in h` with `at(h, n)` — is built. `examples/code.mx` writes
 its arms as `[ v ":" s ]*` and walks the two lists in step;
-`examples/pascal.pt` still folds the pair into one hole with an infix rule,
+`examples/pascal.mx` still folds the pair into one hole with an infix rule,
 because a string template cannot interleave two lists at all.
 
 **`real` is in**, and it is what gave `@fragment` its first two-hole customer.
 A type is now a rule of its own — a word alone, `@syntax "real" => "double"` —
 so a parameter list can hold a *hole* where the type goes and translate each one
-separately. `examples/code.pt` writes `void Scale(int n, double k)` and
+separately. `examples/code.mx` writes `void Scale(int n, double k)` and
 `tests/pascal.sh` compiles and runs it. See COMPLETED.md for what it cost.
 
 **What is left to write:** nothing, for the types this program uses. What
@@ -152,10 +152,10 @@ gets the hole — the difference being that inside `"(" … ")"` after a procedu
 name there is no case arm to be confused with. Context again, from a new
 direction.
 
-**Settled, and staying wrong on purpose.** `pascal.pt` cannot translate
+**Settled, and staying wrong on purpose.** `pascal.mx` cannot translate
 `'it''s'` into `"it's"`, because a rule cannot match a bare token and so nothing
 can rewrite a literal where it stands — it has to happen inside a rule that has
-a word in it, which is what `code.pt` does inside `writeln`. That is the one
+a word in it, which is what `code.mx` does inside `writeln`. That is the one
 thing between `pascal.out` and a program that runs, it is recorded in the file's
 own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
 
@@ -168,7 +168,7 @@ and this one does not.
 **This is the piece stage 3 left out, and it was left out named.** The item it
 came from listed three obstacles to reading Python and this was a fourth, found
 by running the thing rather than by reading it — which is why it is here and not
-in a comment somewhere. `examples/python.pt` says so in its own closing note and
+in a comment somewhere. `examples/python.mx` says so in its own closing note and
 avoids wrapped calls; nothing in the suite would otherwise mention it.
 
 It wants a second piece of lexer state beside the indent stack — a bracket
@@ -205,7 +205,7 @@ declared dialects, timed — because a budget picked without one is a number
 somebody made up. `programs/` in Proto is where that kind of evidence lives
 there; there is no equivalent here yet.
 
-**And the instrument is now specified, one page over.** `pt -g` prints the
+**And the instrument is now specified, one page over.** `mx -g` prints the
 grammar a header built and nothing prints the parse it attempted, so a candidate
 list ordered longest-first with the cursor restored is invisible from outside. A
 trace flag that names each candidate tried, its pattern and the token it died
@@ -229,11 +229,11 @@ question is whether `@mode expression` after `@mode text` is a thing a file
 could ever mean, or whether a second `@mode` should simply be an error with no
 `override` at all.
 
-## 5 · A check that every run of `pt` is under the limit
+## 5 · A check that every run of `mx` is under the limit
 
 `tests/limit.sh` exists so that a hang is reported rather than waited on, and it
 only works where it is actually used. Nothing enforces that. A test script added
-tomorrow that calls `"$PT"` directly is a hole in the one guard the suite has
+tomorrow that calls `"$MX"` directly is a hole in the one guard the suite has
 against the failure it cannot otherwise express, and it would pass every check
 here on the day it was written.
 
@@ -244,7 +244,7 @@ read the paragraph and did not count. A number in prose is not a check.
 [POSTMORTEM.md](POSTMORTEM.md) 16 is the scoring.
 
 What it wants is small and grep-shaped: every line in `Makefile` and `tests/*.sh`
-that invokes `$(BIN)`, `./bin/pt` or `"$PT"` names `tests/limit.sh` first.
+that invokes `$(BIN)`, `./bin/mx` or `"$MX"` names `tests/limit.sh` first.
 `tests/hygiene.sh` is the precedent for a check that reads the tree rather than
 running it, and this is the smaller sibling.
 
@@ -254,9 +254,9 @@ rather than an output. A sixth script for one grep is probably one too many.
 
 ## 6 · One grammar, two backends
 
-`examples/pascal.pt` and `examples/code.pt` are 280 and 272 lines, and the
+`examples/pascal.mx` and `examples/code.mx` are 280 and 272 lines, and the
 second opens by saying what the duplication is: *"The body below is character
-for character the body of pascal.pt. Every rule is the same rule. The only
+for character the body of pascal.mx. Every rule is the same rule. The only
 difference is that a template here is `=> { … }` rather than `=> "…"`."* Every
 pattern, every level, every `@token` and every group is written twice, and a
 change to the Pascal grammar has to be made in both or the diff those two files
@@ -277,7 +277,7 @@ and the cost is paid on every future edit to the Pascal grammar rather than
 hypothetically. [prior-art.md](prior-art.md) § 3.1 has the argument in full.
 
 The shape that fits is a rule carrying more than one template, tagged, with one
-chosen at the command line — `pt -b tight examples/pascal.pt`. The tag namespace
+chosen at the command line — `mx -b tight examples/pascal.mx`. The tag namespace
 is new and nothing else is. **And it makes the demonstration better rather than
 worse**: today the argument for the code template is a diff between two files a
 reader has to be told are identical, and then it is a diff between two runs of

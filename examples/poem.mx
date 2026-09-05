@@ -1,4 +1,4 @@
-; poem.pt -- @mode text. The body is prose, not a program: a rule fires where
+; poem.mx -- @mode text. The body is prose, not a program: a rule fires where
 ; it matches and everything else is copied through untouched.
 ;
 ; Same directives, same rule about quoting. The only difference is what happens

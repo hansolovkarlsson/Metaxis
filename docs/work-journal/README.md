@@ -18,6 +18,15 @@ what a `.pt` file means, [notation.md](../notation.md) argues for why it is
 shaped that way, and [direction.md](../direction.md) argues for where it could
 go. If a paragraph would fit in one of those, it belongs there and not here.
 
+**Entries written before 2026-09-05 call the tool `Prototype` and its files
+`.pt`.** That was its name at the time; it was renamed to **Metaxis** on
+2026-09-05, and these pages are dated accounts rather than descriptions of now,
+so they were left as written. Rewriting them would make an entry claim a name
+that did not exist when it was written.
+[direction.md](../direction.md)'s "What to call it" has the decision.
+[CHANGELOG.md](../CHANGELOG.md) and [POSTMORTEM.md](../POSTMORTEM.md) were left
+alone for the same reason.
+
 | Day | |
 |---|---|
 | [2026-09-05](2026-09-05.md) | Two roadmap items, a reference audit that found its own first example never ran, and a change of method: one translator at a time. Stage 1 of Pascal→C, checked by a compiler, which paid on the first run and asked for two builtins. Then an afternoon in which three predictions met files and failed, and a third stretch that built `@fragment`, refuted the spelling the plan had written down for it, and found a crash `@template` had shipped with a day earlier. Then stage 3 — a block that is an indentation — and, last, the first look outward: a survey of the tools that do something like this, which falsified a claim in `direction.md` that nothing in the tree could have checked. |

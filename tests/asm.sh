@@ -1,8 +1,8 @@
 #!/bin/sh
 # asm.sh -- stage 2, checked by an assembler and a CPU.
 #
-# tests/pascal.sh compiles the C that examples/code.pt emits. This does the same
-# one level down: it assembles what examples/asm.pt emits, links it against a
+# tests/pascal.sh compiles the C that examples/code.mx emits. This does the same
+# one level down: it assembles what examples/asm.mx emits, links it against a
 # four-line runtime, runs it, and checks the numbers. If a rule emitted its
 # operands in the wrong order, popped the wrong register, or reused a label, the
 # program would still assemble and would print something else.
@@ -12,17 +12,17 @@
 # to what it emits is caught anywhere. Only the half that needs a CPU of the
 # right kind is gated, and it says so rather than passing silently.
 
-PT="${1:-./bin/pt}"
+MX="${1:-./bin/mx}"
 CC="${CC:-cc}"
 LIMIT="${LIMIT:-10}"
 
 if [ "$(uname -m)" != "arm64" ]; then
-    echo "ok      asm.sh: skipped, examples/asm.pt emits arm64 and this is $(uname -m)"
+    echo "ok      asm.sh: skipped, examples/asm.mx emits arm64 and this is $(uname -m)"
     echo "            the recorded output is still checked by make check"
     exit 0
 fi
 
-TMP="${TMPDIR:-/tmp}/pt-asm.$$"
+TMP="${TMPDIR:-/tmp}/mx-asm.$$"
 mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 
@@ -33,8 +33,8 @@ WANT="14
 10
 20"
 
-if ! sh tests/limit.sh "$LIMIT" "$PT" examples/asm.pt > "$TMP/prog.s" 2> "$TMP/err"; then
-    echo "FAILED  asm.sh: examples/asm.pt did not expand"
+if ! sh tests/limit.sh "$LIMIT" "$MX" examples/asm.mx > "$TMP/prog.s" 2> "$TMP/err"; then
+    echo "FAILED  asm.sh: examples/asm.mx did not expand"
     cat "$TMP/err"
     exit 1
 fi

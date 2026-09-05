@@ -1,6 +1,6 @@
 # The notation
 
-`.pt` in, `.out` out. What this changes, against Proto, is the *mention* of
+`.mx` in, `.out` out. What this changes, against Proto, is the *mention* of
 foreign text inside a directive — which is where Proto's grammar and the
 grammars it declares keep meeting.
 
@@ -11,14 +11,14 @@ What is not is under [Not done](#not-done), at the bottom.
 says what to do about what is missing; [direction.md](direction.md) says where
 the whole thing could go and what it would stop being.** Every directive,
 kind, level, template form, lexer decision and error message is there,
-exhaustively. Read that one to write a `.pt`; read this one to know why it is
+exhaustively. Read that one to write a `.mx`; read this one to know why it is
 shaped the way it is, and what it cost.
 
 ## The one rule
 
 > **Everything a directive says about text — the text it recognises and the
 > text it emits — is inside a string. Everything outside a string is
-> Prototype's own fixed vocabulary.**
+> Metaxis's own fixed vocabulary.**
 
 A directive mentions foreign text; the body is foreign text. Quoting is what
 tells the two apart, and it is the only thing that has to. Strings already have
@@ -40,7 +40,7 @@ convention:
 - **Right of `=>`**: one string; `{name}` splices a hole; `{~name}` is a name
   nobody else has; `{{` and `}}` are a literal brace.
 
-The header's own strings are always Prototype's, spelled Prototype's way. The
+The header's own strings are always Metaxis's, spelled Metaxis's way. The
 body's strings are whatever `@token string` said they are. The two never meet.
 
 ## What falls out of it
@@ -81,7 +81,7 @@ C's `0x1f` are the same directive with a different string in it.
 
 **Alphabetic words still are not reserved.** See *Ties*, below. `then` is a
 form's word where a form wants one and a name everywhere else, including in the
-same file — `examples/tour.pt` uses `then` both ways four lines apart.
+same file — `examples/tour.mx` uses `then` both ways four lines apart.
 
 **Directives stop needing a terminator.** Proto ends one with `.`, which is also
 the statement separator inside the template. Here a directive ends at a newline,
@@ -115,31 +115,31 @@ splice      = "@" a name declared by @fragment .
 level       = integer [ "left" | "right" ] .
 template    = string, with "{" name "}" splices, "{~" name "}" fresh names,
               and "{{" "}}" for a literal brace
-            | code, a block in Prototype's own language .
+            | code, a block in Metaxis's own language .
 ```
 
-Every string above is a Prototype string: `"…"` with `\"` `\\` `\n` `\t` `\r`
+Every string above is a Metaxis string: `"…"` with `\"` `\\` `\n` `\t` `\r`
 and no other escape. That never varies, in any file, whatever the file declares.
 
 **`@token`** names a class and gives a POSIX extended regular expression for it.
 Redeclaring a name replaces it.
 
 **`@comment`** adds an opener. It does not replace anything: `;` to end of line
-is Prototype's own header comment and always works, and a declared comment joins
+is Metaxis's own header comment and always works, and a declared comment joins
 it. Below the body, only the declared ones are left.
 
 **`@separator`** gives the input separator and, after `=>`, what to join the
 output with. Without the second half the input text is reused. A separator of
-`"\n"` makes newline a token instead of whitespace — `examples/reserved.pt`
+`"\n"` makes newline a token instead of whitespace — `examples/reserved.mx`
 uses it. With `indent` after that, indentation nests as well: the lexer keeps a
-stack of columns and a `block` hole reads what it emits — `examples/python.pt`
+stack of columns and a `block` hole reads what it emits — `examples/python.mx`
 uses it, and the section above argues for why that hole is a bare word rather
 than a pair of strings.
 
 **`@use`** reads another file's directives into this header. It is looked for
 beside the file that used it, holds directives and nothing else, is read once
-however many times it is reached, and stops at 64 deep. `examples/use.pt` takes
-its arithmetic from `lib/arith.pt` and keeps its own comment and separator,
+however many times it is reached, and stops at 64 deep. `examples/use.mx` takes
+its arithmetic from `lib/arith.mx` and keeps its own comment and separator,
 which is the division that file is for.
 
 **`@template`** and **`@fragment`** are the only things besides a rule that can
@@ -160,13 +160,13 @@ whose type varies, already breaks.
 **`@end`** ends the header. Without it the header ends at the first line that
 does not begin a directive. Either way it is one-way: below it nothing is a
 directive, so a body may begin a line with `@` and mean it — which
-`examples/reserved.pt` does, having declared `@` as an operator.
+`examples/reserved.mx` does, having declared `@` as an operator.
 
 ## Fresh names
 
 `{~t}` in a template is **a name nobody else has**. One expansion, one name: two
 `{~t}` in a template are the same name, and the next use of the rule is a
-different one. `examples/hygiene.pt` calls one `swap` twice and the output has
+different one. `examples/hygiene.mx` calls one `swap` twice and the output has
 `t__1` and `t__2`.
 
 A name is taken if it occurs anywhere in the source being expanded or in any
@@ -189,7 +189,7 @@ one line to state.
 
 **A hole's kind is how far it reaches.** `expr` parses an expression, `stmts` a
 run of statements up to the pattern's next word, `text` raw source, and a class
-name exactly one token of that class. `examples/pascal.pt` needs `i:name` in
+name exactly one token of that class. `examples/pascal.mx` needs `i:name` in
 `"for" i:name ":=" …` so that the `:=` is the `for`'s and not the infix rule's:
 a `name` hole takes one token and stops, where an `expr` hole would take the
 assignment. This is the one thing quoting does not do by itself.
@@ -211,29 +211,29 @@ settled. It leaves `( … )` unspent, which is worth something on its own: a
 bracket nothing has claimed is cheap to keep and expensive to get back.
 
 **A group needs no new syntax to be safe from the body.** `[ … ]`, `*`, `+`,
-`sep` and `join` are Prototype's vocabulary and live *outside* the strings, so a
+`sep` and `join` are Metaxis's vocabulary and live *outside* the strings, so a
 file that wants `[` and `]` in its own language quotes them and the two never
-meet — `examples/clike.pt` declares `a "[" i "]"` for an index in the same tool
+meet — `examples/clike.mx` declares `a "[" i "]"` for an index in the same tool
 that reads `[ x ]* sep ","`. Proto declined repetition and optional parts three
 times, in `conventions.md`, on the grounds that no program had asked; a
 language-agnostic tool has argument lists everywhere and asks on the first file.
 
 What a group does **not** buy is an output that differs on whether a part
 matched. Every hole is bound — to its turns, or to nothing — and a splice is the
-only thing a string template can vary, so `examples/groups.pt` still writes
+only thing a string template can vary, so `examples/groups.mx` still writes
 `if (!0) { ; }` where its optional part was absent. That is
 the plainest customer for the code template (§ *What it costs*), and the reason
-`join` covers only the easy half of per-element output — `examples/code.pt`
+`join` covers only the easy half of per-element output — `examples/code.mx`
 writes the other half with a `for … sep` loop.
 
 **The sharp edge of that is `join` writes one text and cannot vary it.** A
 parameter list is the case, and it stopped being hypothetical on 2026-09-05:
 `Scale(n: integer; k: real)` needs `int` in front of one turn and `double` in
 front of the next, and `join ", int "` can only write the same word before every
-one. So `examples/pascal.pt` emits `void Scale(int n, int k)` — output that
+one. So `examples/pascal.mx` emits `void Scale(int n, int k)` — output that
 compiles, links, runs, and is wrong. It is recorded in `examples/pascal.out` and
 pinned by `tests/pascal.sh` for exactly that reason: a failure a compiler will
-not mention is the kind that has to be written down. `examples/code.pt` holds
+not mention is the kind that has to be written down. `examples/code.mx` holds
 the types as a second list and walks the two in step, and gets `double k`.
 
 Underneath it is one limitation, not two: **a string template splices each list
@@ -284,14 +284,14 @@ rule about quoting; the difference is only what happens to text no rule claimed.
 ## Running it
 
 ```
-make            # bin/pt
+make            # bin/mx
 make check      # every example against the .out beside it, then the five
                 # scripts in tests/ -- four of which run what they produced
 make record     # re-record those .out files; read the diff before committing it
 
-bin/pt examples/clike.pt          # to stdout
-bin/pt -o out.sol examples/clike.pt
-bin/pt -g examples/pascal.pt      # the grammar the header declared, and stop
+bin/mx examples/clike.mx          # to stdout
+bin/mx -o out.sol examples/clike.mx
+bin/mx -g examples/pascal.mx      # the grammar the header declared, and stop
 ```
 
 C11 and `make`, plus POSIX `<regex.h>` for `@token` — which is in libc and is
@@ -320,7 +320,7 @@ have caught it. That is the rule kept in letter and spent in meaning, and it
 cannot be taken back: once a quoted word may name a token nobody wrote, quoting
 has stopped being the thing that tells the two apart.
 
-So the block is spelled the other way, outside the quotes, where Prototype's own
+So the block is spelled the other way, outside the quotes, where Metaxis's own
 vocabulary lives:
 
 ```
@@ -334,7 +334,7 @@ other way cannot say so, and the next such wish will arrive as a request for a
 second kind. Against that: the rule that made the notation worth having is
 intact, and it is intact *because* the exception was spelled as one. A bare word
 outside the quotes is how this notation has always said *this one is
-Prototype's* — the same way `stmts` and `expr` and `[ … ]` say it. Reading it,
+Metaxis's* — the same way `stmts` and `expr` and `[ … ]` say it. Reading it,
 you cannot mistake what it is.
 
 And it is a smaller exception than it looks. The rule that reads a block still
@@ -346,8 +346,8 @@ entries in its table are not like this one.
 ## What it costs
 
 **Output parenthesisation is the author's problem, in a string template.**
-Prototype knows the input grammar because the file declared it, and a string
-template can splice and nothing else. So `examples/pascal.pt` writes
+Metaxis knows the input grammar because the file declared it, and a string
+template can splice and nothing else. So `examples/pascal.mx` writes
 `"({a} + {b})"` on every arithmetic rule, and `examples/pascal.out` is checked
 in with the parenthesis noise that produces:
 
@@ -355,7 +355,7 @@ in with the parenthesis noise that produces:
 if (((((i % mod) == 0)) && ((i != 9)))) total = (total + i) else …
 ```
 
-**A code template does not pay it.** `examples/code.pt` is the same file with
+**A code template does not pay it.** `examples/code.mx` is the same file with
 `=> { emit group(a, 60) + " + " + group(b, 61) }` in place of the string, and
 `group(h, n)` asks an operand what level it was parsed at and brackets it only
 where it must. Both outputs are recorded, and the diff between them is why the
@@ -367,7 +367,7 @@ shorter.
 `fresh("t")` in a code template, closed the half of hygiene where a template
 *introduces* a name. The half where it
 *reaches out* for one stays open, and is not an unimplemented feature — it is
-the price. `examples/hygiene.pt` declares a `bump` whose template means the
+the price. `examples/hygiene.mx` declares a `bump` whose template means the
 file-scope `total` that was in scope where the rule was written; a caller that
 shadows `total` gets the shadow updated and the real one left alone, and both
 numbers are wrong and neither is an error:
@@ -383,7 +383,7 @@ There is nothing for a fresh name to invent here. What is wanted is a way to say
 reach past a caller's — the code template was built and this did not move, which
 was predicted in the roadmap before it was written and is the one prediction
 there that held. Proto can, because its expander works on trees in a
-language whose scopes it knows; closing it here would mean Prototype learning
+language whose scopes it knows; closing it here would mean Metaxis learning
 the output language's binding rules, which is the one thing being agnostic gave
 up. `tests/hygiene.sh` compiles that output and runs it, so the line stays a
 number.
@@ -399,18 +399,18 @@ what a repeated group with more than one hole in it otherwise cannot say.
 
 What settled it is worth more than the fix. The obvious cheap answer — look at
 the last character emitted, and skip the separator after a `}` — would have been
-*wrong*, and wrong in both directions at once. `examples/clike.pt` reads C's
+*wrong*, and wrong in both directions at once. `examples/clike.mx` reads C's
 braces and emits Solveig, where a `.` is wanted between two statements however
-the one before ended; `examples/groups.pt` reads the same braces and emits
+the one before ended; `examples/groups.mx` reads the same braces and emits
 JavaScript, where it is not; and C's own `struct { … };` wants the semicolon
 after the brace. So the input rule and the output rule are about two different
 languages and had to be two rules. Guessing is what this tool declines to do
 about precedence and about scopes, and it declines here for the same reason.
 
 **A literal is moved, not understood — again, in a string template.**
-`examples/pascal.pt` emits `puts('it''s middling')` into C, because a `string`
+`examples/pascal.mx` emits `puts('it''s middling')` into C, because a `string`
 hole splices the source text it matched and a splice is all there is.
-`examples/code.pt` writes `replace(drop(x, 1, 1), "''", "'")` and gets
+`examples/code.mx` writes `replace(drop(x, 1, 1), "''", "'")` and gets
 `puts("it's middling")`. Both are recorded, for the same reason as the
 parentheses above.
 
@@ -483,7 +483,7 @@ header would be slow and nothing measures it. Text mode is no longer in that
 position — its matcher became a search on 2026-09-04 and was given a budget of
 200000 attempts per rule at the same time, and it *is* measured: 113KB of
 markdown, 2000 lines, 60ms, with the `**` and `[[…]]` rules of
-`examples/poem.pt`. The expression side has had no such measurement and no such
+`examples/poem.mx`. The expression side has had no such measurement and no such
 budget. See [ROADMAP.md](ROADMAP.md).
 
 **A line that continues inside brackets is not read.** `f(a,` newline `b)` is a

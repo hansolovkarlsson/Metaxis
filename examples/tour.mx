@@ -1,4 +1,4 @@
-; tour.pt -- the whole idea in one file. Emits Solveig, the way Proto does.
+; tour.mx -- the whole idea in one file. Emits Solveig, the way Proto does.
 ;
 ; The header mentions text. The body is text. Quotes are what tell the two
 ; apart, on both sides of the arrow, and they are the only thing that has to.

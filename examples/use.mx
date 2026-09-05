@@ -1,4 +1,4 @@
-; use.pt -- a file whose arithmetic came from somewhere else.
+; use.mx -- a file whose arithmetic came from somewhere else.
 ;
 ; `@use` reads another file's directives into this one's header. The used file
 ; is looked for beside this one, holds directives and nothing else, is read
@@ -6,15 +6,15 @@
 ; bring is a comment or a separator: this file declares those, because they are
 ; its own and not its arithmetic's.
 
-@use "../lib/arith.pt"
-@use "../lib/vector.pt"     ; which uses arith.pt as well -- a diamond, and
+@use "../lib/arith.mx"
+@use "../lib/vector.mx"     ; which uses arith.mx as well -- a diamond, and
                             ; a file is read once, so that costs nothing
 
 @comment "#" eol
 @separator ";" => ".\n"
 
 ; Two files declaring one thing is refused, and this is how a file says it
-; meant it: `/` already came in from arith.pt, and the word after the template
+; meant it: `/` already came in from arith.mx, and the word after the template
 ; says so. Without `override` this line is an error naming both declarations;
 ; with it, this one wins and nothing is said, because it was said here.
 @syntax a "/" b 70 => "{a}:idiv({b})" override
@@ -23,5 +23,5 @@
 x = 2 ^ 3 ^ 2;          # right, so 2 ^ (3 ^ 2) and not (2 ^ 3) ^ 2
 y = -x + 4 * 5;         # the prefix `-` binds tighter than the infix one
 (x - y):print;
-<x, y>:show;            # from vector.pt, whose own arithmetic is this one
-(9 / 2):print;          # `/` is this file's now, not the one arith.pt declared
+<x, y>:show;            # from vector.mx, whose own arithmetic is this one
+(9 / 2):print;          # `/` is this file's now, not the one arith.mx declared

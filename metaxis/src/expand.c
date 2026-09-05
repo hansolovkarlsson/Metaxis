@@ -9,7 +9,7 @@
  * backtracking; this backtracks, which is slower and shorter, and the inputs
  * are files.
  */
-#include "pt.h"
+#include "mx.h"
 
 #include <ctype.h>
 #include <string.h>

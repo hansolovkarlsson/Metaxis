@@ -7,7 +7,7 @@
  * unconditionally because nobody could ask an operand its level, and a literal
  * moved rather than translated.
  *
- * The language is Prototype's own, so it lives outside the strings; the foreign
+ * The language is Metaxis's own, so it lives outside the strings; the foreign
  * text it emits lives inside them. That is the one rule read once more, and it
  * is why `{` after the `=>` is enough to tell the two forms apart -- a template
  * has always been a string until now, and a string never starts with a brace.
@@ -15,7 +15,7 @@
  * It is deliberately small. Every form below names a customer in
  * docs/ROADMAP.md, and anything that cannot name one is not here.
  */
-#include "pt.h"
+#include "mx.h"
 
 #include <ctype.h>
 #include <stdlib.h>

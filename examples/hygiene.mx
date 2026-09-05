@@ -1,7 +1,7 @@
-; hygiene.pt -- one half fixed, one half charged.
+; hygiene.mx -- one half fixed, one half charged.
 ;
 ; A Proto template is a tree in a language Proto knows, so a name the template
-; introduces can be renamed before anybody sees it. A Prototype template is a
+; introduces can be renamed before anybody sees it. A Metaxis template is a
 ; string. `{~t}` gives it the one thing a string can be given: a name nobody
 ; else has. That closes the half of the problem where a template *introduces* a
 ; name, and does not touch the half where a template *reaches out* for one.

@@ -1,4 +1,4 @@
-#include "pt.h"
+#include "mx.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -11,7 +11,7 @@
 void *xmalloc(size_t n)
 {
     void *p = malloc(n ? n : 1);
-    if (!p) { fputs("pt: out of memory\n", stderr); exit(2); }
+    if (!p) { fputs("mx: out of memory\n", stderr); exit(2); }
     return p;
 }
 

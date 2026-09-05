@@ -1,7 +1,7 @@
 #!/bin/sh
 # hygiene.sh -- one half fixed, one half charged, run rather than argued.
 #
-# It expands examples/hygiene.pt, compiles the C that comes out and runs it.
+# It expands examples/hygiene.mx, compiles the C that comes out and runs it.
 # Three outcomes are named below and each says something different, because
 # there are two failures here and they moved at different times.
 #
@@ -26,12 +26,12 @@
 # failures against the same expansion, and its comments record #105 and #0 for
 # the second -- the same pair the last line here still prints.
 
-PT="${1:-./bin/pt}"
+MX="${1:-./bin/mx}"
 CC="${CC:-cc}"
 LIMIT="${LIMIT:-10}"
-SRC="${SRC:-examples/hygiene.pt}"
+SRC="${SRC:-examples/hygiene.mx}"
 
-TMP="${TMPDIR:-/tmp}/pt-hygiene.$$"
+TMP="${TMPDIR:-/tmp}/mx-hygiene.$$"
 mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 
@@ -51,7 +51,7 @@ WHOLE='swap: 2 1
 again: 4 3
 bump: 100 5'
 
-if ! sh tests/limit.sh "$LIMIT" "$PT" "$SRC" > "$TMP/body.c" 2> "$TMP/err"; then
+if ! sh tests/limit.sh "$LIMIT" "$MX" "$SRC" > "$TMP/body.c" 2> "$TMP/err"; then
     echo "FAILED  hygiene.sh: $SRC did not expand"
     cat "$TMP/err"
     exit 1

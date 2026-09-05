@@ -1,4 +1,4 @@
-; clike.pt -- the six things Proto's lib/clike.pro lists as impossible.
+; clike.mx -- the six things Proto's lib/clike.pro lists as impossible.
 ;
 ; That file's header says what C has and a Proto dialect cannot take: `;`
 ; between statements, `x++` and `a[i]` and `p->f`, a lone `|`, `for`, and `42`
@@ -13,7 +13,7 @@
 ; `;` opens a comment in Proto, which is why `;` cannot end a statement there.
 ; The comment opener is declared here, so `;` is free the moment this line says
 ; something else is the opener. These two lines are themselves still written in
-; `;` comments: `;` is Prototype's own header comment and always works, and a
+; `;` comments: `;` is Metaxis's own header comment and always works, and a
 ; declared one joins it rather than replacing it.
 @comment "//" eol
 @comment "/*" "*/"
@@ -77,7 +77,7 @@
 // statements however the one before ended -- so a `}` that needs no `;` in the
 // C being read still needs a `.` in the Solveig being written. The input side
 // and the output side are about two different languages, and this file is where
-// they disagree. examples/groups.pt reads the same braces and declares the word.
+// they disagree. examples/groups.mx reads the same braces and declares the word.
 
 total = 0;
 
