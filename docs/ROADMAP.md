@@ -229,30 +229,7 @@ question is whether `@mode expression` after `@mode text` is a thing a file
 could ever mean, or whether a second `@mode` should simply be an error with no
 `override` at all.
 
-## 5 · A check that every run of `mx` is under the limit
-
-`tests/limit.sh` exists so that a hang is reported rather than waited on, and it
-only works where it is actually used. Nothing enforces that. A test script added
-tomorrow that calls `"$MX"` directly is a hole in the one guard the suite has
-against the failure it cannot otherwise express, and it would pass every check
-here on the day it was written.
-
-**The evidence that this is not hypothetical is one directory over.**
-[COMPLETED.md](COMPLETED.md)'s entry for `limit.sh` claimed "all six places"; it
-was seven that morning and eight by the evening, and the day's own close-out
-read the paragraph and did not count. A number in prose is not a check.
-[POSTMORTEM.md](POSTMORTEM.md) 16 is the scoring.
-
-What it wants is small and grep-shaped: every line in `Makefile` and `tests/*.sh`
-that invokes `$(BIN)`, `./bin/mx` or `"$MX"` names `tests/limit.sh` first.
-`tests/hygiene.sh` is the precedent for a check that reads the tree rather than
-running it, and this is the smaller sibling.
-
-**The one thing to decide before writing it** is whether it lives in the suite
-or in `tests/hygiene.sh`, which is already the file that checks a property
-rather than an output. A sixth script for one grep is probably one too many.
-
-## 6 · One grammar, two backends
+## 5 · One grammar, two backends
 
 `examples/pascal.mx` and `examples/code.mx` are 280 and 272 lines, and the
 second opens by saying what the duplication is: *"The body below is character
@@ -289,7 +266,7 @@ against that today, and it is the evidence that would change its mind.
 
 ---
 
-## 7 · Source maps
+## 6 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -298,7 +275,7 @@ this far down.
 
 ---
 
-## 8 · Alternation inside a pattern — explored, not wanted yet
+## 7 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason

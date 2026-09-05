@@ -10,6 +10,48 @@ argued away.*
 
 Newest first.
 
+## The limit guard: a property, where a number used to be
+
+`tests/hygiene.sh` now runs two checks, and the new one is four lines of `awk`
+stating a property: **the tool is never run except through `tests/limit.sh`.**
+
+`tests/limit.sh` exists so a hang is reported rather than waited on, and it only
+works where it is used — a test script added next month that runs the binary
+directly is a hole in the one guard this suite has against the failure no
+recorded `.out` can express, and it would pass every check here on the day it
+was written.
+
+**What it replaces is the reason it exists.** This file once said "all six
+places the suite runs the tool" go through `limit.sh`. There were seven that
+morning and eight by the evening, and a close-out read the sentence and did not
+count ([POSTMORTEM.md](POSTMORTEM.md) 16). So the guard counts nothing. Three
+shapes name the binary without running it — where the path is *stored*, a make
+rule header, and handing the path to a script this same check covers — and each
+is exempted by name rather than by a pattern broad enough to hide a fourth.
+
+**It lives in `hygiene.sh` rather than in a sixth script** because that file was
+already the one that checks a *property* rather than an output, and a whole
+script for one grep is one too many. That was the item's open decision and this
+is the answer.
+
+**Two things were found by writing it, and both are the same shape.** The first
+pattern matched *its own text* — this file is one of the files being scanned —
+so the guard reported itself; the bracket classes in it are what fix that, and
+they are commented, because they look like decoration and are not. The second is
+worse and is the one worth carrying: an early draft had a regex `awk` could not
+parse, so **`awk` exited 2, the substitution came back empty, and the guard
+printed `ok`.** A check that passes when its own machinery breaks is worse than
+no check, because it also silences the check that would have caught the thing.
+The `|| exit` after the substitution is that fix, and it is the first thing in
+this suite to guard its own failure rather than only the tool's.
+
+Proved by planting a violation — `"$MX" examples/first.mx` appended to
+`tests/asm.sh` — and watching it come back with the file and line, then
+removing it. Closes ROADMAP 5, which is why the items below it moved up.
+
+Verified at 13 examples, 69 error cases and five check scripts, **88 `ok` lines**
+where there were 87.
+
 ## CI: `make check`, on a machine that is not the author's
 
 `.github/workflows/check.yml`. `make check LIMIT=30` on `ubuntu-latest` and
@@ -73,7 +115,7 @@ scored by evidence from outside the repository.
 pattern side and quoted output inside `.OUT` in 1964, which is this notation's
 premise, both halves, on a machine with 8K of six-bit memory. `examples/code.mx`
 is 272 lines duplicated from `examples/pascal.mx` and that is a maintenance cost
-rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 6. And **collection
+rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 5. And **collection
 attributes** (JastAdd, Silver) are a better-shaped answer to
 [direction.md](direction.md)'s declared environment than the key/value store it
 sketches: contribution is union rather than assignment, so two `@use`'d files
@@ -192,7 +234,7 @@ operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
 print `40 80 50`.
 
 **What the example does not do, in its own closing note.** `elif` is one rule
-per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 8 declines to build
+per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 7 declines to build
 for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
 thing rather than reading it. C's types come off Python's annotations or nowhere,
 which is the stage-1 wall in its honest form. And the example says `twice`
@@ -228,7 +270,7 @@ loaded machine.
 *This paragraph said "all six places" when it was written and there were seven,
 and the close-out that day did not catch it; there are eight now. The count has
 been taken out rather than corrected, because a number counted by hand in prose
-is a claim nothing checks — [ROADMAP.md](ROADMAP.md) 5 is the check that would,
+is a claim nothing checks — the check that would is now in `tests/hygiene.sh`,
 and [POSTMORTEM.md](POSTMORTEM.md) 16 is what it cost.*
 
 **It costs nothing when nothing hangs.** The full run is 2.3 seconds, and the

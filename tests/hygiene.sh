@@ -1,5 +1,40 @@
 #!/bin/sh
-# hygiene.sh -- one half fixed, one half charged, run rather than argued.
+# hygiene.sh -- the two checks that read the tree instead of running it.
+#
+# The second one is the file's original job and most of what is below. The
+# first is the limit guard, added because it is the same kind of check -- a
+# property nothing else here can express -- and a sixth script for one grep
+# would have been one too many. See docs/ROADMAP.md 5, which this closes.
+#
+# ---------------------------------------------------------------------------
+# 1 - the limit guard
+#
+# tests/limit.sh exists so that a hang is reported rather than waited on, and it
+# only works where it is actually used. Nothing enforced that. A test script
+# added next month that runs the tool directly is a hole in the one guard this
+# suite has against the failure no recorded .out can express, and it would pass
+# every check here on the day it was written.
+#
+# This is not hypothetical, which is why it is a check and not a note.
+# docs/COMPLETED.md once claimed "all six places the suite runs the tool" go
+# through limit.sh. There were seven that morning and eight by the evening, and
+# a close-out read the sentence and did not count. POSTMORTEM 16: **a number in
+# prose is not a check.** So this counts nothing -- it states the property.
+#
+# The property: the tool is never *run* except through tests/limit.sh. Three
+# shapes name the binary without running it, and each is exempted by name
+# rather than by a pattern broad enough to hide a fourth:
+#
+#   BIN = ... / MX=...     where the path is stored
+#   a make rule header     `all: $(BIN)`, `$(BIN): $(OBJ)`, `check: $(BIN)`
+#   sh tests/<x>.sh ...    handing the path to a script this same check covers
+#
+# The third is the loosest of the three -- it would also forgive a line that
+# both handed the path over and ran it -- and it is written this way because
+# the alternative is a shell parser. If that shape ever appears, tighten it.
+#
+# ---------------------------------------------------------------------------
+# 2 - hygiene: one half fixed, one half charged, run rather than argued.
 #
 # It expands examples/hygiene.mx, compiles the C that comes out and runs it.
 # Three outcomes are named below and each says something different, because
@@ -30,6 +65,45 @@ MX="${1:-./bin/mx}"
 CC="${CC:-cc}"
 LIMIT="${LIMIT:-10}"
 SRC="${SRC:-examples/hygiene.mx}"
+
+if [ ! -f tests/limit.sh ]; then
+    echo "FAILED  hygiene.sh: tests/limit.sh is gone, and everything below"
+    echo "        assumes it is there. See the note at the head of this file."
+    exit 1
+fi
+
+# The bracket classes below are not decoration. This file is one of the files
+# being scanned, so a pattern written the obvious way would match its own text
+# and report itself -- `grep -v grep`, one level up. Written like this it still
+# matches $(BIN), bin/mx and $MX and does not contain any of them.
+# `|| exit` is not belt and braces. The first draft of this had a regex awk
+# could not parse; awk exited 2, the substitution came back empty, and the guard
+# printed `ok`. **A check that passes when its own machinery breaks is worse
+# than no check**, because it also silences the one that would have told you.
+unguarded=$(awk '
+    /[$][(]BIN[)]|bin\/mx|[$]M[X]/ {
+        if ($0 ~ /^[[:space:]]*#/)                    next   # a comment runs nothing
+        if ($0 ~ /limit[.]sh/)                        next   # guarded
+        if ($0 ~ /^[[:space:]]*BIN[[:space:]]*=/)     next   # stored, not run
+        if ($0 ~ /^[[:space:]]*M[X]=/)                next   # stored, not run
+        if (FILENAME == "Makefile" && $0 ~ /^[^\t ][^=]*:/) next   # rule header
+        if ($0 ~ /sh tests\/[a-z]+[.]sh /)            next   # handed on
+        printf "%s:%d:%s\n", FILENAME, FNR, $0
+    }
+' Makefile tests/*.sh) || {
+    echo "FAILED  hygiene.sh: the limit guard did not run -- awk exited $?."
+    echo "        Its own failure must not read as a pass. See the note above it."
+    exit 1
+}
+
+if [ -n "$unguarded" ]; then
+    echo "FAILED  hygiene.sh: the tool is run without tests/limit.sh in front of it."
+    echo "        A hang there stops the suite instead of failing it, which is"
+    echo "        the one outcome no recorded .out can express."
+    echo "$unguarded" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: every run of the tool goes through tests/limit.sh"
 
 TMP="${TMPDIR:-/tmp}/mx-hygiene.$$"
 mkdir -p "$TMP" || exit 1

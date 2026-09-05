@@ -101,7 +101,7 @@ more: `CLAUDE.md`, `README.md` and `notation.md` all still said the suite ran
 `CLAUDE.md` is the file a session with no memory reads first, so that one was
 costing something every morning.
 
-And [ROADMAP.md](ROADMAP.md) 5: a grep that fails when a test script runs `$PT`
+And a grep that fails when a test script runs `$PT`
 without `tests/limit.sh` in front of it. That is the claim, enforced.
 
 **Learnings.**
