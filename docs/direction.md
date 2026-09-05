@@ -298,6 +298,46 @@ re-deriving the evidence:
   since the PyTorch collision is the one a reader actually hits and the
   extension is spelled in every example, test and document here.
 
+#### The shortlist — three candidates, checked 2026-09-05
+
+**Three findings narrowed the field more than any individual candidate did**, and
+they are worth more than the list itself:
+
+1. **Every real word in the semantic field is already taken.** *argot* is an
+   option parser, *idiolect* is three GitHub projects, *maquette* is a virtual
+   DOM library, *hapax* is an AI-infrastructure tool, and *rubric* and
+   *cartouche* are occupied on all three registries. That is not bad luck. It is
+   why this field's tools are called Stratego, Spoofax, Comby, Katahdin,
+   Coccinelle and Rascal: **borrowing from outside the domain is not taste, it is
+   the only thing that works.**
+2. **A near-word is worse than a far-word.** `foretext` is free on every registry
+   and was nearly the recommendation — the header *is* the text before the text.
+   It sits one letter from `pretext`, a JavaScript text-layout library, and from
+   **PreTeXt**, an authoring language for textbooks. A name misheard as an
+   existing tool **in the same domain** is worse than one nobody knows yet.
+3. **A descriptive name has to be scored, and this page has already shown what
+   that costs.** The description above was written and refuted inside a day. A
+   name that encodes the current stage inherits exactly that. **Which is the real
+   case against `Prototype`, and it has nothing to do with searchability:** it
+   means *the small model made before the real thing*, and the third row of the
+   table above is aiming at a tool that makes real interpreters. The name would
+   have to be abandoned precisely when the project succeeded.
+
+| | | why | against it |
+| --- | --- | --- | --- |
+| **Ostracon** — `ost`, `.ost` | **recommended** | A potsherd: the cheap, throwaway surface drafts were written on because papyrus was expensive. Literally *the thing you write a draft on* — the honest half of the description, without the word, and without its defect: **the surface is cheap, not the result**. Outside the software domain entirely, so it is searchable, and it asserts nothing about rewriting, evaluating or interpreting, so it survives every row of the table above including the one that has not landed | eight letters, and nobody knows it (*OS-truh-kon*) — the same cost Spoofax, Katahdin and Coccinelle pay deliberately. `npm` is taken; crates.io and PyPI are free |
+| **Incip** — `incip`, `.incip` | runner-up | An *incipit* is the opening words by which a manuscript is identified: the header saying how to read what follows, which is exactly true here. **Free on all three registries**, and five letters | reads as a truncation, looks like a typo for *incipient*, and nobody will say it with confidence |
+| **Maquette** | **declined** | the best pure synonym for *prototype* | and that is the objection. It hard-codes *preliminary*, so it closes the same door `Prototype` does, only more elegantly. Also a virtual DOM library |
+
+The registry checks and what each name collides with are in
+[prior-art.md](prior-art.md) § 1, dated, so the next person to open this does not
+re-run them.
+
+**And `.pt` should change whichever way this goes.** It is PyTorch's checkpoint
+extension, it is the collision a reader meets before they meet the name, and it
+is spelled in every example, test and document here — separable from the naming
+question, more expensive to change, and more likely to be worth it.
+
 **And there is nothing to build either way, which is why this is not on
 [ROADMAP.md](ROADMAP.md).** A name is settled by deciding, not by working, and
 the page that holds it should be this one. When it is decided, this subsection

@@ -74,8 +74,36 @@ with an overloaded English word — not with a peer. Nothing here would be
 confused for another tool in this survey; it would be hard to *find*, which is a
 different and smaller problem.
 
-[direction.md](direction.md)'s "What to call it" carries what that costs and what
-the name buys in exchange. This page holds only the evidence.
+### What the alternatives cost, checked 2026-09-05
+
+Occupancy on **crates.io**, **npm** and **PyPI**, and what each name already
+returns when searched. Registry occupancy is the weaker signal of the two —
+`prototype` is "taken" on npm and PyPI by two stubs — so the last column is the
+one that decides.
+
+| name | crates.io | npm | PyPI | what it already returns |
+| --- | --- | --- | --- | --- |
+| `prototype` | free | stub, v0.0.5 | stub, v0.2 | the JS framework, and five meanings of the word |
+| `argot` | taken | taken | taken | an option parser for the Neut language — **the same domain** |
+| `idiolect` | free | free | taken | three GitHub projects, one of them topical |
+| `maquette` | free | taken | taken | a virtual DOM library |
+| `hapax` | free | taken | taken | an AI-infrastructure tool |
+| `rubric` | taken | taken | taken | grading rubrics, edtech |
+| `cartouche` | taken | taken | taken | nothing prominent |
+| `foretext` | **free** | **free** | **free** | nothing — **but one letter from `pretext`, a JS text-layout library, and from PreTeXt, an authoring language.** Ruled out for that |
+| **`incip`** | **free** | **free** | **free** | nothing |
+| **`ostracon`** | **free** | taken | **free** | nothing |
+| `uncial` | free | taken | free | nothing prominent |
+
+**What the table says, more than any row does: every real word in this semantic
+field is already occupied.** That is the mechanism behind the habit above rather
+than a coincidence — a tool here is found by its name, the near words are gone,
+and so the field reaches outside its own domain and takes a board game, a
+mountain or a ladybird.
+
+[direction.md](direction.md)'s "What to call it" carries what that costs, what
+the name buys in exchange, and a shortlist of three. This page holds only the
+evidence.
 
 ## 2 · The uniqueness claim, scored
 
