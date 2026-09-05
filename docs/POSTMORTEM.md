@@ -11,6 +11,60 @@ Newest first.
 
 ---
 
+## 16 · A number counted by hand, wrong on the day it was written, that a close-out read and did not check
+
+**Issue.** `COMPLETED.md`'s entry for `tests/limit.sh` said **"All six places the
+suite runs `pt`"** go through it. There were seven when the sentence was written,
+this morning. By the evening there were eight, because `tests/python.sh` added
+one. Neither the commit that wrote it nor the close-out four hours later noticed.
+
+**What found it.** The next close-out, doing the audit rather than the writing —
+`grep -c` over `Makefile` and `tests/*.sh`, run because a *different* claim
+looked stale and the same command answered both.
+
+**Root cause.** The file's own opening note says *each entry ends with the state
+it was verified at, so a claim here can be checked rather than taken*. That is
+true of the `Verified at 12 examples, 62 error cases` lines, which are dated
+snapshots and stay true by being about a moment. It is not true of a count in
+running prose describing how the tool is **wired**, which claims to be about now
+and rots the first time somebody adds a file. The two look identical on the page
+and behave completely differently, and nothing marked which was which.
+
+**Solution.** The count is gone rather than corrected — *every place the suite
+runs `pt` goes through it*, with the shape spelled out and no number to go stale.
+Three more descriptions of `make check` were stale in the same direction and by
+more: `CLAUDE.md`, `README.md` and `notation.md` all still said the suite ran
+`errors.sh` and `hygiene.sh`, which stopped being the whole list when
+`pascal.sh` landed **eleven commits ago** and was wrong twice over by tonight.
+`CLAUDE.md` is the file a session with no memory reads first, so that one was
+costing something every morning.
+
+And [ROADMAP.md](ROADMAP.md) 5: a grep that fails when a test script runs `$PT`
+without `tests/limit.sh` in front of it. That is the claim, enforced.
+
+**Learnings.**
+
+**A number in prose is a claim with no test, and it decays fastest in the
+sentences that sound most authoritative.** "All six places" reads like something
+somebody verified. It reads that way *because* it is specific, which is exactly
+why it was not re-counted — the precision was doing the work that checking should
+have done.
+
+**Distinguish a snapshot from a standing claim, and prefer the snapshot.** *As of
+this entry, twelve examples* cannot go stale; *the suite has four test scripts*
+is stale the moment a fifth arrives. Where a record has to describe how something
+is wired now, describe the **shape** and let the count live in a check — or in
+nothing.
+
+**And the close-out is where this gets caught, or it does not get caught.** Entry
+14's lesson was that a gap recorded only in prose stays open; this is the
+narrower version — **prose that describes the tree drifts from the tree, and the
+only thing that reliably notices is somebody running a command instead of
+re-reading the sentence.** Today's close-out found four stale claims in the four
+minutes it spent grepping and none in the hour it spent writing.
+
+---
+
 ## 15 · A prediction that held in every part, and the one measurement that is why
 
 **Issue.** [direction.md](direction.md) closes with a standing lesson from three

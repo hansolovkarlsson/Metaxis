@@ -41,7 +41,8 @@ be true for it to land.
 
 ```
 make            # bin/pt
-make check      # every example against the .out beside it, then tests/errors.sh
+make check      # every example against the .out beside it, then the five
+                # scripts in tests/ -- four of which run what they produced
 ```
 
 C11 and `make`, plus POSIX `<regex.h>` for `@token`.

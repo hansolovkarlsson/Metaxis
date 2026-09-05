@@ -25,8 +25,12 @@ never be read as the thing it is declaring.
 
 `make`, `make check` (`make test` is the same target), `make record`,
 `make clean`. `make check` runs every example against the `.out` recorded beside
-it, then `tests/errors.sh` and `tests/hygiene.sh`. `make record` re-records
-those `.out` files; read the diff before committing it.
+it, then the five scripts in `tests/` — `errors.sh`, `hygiene.sh`, `pascal.sh`,
+`asm.sh` and `python.sh`. The last four **run what they produced** rather than
+diffing it, which is how a wrong answer is caught and not merely a changed one.
+Every invocation goes through `tests/limit.sh`, so a hang is reported instead of
+waited on; `make check LIMIT=30` raises the 10s default. `make record`
+re-records those `.out` files; read the diff before committing it.
 
 C11 and `make`, plus POSIX `<regex.h>`.
 

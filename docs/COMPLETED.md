@@ -112,7 +112,7 @@ operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
 print `40 80 50`.
 
 **What the example does not do, in its own closing note.** `elif` is one rule
-per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 6 declines to build
+per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 7 declines to build
 for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
 thing rather than reading it. C's types come off Python's annotations or nowhere,
 which is the stage-1 wall in its honest form. And the example says `twice`
@@ -140,10 +140,16 @@ not go red, it stopped.
 `tests/limit.sh` runs a command under a wall-clock limit and exits 124 if it has
 to kill it, which is what GNU `timeout` uses. macOS has no `timeout(1)` and this
 tree takes no dependencies, so it is the portable shape: start the command, race
-it against a sleeper, and let whichever finishes first decide. **All six places
-the suite runs `pt`** — the Makefile's `check` and `record` loops and one or two
-calls in each of the four test scripts — go through it. `make check LIMIT=30`
-raises it for a loaded machine.
+it against a sleeper, and let whichever finishes first decide. **Every place the
+suite runs `pt` goes through it** — the Makefile's `check` and `record` loops and
+one or two calls in each test script. `make check LIMIT=30` raises it for a
+loaded machine.
+
+*This paragraph said "all six places" when it was written and there were seven,
+and the close-out that day did not catch it; there are eight now. The count has
+been taken out rather than corrected, because a number counted by hand in prose
+is a claim nothing checks — [ROADMAP.md](ROADMAP.md) 5 is the check that would,
+and [POSTMORTEM.md](POSTMORTEM.md) 16 is what it cost.*
 
 **It costs nothing when nothing hangs.** The full run is 2.3 seconds, and the
 limit is not a performance budget: every example expands in milliseconds and 10

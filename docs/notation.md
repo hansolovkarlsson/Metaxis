@@ -285,7 +285,8 @@ rule about quoting; the difference is only what happens to text no rule claimed.
 
 ```
 make            # bin/pt
-make check      # every example against the .out beside it, then tests/errors.sh
+make check      # every example against the .out beside it, then the five
+                # scripts in tests/ -- four of which run what they produced
 make record     # re-record those .out files; read the diff before committing it
 
 bin/pt examples/clike.pt          # to stdout
