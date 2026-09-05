@@ -59,6 +59,19 @@
 @syntax "program" n:name                       => { emit "/* " + n + " */\n#include <stdio.h>" } terminated
 @syntax a "," b                   20           => { emit a + ", " + b }
 @syntax a ":" "integer"           15           => { emit "int " + a }
+
+; A case arm, and the one rule here that had to be shaped around what a
+; template cannot do. `case n of 1: a; 2: b end` wants to be a repeated group of
+; `[ v ":" s ]`, and it cannot be: two holes in one group are two parallel
+; lists, and nothing pairs them -- a code template's `for` walks one list and
+; has no index, and a string template splices each of them joined. So the arm
+; is a *rule* instead, which turns the pair into one hole before the group ever
+; sees it.
+;
+; It is safe only because the type rule above is declared first: both patterns
+; are three elements long, so declaration order is what tries `: integer`
+; before `: anything`. Add a second type and it goes above this line too.
+@syntax a ":" s                   15           => { emit "case " + a + ": " + s + "; break;" }
 @syntax a ":" "boolean"           15           => { emit "int " + a }
 @syntax "var" d                                => { emit d }
 
@@ -71,6 +84,32 @@
         emit "{\n" + body
         if not terminated(body) { emit ";" }
         emit "\n}"
+    } terminated
+
+; `group(c, 80)` again: C's `!` binds tighter than any comparison, so the
+; condition needs brackets unless it is an atom. examples/pascal.pt writes them
+; unconditionally, and `while (!(1))` is what that costs.
+@syntax "repeat" b:stmts "until" c
+    => {
+        emit "do {\n" + b
+        if not terminated(b) { emit ";" }
+        emit "\n} while (!" + group(c, 80) + ")"
+    }
+
+; Pascal's arms do not fall through and C's do, so every one ends in a `break`
+; the source never wrote. The arms are a list, so a loop writes them; the rule
+; above is what made each one a single value to loop over.
+@syntax "case" e "of" [ arm ]* sep ";" "end"
+    => {
+        emit "switch (" + e + ") {\n"
+        for x in arm sep "\n" { emit x }
+        emit "\n}"
+    } terminated
+@syntax "case" e "of" [ arm ]* sep ";" "else" d "end"
+    => {
+        emit "switch (" + e + ") {\n"
+        for x in arm sep "\n" { emit x }
+        emit "\ndefault: " + d + "; break;\n}"
     } terminated
 @syntax "begin" body:stmts "end" "."
     => { emit "int main(void) {\n" + body + ";\nreturn 0;\n}" } terminated
@@ -144,7 +183,7 @@ program Fizz;
 
 var
   total, mod: integer;
-  i: integer;
+  i, n: integer;
 
 { A procedure and a function. Pascal separates parameter groups with `;` and
   C gives every parameter its own type, so one Pascal group becomes several
@@ -181,6 +220,22 @@ begin
     end
   else
     writeln(total);
+
+  { `until` says when to stop; C's `while` says when to go on. }
+  n := 0;
+  repeat
+    n := n + 1
+  until n > 3;
+  writeln(n);
+
+  { Pascal's arms do not fall through. C's do, so each one gains a `break`. }
+  case n of
+    1: writeln(11);
+    4: writeln(44)
+  else
+    writeln(0)
+  end;
+
   Show(Double(total));
   Pair(total, 2)
 end.

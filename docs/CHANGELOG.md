@@ -10,6 +10,10 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`repeat … until` and `case … of` in the Pascal examples**, inverting the
+condition for C's `do … while` and giving every `case` arm the `break` Pascal
+does not need. No change to the tool.
+
 **`procedure` and `function` in the Pascal examples.** With parameter lists,
 calls, and Free Pascal's `Result :=` for the return value. `tests/pascal.sh`
 compiles and runs what comes out and now checks four values rather than two.

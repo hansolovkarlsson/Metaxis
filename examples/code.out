@@ -1,7 +1,7 @@
 /* Fizz */
 #include <stdio.h>
 int total, mod;
-int i;
+int i, n;
 void Show(int n) {
 printf("%d\n", n);
 }
@@ -20,6 +20,16 @@ if (total > 30) {
 total = total + 1;
 printf("%d\n", total);
 } else printf("%d\n", total);
+n = 0;
+do {
+n = n + 1;
+} while (!(n > 3));
+printf("%d\n", n);
+switch (n) {
+case 1: printf("%d\n", 11); break;
+case 4: printf("%d\n", 44); break;
+default: printf("%d\n", 0); break;
+}
 Show(Double(total));
 Pair(total, 2);
 return 0;

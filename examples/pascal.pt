@@ -54,6 +54,19 @@
 @syntax "program" n:name                       => "/* {n} */\n#include <stdio.h>" terminated
 @syntax a "," b                   20           => "{a}, {b}"
 @syntax a ":" "integer"           15           => "int {a}"
+
+; A case arm, and the one rule here that had to be shaped around what a
+; template cannot do. `case n of 1: a; 2: b end` wants to be a repeated group of
+; `[ v ":" s ]`, and it cannot be: two holes in one group are two parallel
+; lists, and nothing pairs them -- a code template's `for` walks one list and
+; has no index, and a string template splices each of them joined. So the arm
+; is a *rule* instead, which turns the pair into one hole before the group ever
+; sees it.
+;
+; It is safe only because the type rule above is declared first: both patterns
+; are three elements long, so declaration order is what tries `: integer`
+; before `: anything`. Add a second type and it goes above this line too.
+@syntax a ":" s                   15           => "case {a}: {s}; break;"
 @syntax a ":" "boolean"           15           => "int {a}"
 
 ; `var` opens the section and does nothing to the declaration after it; the
@@ -65,6 +78,18 @@
 ; statements and never after the last, and this template cannot ask whether the
 ; last one already ended.
 @syntax "begin" body:stmts "end"               => "{{\n{body};\n}}" terminated
+
+; Pascal's post-tested loop is C's, inverted: `until` says when to stop and
+; `while` says when to go on.
+@syntax "repeat" b:stmts "until" c             => "do {{\n{b};\n}} while (!({c}))"
+
+; Pascal's arms do not fall through and C's do, so every one ends in a `break`
+; the source never wrote. That is a translation and not a rename, which is the
+; same thing `**` would be if this file read Python.
+@syntax "case" e "of" [ arm ]* sep ";" join "\n" "end"
+    => "switch ({e}) {{\n{arm}\n}}" terminated
+@syntax "case" e "of" [ arm ]* sep ";" join "\n" "else" d "end"
+    => "switch ({e}) {{\n{arm}\ndefault: {d}; break;\n}}" terminated
 
 ; The outer block, which ends in a full stop. It is a longer pattern than the
 ; one above, so it is tried first and the inner blocks are unaffected.
@@ -124,7 +149,7 @@ program Fizz;
 
 var
   total, mod: integer;
-  i: integer;
+  i, n: integer;
 
 { A procedure and a function. Pascal separates parameter groups with `;` and
   C gives every parameter its own type, so one Pascal group becomes several
@@ -161,6 +186,22 @@ begin
     end
   else
     writeln(total);
+
+  { `until` says when to stop; C's `while` says when to go on. }
+  n := 0;
+  repeat
+    n := n + 1
+  until n > 3;
+  writeln(n);
+
+  { Pascal's arms do not fall through. C's do, so each one gains a `break`. }
+  case n of
+    1: writeln(11);
+    4: writeln(44)
+  else
+    writeln(0)
+  end;
+
   Show(Double(total));
   Pair(total, 2)
 end.

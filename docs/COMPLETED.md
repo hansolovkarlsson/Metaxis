@@ -10,6 +10,57 @@ argued away.*
 
 Newest first.
 
+## `repeat` and `case`, and the prediction that `case` would be free
+
+```
+repeat                       do {
+  n := n + 1        →        n = n + 1;
+until n > 3                  } while (!(n > 3))
+
+case n of                    switch (n) {
+  1: writeln(11);            case 1: printf("%d\n", 11); break;
+  4: writeln(44)     →       case 4: printf("%d\n", 44); break;
+else                         default: printf("%d\n", 0); break;
+  writeln(0)                 }
+end
+```
+
+Both translate rather than rename. Pascal's `until` says when to *stop* and C's
+`while` says when to *go on*, so the condition is inverted. Pascal's case arms do
+not fall through and C's do, so every arm gains a `break` the source never wrote
+— and the recorded output proves it, because a missing `break` would print the
+default arm as well and `tests/pascal.sh` checks the numbers.
+
+**The roadmap said `case` needed no new mechanics. That was wrong**, and finding
+out how is the useful part. The arms want to be a repeated group of
+`[ v ":" s ]`, and they cannot be: two holes in one group come out as **two
+parallel lists**, and nothing puts them back together. A code template's `for`
+walks one list and has no index; a string template splices each of them joined.
+There is no `zip` and no `v[i]`.
+
+**The workaround is to make the arm a rule** — `a ":" s` — so the pair becomes
+one value before the group ever sees it, and the group has a single hole to
+loop over. It works, and it is not a general answer: it needs the two parts to
+be joinable by an operator rule, and it only parses because `a ":" "integer"` is
+declared first and both patterns are three elements long, so declaration order
+is what tries the type before the arm. Add a second Pascal type and it has to go
+above that line, with nothing enforcing it. Both files say so in a comment.
+
+So the roadmap gained an item with a customer rather than a guess, which is the
+second time this stage has produced one: `for` wants an index, or a second loop
+variable. Its next customer is already visible — a `var` section whose
+declarations have different types is the same shape, and `real` beside `integer`
+walks into it.
+
+**`repeat` needed nothing at all**, which is what the prediction was right
+about: a `stmts` hole stopping at `until`, and `group(c, 80)` in the code
+template to bracket the condition only when C's `!` would otherwise take it
+apart. `examples/pascal.pt` brackets unconditionally and `while (!(1))` is what
+that costs.
+
+*Verified at 10 examples, 36 error cases, `tests/hygiene.sh` and
+`tests/pascal.sh`; `make check` clean.*
+
 ## `procedure` and `function`, and a parameter list that is a group
 
 Pascal's subprograms, in both example files and checked by a compiler:
