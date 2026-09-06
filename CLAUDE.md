@@ -25,10 +25,10 @@ never be read as the thing it is declaring.
 
 `make`, `make check` (`make test` is the same target), `make record`,
 `make clean`. `make check` runs every example against the `.out` recorded beside
-it, then the eight scripts in `tests/` — `errors.sh`, `hygiene.sh`, `docs.sh`,
-`pascal.sh`, `asm.sh`, `python.sh`, `basic.sh` and `scale.sh`. Five of them
-**run what they produced** rather than diffing it, which is how a wrong answer
-is caught and not merely a changed one; `hygiene.sh` also checks a property of the tree,
+it, then the nine scripts in `tests/` — `errors.sh`, `hygiene.sh`, `docs.sh`,
+`pascal.sh`, `asm.sh`, `python.sh`, `basic.sh`, `island.sh` and `scale.sh`. Six
+of them **run what they produced** rather than diffing it, which is how a wrong
+answer is caught and not merely a changed one; `hygiene.sh` also checks a property of the tree,
 `docs.sh` runs every `$ mx …` transcript in `docs/` against what it claims to
 print, and `scale.sh` expands one input large enough for a quadratic to show —
 the suite is otherwise small enough by construction that it cannot see one.

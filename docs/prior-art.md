@@ -328,6 +328,13 @@ should not have to rediscover that the backtracking is already there.
 *Strongest finding on this page, and the one that changes what the tool can be
 pointed at.*
 
+**2026-09-06: text mode had it already.** A rewrite over `metaxis/cmd/mx.c`,
+the tool's own front end, is stage 5 — `lib/island.mx`, `tests/island.sh` — and
+needed nothing built. What it *does* need next is none of the three shapes
+below: the rehearsal asked for identifiers, balanced brackets, and comments
+skipped rather than removed, which is [ROADMAP.md](ROADMAP.md) 7. The rest of
+this section is as it was written, the day before.
+
 **Who has it.** TXL calls it **agile parsing**: the effective grammar is a base
 grammar plus explicit *overrides*, and *"grammar overrides are used to express
 robust parsing, and to avoid errors or exceptions due to input not explained by
@@ -633,7 +640,7 @@ it. It is [ROADMAP.md](ROADMAP.md) 4.
 | 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and it was the measurement that settled the backtracking budget | small |
 | 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/` | small, and the spelling is the decision |
 | 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx`; and since 2026-09-06 every declaration `examples/basic.mx` cannot write — **[ROADMAP.md](ROADMAP.md) 4** | medium — wants a second pass over the output, which the tool does not have |
-| 5 | **An island rule** (§3.3) | none yet, and it would change what the tool can be pointed at | medium, and it can make grammar bugs silent |
+| 5 | **An island rule** (§3.3) | since 2026-09-06 `tests/island.sh`, which rewrites the tool's own front end; text mode had the rule, and what it lacks is **[ROADMAP.md](ROADMAP.md) 7** | medium, and it can make grammar bugs silent |
 | 6 | **A guard on a rule** (§3.2) | thin — two candidates, neither strong | very small; the backtracking is already there |
 | 7 | Editor mode from the header (§3.8) | none | small |
 | 8 | More than one error per run (§3.9) | none | small |

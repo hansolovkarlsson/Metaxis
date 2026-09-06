@@ -10,6 +10,16 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**Stage 5: the tool rewrites its own front end.** `lib/island.mx` is a
+text-mode rewrite of one `fprintf` shape into a call, with the definition
+inserted; `tests/island.sh` runs it over `metaxis/cmd/mx.c`, compiles the
+result against the tree's objects, and runs it. Text mode was an island grammar
+already and nothing was built; what it lacks is [ROADMAP.md](ROADMAP.md) 7.
+
+**A led rule in text mode is refused** — `a rule that begins with a hole is
+infix, and text mode has nothing for it to continue — it could never fire`. It
+used to be accepted and never fire.
+
 **Stage 4: BASIC→C.** `examples/basic.mx` reads line-numbered BASIC — `LET`,
 `PRINT`, `IF … THEN`, `GOTO`, `FOR`/`NEXT`, `END`, string variables with `$` —
 and writes C with a label per line. `tests/basic.sh` compiles it, runs it and

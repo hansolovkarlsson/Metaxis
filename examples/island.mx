@@ -1,0 +1,21 @@
+; island.mx -- the rules in lib/island.mx, over a body that is C and not a
+; program written for a grammar. The body below is four lines shaped like
+; the ones in metaxis/cmd/mx.c; tests/island.sh points the same rules at
+; that file itself, compiles what comes out against the tool's own objects,
+; and runs the result. Stage 5.
+;
+; Three of the four lines change and one does not: the last is a different
+; format string, and the rule's pattern is the whole call up to the
+; argument, so it passes through. The third is the nested case -- a hole
+; over `f(x, g(y))` stops at the first `)` and the template keeps the hole
+; last, so the leftover `))` is copied through and the result is right.
+; Reorder the template and it would not be; lib/island.mx says why.
+
+@use "../lib/island.mx"
+@end
+static void usage(void)
+{
+    if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }
+    fprintf(stderr, "mx: %s\n", f(x, g(y)));
+    fprintf(stderr, "mx: cannot write %s\n", outpath);
+}

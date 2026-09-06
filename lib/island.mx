@@ -1,0 +1,34 @@
+; island.mx -- a rewrite over real C, in text mode. Stage 5's rules.
+;
+; The body this is used on is not written to fit a grammar: it is
+; metaxis/cmd/mx.c, the tool's own front end, exactly as it is in the tree.
+; Text mode is an island grammar by construction -- a rule fires where it
+; matches and everything else is copied through -- so a file that declares
+; two constructs can be pointed at a real file and leave the rest alone.
+; That is what the survey in docs/prior-art.md §3.3 said was the strongest
+; thing this tool lacked, and text mode turned out to have it already.
+;
+; The rewrite: every `fprintf(stderr, "mx: %s\n", X)` becomes `complain(X)`,
+; and `complain` is defined in front of `usage`, which is the one line that
+; file has where a definition can go. That landmark is a workaround and says
+; so: the honest place is *before the first function*, and nothing here can
+; say that -- docs/ROADMAP.md 4 is the same wall from the BASIC side.
+;
+; What text mode does not know, measured on this file and recorded in
+; docs/ROADMAP.md 7: it has no tokens, so a word fires inside an identifier or
+; a string; it has no brackets, so a hole over `f(x, g(y))` stops at the first
+; `)` and is right only when the template keeps the hole last; and declaring
+; C's comments would remove them. The two rules below are written to stay
+; inside what it does know.
+;
+; Two things about writing C from a string template. `{` is a hole, so C's
+; braces are `{{ }}`; and `\n` is a newline, so the C source's own `\n` is
+; `\\n`. A code template has neither problem and is the form to reach for
+; when the C gets longer than a line.
+
+@mode text
+
+@syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"  => "complain({e})"
+
+@syntax "static void usage(void)"
+    => "static void complain(const char *e) {{ fprintf(stderr, \"mx: %s\\n\", e); }}\n\nstatic void usage(void)"

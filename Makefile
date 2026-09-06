@@ -92,6 +92,7 @@ check: $(BIN)
 	LIMIT=$(LIMIT) sh tests/docs.sh ./$(BIN) || fail=1; \
 	LIMIT=$(LIMIT) sh tests/pascal.sh ./$(BIN) || fail=1; \
 	LIMIT=$(LIMIT) sh tests/basic.sh ./$(BIN) || fail=1; \
+	LIMIT=$(LIMIT) sh tests/island.sh ./$(BIN) || fail=1; \
 	LIMIT=$(LIMIT) sh tests/asm.sh ./$(BIN) || fail=1; \
 	LIMIT=$(LIMIT) sh tests/python.sh ./$(BIN) || fail=1; \
 	LIMIT=$(LIMIT) sh tests/scale.sh ./$(BIN) || fail=1; \

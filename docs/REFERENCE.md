@@ -737,7 +737,9 @@ If the body does not parse, the error names the furthest token reached:
 `@mode text`. The body is scanned; where a rule matches it fires; everything
 else is copied through unchanged.
 
-- Only **nud** rules apply. A led rule has nothing to continue.
+- Only **nud** rules apply, and a led rule is refused: `a rule that begins with
+  a hole is infix, and text mode has nothing for it to continue — it could never
+  fire`. Until 2026-09-06 it was accepted and silently never fired.
 - **Matching is a search, not a scan.** A rule takes an alternative, tries the
   whole remainder of its pattern, and puts the cursor and every binding back if
   it fails. That is what groups need — an optional part may or may not be there,
@@ -1060,6 +1062,7 @@ Every message the tool can produce, and what it means.
 | `expected a kind after ':'` | a hole wrote `:` and stopped |
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
 | `'x:name' asks for one token of a class, and text mode has no tokens` | §7 |
+| `a rule that begins with a hole is infix, and text mode has nothing for it to continue — it could never fire` | §7 |
 | `a rule needs a pattern` | `@syntax => "…"` |
 | `trailing text after the template` | something after the template that is not `terminated` or `override` |
 | `an empty word matches nothing` | `""` as a pattern element |

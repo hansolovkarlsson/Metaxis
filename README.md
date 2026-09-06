@@ -57,8 +57,8 @@ not.
 
 ```
 make            # bin/mx
-make check      # every example against the .out beside it, then the eight
-                # scripts in tests/ -- five of which run what they produced,
+make check      # every example against the .out beside it, then the nine
+                # scripts in tests/ -- six of which run what they produced,
                 # one of which is large enough to show a quadratic, and one
                 # of which runs the transcripts in docs/
 ```
@@ -84,6 +84,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [pascal.mx](examples/pascal.mx) | Pascal in, C out — stage 1. `program`, `var`, `procedure`, `function`, `begin`/`end`, `if`, `while`, `for`, `repeat`, `case`, calls, and the operator words. `pascal.out` keeps its parenthesis noise, which is the cost of agnosticism showing itself, and is the one output here that is expected not to compile |
 | [python.mx](examples/python.mx) | Python in, C out — stage 3, and a block that is an **indentation**. `@separator "\n" indent` gives the lexer a stack of columns and a `block` hole reads what it emits: the one delimiter in the notation that is not a string, because an indent is not text anybody wrote. Its body is real Python, and `tests/python.sh` runs it under `python3` as well as compiling the C, so the two answers can be compared |
 | [basic.mx](examples/basic.mx) | BASIC in, C out — stage 4, and a source that **declares nothing**. A line number is the left operand of its statement, `FOR` and `NEXT` are two statements the way BASIC means them, and the type of a variable is the sigil on its name. What it cannot write is the line C wants first, `int T, I, N;`, because that is the aggregate of every line below it; `tests/basic.sh` writes that line by hand and is pinned to fail the day the translator starts to |
+| [island.mx](examples/island.mx) | stage 5: **C in, C out, over a file not written for it.** The rules in [lib/island.mx](lib/island.mx) turn one `fprintf` shape into a call and insert its definition, and leave everything else alone; `tests/island.sh` points them at `metaxis/cmd/mx.c` itself, compiles what comes out against the tool's own objects, and runs it. Text mode was an island grammar all along |
 | [poem.mx](examples/poem.mx) | `@mode text`: prose in, HTML out |
 | [reserved.mx](examples/reserved.mx) | every character Metaxis writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.mx](examples/use.mx) | `@use`, taking its arithmetic from [lib/arith.mx](lib/arith.mx) and keeping its own comment and separator — a diamond through [lib/vector.mx](lib/vector.mx), and an `override` of one of arith's rules |

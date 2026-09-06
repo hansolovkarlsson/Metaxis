@@ -10,6 +10,59 @@ argued away.*
 
 Newest first.
 
+## Stage 5 — the tool rewrites its own front end, and text mode was the island
+
+```
+$ mx examples/island.mx
+static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
+
+static void usage(void)
+{
+    if (!src) { complain(err); return 1; }
+    complain(f(x, g(y)));
+    fprintf(stderr, "mx: cannot write %s\n", outpath);
+}
+```
+
+**Rehearsed first, by the stage 3 method, and the rehearsal was the stage.**
+The survey's strongest finding was the island rule — text a file has no rule
+for passes through — and its three proposed shapes were all for expression
+mode. The cheapest thing that tested it cost no tool change: text mode already
+scans, fires a rule where one matches, and copies everything else, so a
+five-line header was pointed at `metaxis/cmd/mx.c` — the tool's own front end,
+a file written for no grammar — to turn `fprintf(stderr, "mx: %s\n", err)`
+into `complain(err)` and insert the definition. Six call sites changed, the
+seventh with a different format string did not, and the rewritten tree built
+and passed every check. That result was then made permanent: the rules are
+`lib/island.mx`, `examples/island.mx` runs them over four representative
+lines, and `tests/island.sh` concatenates them with the real `mx.c` at test
+time — so the two can never drift — compiles what comes out against the
+tree's own objects, and runs the binary on `examples/first.mx` and on a
+missing file. Same output, same message, through `complain`.
+
+**What the rehearsal measured**, each by running it, is
+[ROADMAP.md](ROADMAP.md) 7: a bare word fires inside identifiers and strings
+(`usage` → `help` rewrote the usage string; `err` → `e` made `stde`), a hole
+stops at the first `)` and is right only when the template keeps it last, and
+declaring C's comments removes them. The example's third line records the
+bracket accident on purpose, the way `tests/hygiene.sh` records `bump`.
+
+**What it found in the tool.** A led rule in text mode — `a "->" b` — was
+accepted and silently never fired: `p->f` came through unchanged with exit 0.
+The reference said *a led rule has nothing to continue* and nothing enforced
+it, which is the shape of defect `seal_check` was written to refuse. It is
+refused now, at the same place, once the header has finished: `a rule that
+begins with a hole is infix, and text mode has nothing for it to continue — it
+could never fire`. `tests/errors.sh` case 79.
+
+**And two things about writing C from a string template** that the first draft
+got wrong on its first run: `{` is a hole, so C's braces are `{{ }}`, and `\n`
+is a newline, so the source's own `\n` is `\\n`. A code template has neither
+problem.
+
+Verified at 16 examples, 79 error cases and **nine** check scripts — 113 `ok`
+lines, seven of them transcripts, the one above included.
+
 ## Stage 4 — BASIC→C, and the wall it was picked to reach
 
 ```

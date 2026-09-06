@@ -193,6 +193,15 @@ expect "text mode has no tokens" <<'EOF'
 @mode text
 EOF
 
+# A led rule in text mode. Until 2026-09-06 this was accepted and the rule never
+# fired: `p->f` came through a text-mode file unchanged, with no message and
+# exit 0. Same shape as the class-kind case above -- a rule that reads as if it
+# worked -- and refused at the same place, once the header has finished.
+expect "text mode has nothing for it to continue" <<'EOF'
+@syntax a "->" b 50 => "{a}.{b}"
+@mode text
+EOF
+
 # Two files declaring one thing. The hole names differ on purpose: what makes
 # the second rule unreachable is its pattern, and a pattern does not know what
 # its holes were called.

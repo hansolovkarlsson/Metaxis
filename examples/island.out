@@ -1,0 +1,8 @@
+static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
+
+static void usage(void)
+{
+    if (!src) { complain(err); return 1; }
+    complain(f(x, g(y)));
+    fprintf(stderr, "mx: cannot write %s\n", outpath);
+}

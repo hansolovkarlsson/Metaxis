@@ -1205,9 +1205,21 @@ int grammar_seal(Grammar *g, char **err)
     qsort(g->punct, (size_t)g->npunct, sizeof *g->punct, cmp_len);
 
     if (g->mode == MODE_TEXT)
-        for (int r = 0; r < g->nrule; r++)
+        for (int r = 0; r < g->nrule; r++) {
+            /* Text mode fires nud rules only: a led rule wants a left operand
+               already parsed, and a scan has none. Until 2026-09-06 such a
+               rule was accepted and simply never fired -- a rule that reads as
+               if it worked, which is the shape of defect seal_check exists to
+               refuse. The island rehearsal in the journal is what found it. */
+            if (g->rule[r].led) {
+                *err = xfmt("%s:%d: a rule that begins with a hole is infix, and"
+                            " text mode has nothing for it to continue -- it could"
+                            " never fire", g->rule[r].file, g->rule[r].line);
+                return -1;
+            }
             if (seal_check(g, &g->rule[r], g->rule[r].el, g->rule[r].nel, err) < 0)
                 return -1;
+        }
     for (int r = 0; r < g->nrule; r++)
         if (seal_block(g, &g->rule[r], g->rule[r].el, g->rule[r].nel, err) < 0)
             return -1;

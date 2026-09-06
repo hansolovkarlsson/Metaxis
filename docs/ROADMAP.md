@@ -31,6 +31,7 @@ on introducing new mechanics and test them out properly.*
 | **2 · done** | C | arm64 | output that is not an expression tree — labels, order, a machine |
 | **3 · done** | Python | C | a language whose blocks are indentation |
 | **4 · done** | BASIC | C | a source that declares nothing — the head of the output is determined by its body |
+| **5 · done** | C | C | a real file, not one written to fit — the tool rewriting its own front end |
 
 Stage 2 landed on 2026-09-05 as `examples/asm.mx` and `tests/asm.sh`. **The
 output side generalises**, which was the question: a rule's value became *the
@@ -68,6 +69,18 @@ with `replace`, which is the wall stage 1 hit at `writeln` dissolved by choice
 of source. **It cost the tool nothing** — no directive, no builtin, no line of
 C — and what it owes is 4 below. `tests/basic.sh` writes the four declarations
 by hand and is pinned to fail the day the translator starts writing them.
+
+Stage 5 landed on 2026-09-06 as `lib/island.mx`, `examples/island.mx` and
+`tests/island.sh`, the same day it was rehearsed. The survey had said the
+island rule — text the file has no rule for passes through — was the strongest
+thing the tool lacked and the one that would change what it could be pointed
+at. **Text mode had it already.** A five-line rewrite over `metaxis/cmd/mx.c`,
+the tool's own front end and a file written for no grammar, turns six error
+calls into `complain(err)` and inserts the definition; the test compiles the
+result against the tree's own objects, runs it, and it is the same tool. What
+it cost: one error, for a led rule in text mode, which was accepted and silently
+never fired until the rehearsal wrote one. What it owes is 7 below — the three
+things text mode does not know, measured on that file rather than predicted.
 
 **The staging exists to say where the *pressure* comes from** — one translator
 at a time, taken far enough to be compiled and run, so that no feature is built
@@ -290,6 +303,62 @@ anything about the output language — where in C it is safe to substitute, how
 to indent it — then the agnosticism is spent and the feature is not worth it.
 The stage 3 method applies: rehearse the pass by hand on `examples/basic.out`
 first, and write the plan after.
+
+## 7 · The island rule — text mode wants a lexer
+
+*Numbered 7 because a number here is stable once given; by this page's own
+order it belongs after 4, being stage 5's.*
+
+**The customer.** `tests/island.sh` rewrites `metaxis/cmd/mx.c` with
+`lib/island.mx` and runs the result, so a rewrite over a real file exists and
+is checked. It works because its two rules stay inside what text mode knows.
+The rehearsal that preceded it — `scratch/island/` on the day, the journal
+after — tried the three things a rewrite over real C wants next, and each one
+failed in a way that is now measured:
+
+- **No tokens.** Renaming `usage` also rewrote the word inside the usage string;
+  renaming `err` turned `stderr` into `stde`. A rename over real code is wrong
+  without an identifier boundary, and a text-mode hole is a run of characters.
+  [REFERENCE.md](REFERENCE.md) §7 already refuses a class kind in text mode
+  and says honouring it is this page's job *if anybody asks*. This is somebody
+  asking.
+- **No brackets.** A hole over `f(x, g(y))` stops at the first `)`. The rewrite
+  in `lib/island.mx` comes out right only because its template keeps the hole
+  last, so the leftover `))` is copied through behind it; a template that reused
+  the hole wrote `log(f(x, g(y); complain(f(x, g(y)))`. `examples/island.mx`
+  records the accident on purpose.
+- **Comment-aware means comment-removing.** Declaring C's `/* */` so that rules
+  stop firing inside comments deleted the comments from the output — six lines
+  of `mx.c` — because a text-mode comment is removed, which is right for a
+  document and wrong for a rewrite that must give the file back.
+
+**What this says about the shape.** The survey offered three shapes for
+islands in *expression* mode — skip a token, skip to the separator, a declared
+fallback rule — and the rehearsal did not ask for any of them. What the rewrite
+wants is text mode plus the three things Comby knows and nothing more:
+identifiers, balanced brackets, and strings and comments that are *skipped over*
+rather than removed. That is a smaller mechanic than any of the three, it does
+not touch expression mode, and it does not touch the completeness that lets an
+expression grammar report its own bugs. Each piece has its own decision:
+
+- a class kind in text mode would have to mean *one token of this class, at a
+  boundary* — which is a lexer inside a scan, and where the token ends is the
+  question;
+- a bracket-aware hole needs to know which characters are brackets, and
+  [ROADMAP.md](ROADMAP.md) 2 has already met the question of whether a bracket
+  is declared (`@bracket "(" ")"`) or known;
+- a comment that is skipped rather than removed is a third thing `@comment`
+  would mean, and may want its own word.
+
+**And one thing the stage could not do**, which is not this item's: the
+definition of `complain` went in front of `usage` because that line happened
+to exist. The honest place is *before the first function*, and saying that is
+[ROADMAP.md](ROADMAP.md) 4's second decision, met now from C as well as BASIC.
+
+**Why it is not built today.** Each piece has a customer in the rehearsal and
+none in a file that ships; the rewrite that ships was written to need none of
+them. Build the first piece when a rewrite is wanted that a bare-word rule gets
+wrong, which will be the first rename.
 
 ## 5 · Source maps
 
