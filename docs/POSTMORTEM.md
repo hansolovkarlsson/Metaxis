@@ -12,6 +12,72 @@ Newest first.
 
 ---
 
+## 24 · A reference that typeset the messages it quoted
+
+**Issue.** Twenty-five error messages quoted in backticks in
+[REFERENCE.md](REFERENCE.md) §10 and in [COMPLETED.md](COMPLETED.md) and
+[CHANGELOG.md](CHANGELOG.md) showed an em dash where the tool prints two
+hyphens. Every one was a message the tool really produces, and none was the
+message as written.
+
+**Root cause.** The messages were transcribed into the page and then typeset
+as prose, so the page's punctuation habit reached into the quotes. Nothing
+compared a quoted message to the source: `tests/errors.sh` pins each message
+by a fragment, and no fragment crossed the spot where the dash stood, and
+`tests/docs.sh` runs transcripts, which these were not.
+
+**What found it.** A style sweep, on 2026-09-06, for a rule about prose. The
+check for that rule exempts code spans, so it did not flag them either; an
+agent counting what its exemption covered noticed that the spans held a
+character the tool never emits. `grep` of the sources for the em dash
+confirmed the tool has none.
+
+**Solution.** Each span was checked against the line in `metaxis/src` that
+prints it and made verbatim.
+
+**Learnings.** **A quotation in backticks is a claim that the tool says
+this, and it is unchecked unless something compares it.** Entry 19 was the
+same lesson for a transcript, and a transcript is now run. A quoted message
+is the smaller case of the same thing, and what would catch it is small: every
+backticked message on the errors page is a substring of a string literal in
+the source. That check is not built. Until it is, the errors page is the one
+place in the reference that says what the tool prints without running it.
+
+---
+
+## 23 · A check that passed on no input, twice in one file that warns about it
+
+**Issue.** The prose check in `tests/hygiene.sh` printed `ok` on its first
+run over a tree holding 679 lines it should have refused. Earlier the same
+afternoon the roadmap check had been placed the same way and happened to be
+harmless.
+
+**Root cause.** The check's code was inserted at the comment that describes
+it, which is in the file's preamble, above the line that computes the list of
+tracked files. `xargs awk` with an empty list runs awk on standard input,
+which was empty, so the scan found nothing and reported nothing wrong. The
+file's own note on the limit guard says a check that passes when its own
+machinery breaks is worse than no check; the note was read while the code was
+written and did not prevent it.
+
+**What found it.** Reading the output order. The new `ok` line printed before
+the limit guard's, which runs first in the file, so the check had run before
+its input existed.
+
+**Solution.** The code moved below the line that lists the files, and the scan
+now refuses an empty list as a failure. The two plants that proved the roadmap
+check, a stale citation and a deleted heading, were repeated for this one.
+
+**Learnings.** **Every input to a check is a thing that can be empty, and the
+empty case is a pass unless it is refused by name.** The limit guard learned
+this for a regex awk could not parse; this is the same lesson for a file list.
+The general form is that a check reports what it scanned as well as what it
+found, and the line it prints should make an empty scan visible: a count of
+files, or a refusal. A note in a file does not prevent the mistake the note
+describes; a line of code that fails does.
+
+---
+
 ## 22 · A test's own watchdog wrote into what the test compared
 
 **Issue.** The first deploy of the website went out green while the suite's

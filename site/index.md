@@ -72,6 +72,8 @@ suite, and each picked because it would ask the tool for something:
   declined.
 - **[Prior art](prior-art.html)**: the tools that do something like this,
   and how this one scores against them.
+- **[Languages](languages.html)**: which languages the tool can be pointed
+  at and which it cannot, each verdict resting on a stated property.
 - **[Changelog](changelog.html)** and **[Roadmap](roadmap.html)**: when
   things shipped, and what is not built and why.
 

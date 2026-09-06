@@ -10,6 +10,23 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**The reference says what a second engine must match.** §3.1: a token
+pattern is POSIX extended, leftmost-longest, the engine's to implement rather
+than its host's. §8.2: a fresh name is `label__N` on one counter for the run,
+pinned as language because it is output. §10: what the language fixes is that
+a file is refused, on standard error, with status 1, naming file and line;
+the wording is the engine's own. Exit status had not been documented before.
+§11: the limits are minimums, and the tab width is a definition. **Every
+document is under a style rule**: no em dash in general prose, and every page
+of the site reads with commas, periods and colons instead. Twenty-five error
+messages quoted in the reference and the records were typeset with an em dash
+where the tool prints two hyphens, and are now verbatim. **The tutorial's
+section on `-b`** now shows the fallback in the output and the three refusals
+around the flag, with one new runnable file. **`make check` holds three more
+properties**: every roadmap citation resolves to an item, no roadmap item
+vanishes between HEAD and the tree unless `SETTLED='N'` says this commit moves
+it, and no em dash stands in general prose.
+
 **A tutorial**, `docs/tutorial.md`, with sixteen runnable files under
 `docs/tutorial/`: one concept per section, every statement and builtin a code
 template has in two tables, and every transcript checked by `make check`.
@@ -76,6 +93,16 @@ space rather than two before `terminated`. The trace `-t` writes is unchanged.
 
 **The first transcript in [REFERENCE.md](REFERENCE.md) said `pt`**, the tool's
 name before 2026-09-05. It says `mx`.
+
+**A page of languages**, `docs/languages.md`, on the site as *Languages*:
+which languages the tool can be pointed at and which it cannot, from a
+notation of your own, Pascal, BASIC, Python, Lua, SQL and JSON to C, C++,
+the shell, Haskell and Lisp, each verdict resting on one of seven stated
+properties of the tool, every property run against the tool the day it was
+written. Two of the runs moved a verdict: an argument list separated by
+nothing but whitespace is unreadable in expression mode, which puts Lisp on
+the unfit list, and XML's character data is a token only by position, which
+puts XML there beside it. Text-mode rewrites over both remain fit.
 
 ## 2026-09-05
 
