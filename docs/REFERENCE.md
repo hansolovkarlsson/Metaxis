@@ -165,6 +165,15 @@ applies — so `"0x[0-9a-fA-F]+|[0-9]+"` takes all of `0x0c` and not just the `0
 @token string "'([^']|'')*'"
 ```
 
+- **The dialect is the language's, not the host's.** A pattern means what
+  POSIX says it means — IEEE Std 1003.1 `regcomp` with `REG_EXTENDED`,
+  matched leftmost-longest — and an engine written in a language whose own
+  regexes are leftmost-first, which is Perl's rule and so nearly everyone's,
+  implements the POSIX rule for token classes rather than handing the pattern
+  to its library. Tokens meaning whatever the host does would let one file lex
+  two ways on two engines, and the premise here is that the file says what it
+  means. A pattern that leans on an extension one libc offers past POSIX is
+  leaning on that libc, and a file that means to travel avoids it.
 - Matching is case sensitive.
 - `.` matches a newline, so a class **may span lines**. That is how a multi-line
   string literal would be declared, and how one is declared by accident.
@@ -870,6 +879,15 @@ occurs anywhere in the source being expanded or in any template any rule
 declared, `@use` included; the test is a substring test, so it is conservative
 in the safe direction — `t__1` is refused while `t__12` is in the file.
 
+**The names are output, and so they are language.** A fresh name is
+`label__N`: the label, two underscores, and a decimal `N` drawn from **one
+counter for the whole run**, which starts at 1 and advances by one for every
+candidate tried, taken or not, across every label — a file that asks for `t`,
+`L`, `t` gets `t__1`, `L__2`, `t__3`. The `.out` beside every example is
+compared byte for byte, so an engine that produced other names would produce
+other output; the scheme is pinned here on purpose rather than left as this
+tool's habit. What is not pinned is how the taken-test is done, only its answer.
+
 `fresh("t")` is the same thing in a code template: **one name per label per
 application**, so two `fresh("L")` in one template are one name and
 `fresh("Lelse")` beside it is another. It draws from the same counter, so a
@@ -1116,6 +1134,15 @@ one `/` is listed.
 
 Every message the tool can produce, and what it means.
 
+**What the language fixes is that the file is refused, and where.** An engine
+that reads Metaxis refuses every file this one refuses, writes the refusal to
+standard error, exits with status 1, and names the file and line wherever a
+message below names one; the *wording* is this implementation's, and another
+engine's may be its own. `tests/errors.sh` pins the wording all the same,
+because for this engine a message is a surface that goes stale like any other —
+a second engine would pin its own. Status 2 is a command line the tool could
+not read, or memory it could not get.
+
 ### In the header
 
 | message | means |
@@ -1243,6 +1270,14 @@ Every message the tool can produce, and what it means.
 | fresh-name attempts | 100000 |
 | everything else | memory |
 
+**These are minimums, and one of them is a definition.** A file that stays
+inside every row is valid input to any engine that reads Metaxis, and an engine
+may reach further; what it does past a row is its own, and this one stops with
+the message §10 gives for it. The exception is the tab: 8 columns is not a
+ceiling but what a tab *means* under `@separator … indent` (§6.1), and an engine
+that counted differently would read a different program. The fresh-name row
+bounds attempts, not names; the counter itself is in §8.2.
+
 The tool allocates and never frees. It reads one file and exits.
 
 ---
@@ -1315,8 +1350,10 @@ Where a term has one home and several mentions, the home is first.
 | Directives, the grammar of | 3 |
 | `drop(s, front, back)` | 8.3 |
 | `emit` | 8.3 |
+| Engine, what a second one must match | 3.1, 8.2, 10, 11 |
 | Errors, every message | 10 |
 | Escapes in a string, the five | 2.4 |
+| Exit status | 10 |
 | Expression mode | 6, 3.6 |
 | `expr` kind | 4.3, 5 |
 | Fixity, read off the pattern | 4.1 |
@@ -1344,6 +1381,7 @@ Where a term has one home and several mentions, the home is first.
 | `num(h)` | 8.3 |
 | `override` | 3.10 |
 | Pattern | 4, 4.1, 4.2 |
+| POSIX, the regex dialect | 3.1 |
 | Postfix | 4.1 |
 | Pratt parser | 6.2 |
 | Prefix | 4.1 |
