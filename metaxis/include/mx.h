@@ -159,6 +159,7 @@ typedef struct {
     int   sep_indent;             /* and indentation opens a block  */
     char *sep_file; int sep_line; /* where it was declared          */
     int   mode;
+    char *mode_file; int mode_line; /* where @mode was declared, if it was */
     int   nfiles;                 /* @use depth guard               */
     char **seen; int nseen;       /* @use reads a file once         */
 } Grammar;

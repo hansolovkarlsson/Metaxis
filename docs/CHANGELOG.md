@@ -10,6 +10,15 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`@mode` declared twice is refused**, unless the second says `override`, as
+every other repeatable declaration already was. `@mode` also **refuses trailing
+text** now, which `@token` and `@separator` began doing earlier the same day and
+this one was missed by. Together those closed a third silence nobody had listed:
+`@mode expression override` parsed and meant nothing, because the word after the
+mode was ignored. New messages: `the mode is already declared at f:n -- write
+'override' to mean it`, `'override', but no mode was declared before it`, and
+`trailing text after @mode`.
+
 **`@separator "…" indent`, and the `block` kind** — a language whose blocks are
 an indentation can now be read. `indent` makes the lexer keep a stack of columns
 and emit two tokens no file spells, an *indent* where a line is deeper than the

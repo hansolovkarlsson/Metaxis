@@ -10,6 +10,46 @@ argued away.*
 
 Newest first.
 
+## `@mode` stops replacing itself in silence
+
+```
+@mode text
+@mode expression override
+```
+
+`@mode` was the last global that a second declaration replaced without saying
+so. A rule's pattern, `@token`, `@separator`, `@template` and `@fragment` all
+refuse a second unless it says `override` (REFERENCE §3.10); this one did not,
+and it was left out because the scope of that work had been settled as three
+directives and widening it unasked is what the item it came from existed to
+prevent. Now six things take `override` and none is an exception.
+
+**The item named one silence and there were three.** `@mode expression zzz` also
+ignored the `zzz` — `@token` and `@separator` had been taught to refuse trailing
+text earlier the same day and `@mode` was missed by that work too. And the two
+together had made a third: **`@mode expression override` parsed, and meant
+nothing**, because the word after the mode was never read. All three are closed
+by the same eight lines, and the third could only ever have been found by
+writing the first two.
+
+**Why `override` rather than a flat refusal**, which was the item's open
+question. A second `@mode` in one file is always a mistake — but **two used
+files are the case that cannot be written around.** A file with no body can
+still declare the mode its rules need, because a set of text-mode rules is
+usable only in text mode, and a file that uses two such libraries has to be able
+to say which it meant. That is exactly the problem `override` was built for one
+directive over, and giving `@mode` a second mechanic of its own would have been
+a new concept for no gain. The word does not become noise: `override` with
+nothing to displace is an error here as everywhere else.
+
+Verified at 13 examples, **72 error cases** and five check scripts — three new
+cases, one per silence — and **91 `ok` lines**. Closes the roadmap's
+**`@mode` declared twice**, which is why the items below it moved up.
+
+*(Named, not numbered. An entry here that said "closes ROADMAP 4" was wrong
+within the hour, because closing an item renumbers the ones under it and the
+number is handed to something else. A completion record cites what it closed.)*
+
 ## The limit guard: a property, where a number used to be
 
 `tests/hygiene.sh` now runs two checks, and the new one is four lines of `awk`
@@ -47,7 +87,8 @@ this suite to guard its own failure rather than only the tool's.
 
 Proved by planting a violation — `"$MX" examples/first.mx` appended to
 `tests/asm.sh` — and watching it come back with the file and line, then
-removing it. Closes ROADMAP 5, which is why the items below it moved up.
+removing it. Closes the roadmap's **check that every run of `mx` is under the
+limit**, which is why the items below it moved up.
 
 Verified at 13 examples, 69 error cases and five check scripts, **88 `ok` lines**
 where there were 87.
@@ -115,7 +156,7 @@ scored by evidence from outside the repository.
 pattern side and quoted output inside `.OUT` in 1964, which is this notation's
 premise, both halves, on a machine with 8K of six-bit memory. `examples/code.mx`
 is 272 lines duplicated from `examples/pascal.mx` and that is a maintenance cost
-rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 5. And **collection
+rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 4. And **collection
 attributes** (JastAdd, Silver) are a better-shaped answer to
 [direction.md](direction.md)'s declared environment than the key/value store it
 sketches: contribution is union rather than assignment, so two `@use`'d files
@@ -234,7 +275,7 @@ operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
 print `40 80 50`.
 
 **What the example does not do, in its own closing note.** `elif` is one rule
-per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 7 declines to build
+per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 6 declines to build
 for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
 thing rather than reading it. C's types come off Python's annotations or nowhere,
 which is the stage-1 wall in its honest form. And the example says `twice`

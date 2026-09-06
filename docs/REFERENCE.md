@@ -115,7 +115,7 @@ in a `@use`d file, not anywhere. It is the boundary the whole notation rests on.
 
 ```ebnf
 directive   = "@use"       string
-            | "@mode"      ( "expression" | "text" )
+            | "@mode"      ( "expression" | "text" ) [ "override" ]
             | "@token"     name string [ "override" ]
             | "@comment"   string ( string | "eol" )
             | "@separator" string [ "=>" string ] [ "indent" ] [ "override" ]
@@ -260,11 +260,21 @@ belong to the file being written and not to the arithmetic in it.
 Two used files that declare one thing are refused, and a file says which it
 meant. §3.10.
 
-### 3.6 `@mode expression` · `@mode text`
+### 3.6 `@mode expression [override]` · `@mode text [override]`
 
 `expression` is the default and parses the whole body with the declared grammar,
 calling anything unmatched an error. `text` scans the body, fires a rule where
 one matches, and copies everything else through. §7.
+
+**Declaring it twice is refused** unless the second says `override`, as
+everything else is (§3.10). Nothing may follow but `override`; anything else is
+`trailing text after @mode`.
+
+A second `@mode` in one file is always a mistake, and it still takes `override`
+rather than being refused outright, because **two used files are the case that
+cannot be written around**: a file with no body can declare the mode its rules
+need — a set of text-mode rules is usable only in text mode — and a file that
+uses two such libraries has to be able to say which it meant.
 
 ### 3.7 `@end`
 
@@ -360,8 +370,8 @@ not one, for the reasons below.
 
 ### 3.10 `override` — two files declaring one thing
 
-Five things can be declared twice: a rule's pattern, a `@token` class name,
-`@separator`, a `@template` name, and a `@fragment` name. **Unmarked, the second is an error naming both lines.** Marked
+Six things can be declared twice: a rule's pattern, a `@token` class name,
+`@separator`, `@mode`, a `@template` name, and a `@fragment` name. **Unmarked, the second is an error naming both lines.** Marked
 `override`, the second wins and nothing is said — because it was said in the
 source.
 
@@ -1052,6 +1062,8 @@ Every message the tool can produce, and what it means.
 | `'override', but no class 'x' was declared before it` | §3.10 |
 | `the separator is already declared at f:n — write 'override' to mean it` | §3.10 |
 | `'override', but no separator was declared before it` | §3.10 |
+| `the mode is already declared at f:n — write 'override' to mean it` | §3.10 |
+| `'override', but no mode was declared before it` | §3.10 |
 | `no fragment called '@p'` | §3.9 — spliced before it was declared, or never declared |
 | `expected a fragment's name after '@'` | a bare `@` in a pattern — §3.9 |
 | `a fragment needs something in it` | `@fragment p =` with no pattern — §3.9 |
@@ -1063,7 +1075,7 @@ Every message the tool can produce, and what it means.
 | `'indent' needs a separator with a newline in it` | §3.3 |
 | `'b:block' wants a block, and nothing here opens one` | a `block` hole and no `@separator … indent` — §4.3 |
 | `'b:block' asks for an indented run of statements, and text mode has no tokens…` | §7 |
-| `trailing text after @token` · `trailing text after @separator` · `trailing text after @fragment` | a word after the directive that is not one of its own |
+| `trailing text after @token` · `trailing text after @separator` · `trailing text after @mode` · `trailing text after @fragment` | a word after the directive that is not one of its own |
 
 ### In the body
 

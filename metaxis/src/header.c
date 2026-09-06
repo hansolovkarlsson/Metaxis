@@ -527,9 +527,41 @@ static int directive(Grammar *g, D *d, const char *file, int line,
     if (!strcmp(name, "mode")) {
         char *m = dident(d);
         if (!m) { derr(d, "expected 'expression' or 'text'"); goto fail; }
-        if (!strcmp(m, "expression")) g->mode = MODE_EXPR;
-        else if (!strcmp(m, "text"))  g->mode = MODE_TEXT;
+        int mode;
+        if (!strcmp(m, "expression")) mode = MODE_EXPR;
+        else if (!strcmp(m, "text"))  mode = MODE_TEXT;
         else { derr(d, "expected 'expression' or 'text'"); goto fail; }
+        /* `override` after the mode, and trailing text refused, for the same
+           reasons `@separator` does both. `@mode` was the last global doing
+           neither: a second one replaced the first in silence, and anything
+           after the word was ignored -- so `@mode expression override` was
+           accepted today and meant nothing.
+
+           It takes `override` rather than being flatly refused because two
+           *used* files are the case that cannot be written around. A file with
+           no body can still declare the mode its rules need -- a set of
+           text-mode rules is only usable in text mode -- and a file that uses
+           two such libraries has to be able to say which it meant. That is the
+           same problem `override` was built for one directive over, and giving
+           `@mode` a second mechanic of its own would be a new concept for no
+           gain. A second `@mode` in one file is still always a mistake; it is
+           just a mistake the word makes you write down. */
+        int over = dtake(d, "override");
+        if (dend(d, "@mode") < 0) goto fail;
+        if (g->mode_file && !over) {
+            derr(d, xfmt("the mode is already declared at %s:%d"
+                         " -- write 'override' to mean it",
+                         g->mode_file, g->mode_line));
+            goto fail;
+        }
+        if (!g->mode_file && over) {
+            derr(d, "'override', but no mode was declared before it");
+            goto fail;
+        }
+        free(g->mode_file);
+        g->mode_file = xstrdup(file);
+        g->mode_line = line;
+        g->mode = mode;
         return 0;
     }
     if (!strcmp(name, "token")) {

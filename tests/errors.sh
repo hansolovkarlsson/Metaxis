@@ -431,6 +431,36 @@ if a
     b
 EOF
 
+# `@mode` was the last global that replaced itself in silence and the last one
+# that ignored whatever followed it -- so `@mode expression override` parsed and
+# meant nothing. Three cases, because there were three silences and the roadmap
+# item had named one.
+
+expect "the mode is already declared at" <<'EOF'
+@mode text
+@mode expression
+@token name "[a-z]+"
+@syntax "hi" => "yo"
+@end
+hi
+EOF
+
+expect "trailing text after @mode" <<'EOF'
+@mode expression zzz
+@token name "[a-z]+"
+@syntax "hi" => "yo"
+@end
+hi
+EOF
+
+expect "'override', but no mode was declared before it" <<'EOF'
+@mode expression override
+@token name "[a-z]+"
+@syntax "hi" => "yo"
+@end
+hi
+EOF
+
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"
 fi

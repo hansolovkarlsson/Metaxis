@@ -214,22 +214,7 @@ aid for a grammar under construction at the same time.
 [prior-art.md](prior-art.md) § 3.7 has it, and the tools that treat *watching
 the parse* as part of the job rather than a luxury.
 
-## 4 · `@mode` declared twice
-
-A rule's pattern, `@token`, `@separator`, `@template` and `@fragment` are all
-refused when declared twice without `override` (REFERENCE.md §3.10). `@mode` is
-the one global that is not:
-a second `@mode` silently replaces the first, which is the same silence the
-`override` work was done to remove, one directive over. It was left out because
-the scope of that work was settled as those three and widening it unasked is
-what the item it came from existed to prevent.
-
-It is small — the same shape as `@separator`'s check — and the only real
-question is whether `@mode expression` after `@mode text` is a thing a file
-could ever mean, or whether a second `@mode` should simply be an error with no
-`override` at all.
-
-## 5 · One grammar, two backends
+## 4 · One grammar, two backends
 
 `examples/pascal.mx` and `examples/code.mx` are 280 and 272 lines, and the
 second opens by saying what the duplication is: *"The body below is character
@@ -266,7 +251,7 @@ against that today, and it is the evidence that would change its mind.
 
 ---
 
-## 6 · Source maps
+## 5 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -275,7 +260,7 @@ this far down.
 
 ---
 
-## 7 · Alternation inside a pattern — explored, not wanted yet
+## 6 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason
