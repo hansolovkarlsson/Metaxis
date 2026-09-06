@@ -310,6 +310,23 @@ expect "'level' is a builtin and gives a value" <<'EOF'
 @syntax "f" a => { level(a) }
 EOF
 
+# The other way round: `contribute` is a statement, as `emit` is, and has no
+# value. `splice` is the expression half and is covered by the case above it.
+expect "'contribute' is a statement" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { emit contribute("vars", a) }
+EOF
+
+expect "'contribute' takes 2" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { contribute(a) }
+EOF
+
+expect "'splice' takes 1 and was given 2" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { emit splice("vars", a) }
+EOF
+
 expect "'t' is a template" <<'EOF'
 @token number "[0-9]+"
 @template t(x) { emit x }

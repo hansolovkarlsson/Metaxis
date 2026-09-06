@@ -8,10 +8,18 @@
 ; the top, before the first statement, and *which* ones is the aggregate of
 ; every LET, FOR and PRINT below. That is the customer this stage was picked
 ; to be: **the head of the output is determined by its body**, and no rule
-; here can see past itself. tests/basic.sh writes the declarations by hand,
-; says so, and fails if this file ever starts writing them -- the same pin
-; tests/pascal.sh keeps on the literal. docs/ROADMAP.md has what it would
-; take.
+; here can see past itself.
+;
+; **It can contribute, though.** `contribute("vars", "int T;")` in a rule adds
+; a line to a collection, once however many times it is said, and a
+; collection nobody splices goes at the start of the output -- which is where
+; a program with no head wants it. So the declarations below come out of the
+; LET and FOR that mention the variables, and tests/basic.sh compiles the
+; result with nothing supplied but `main` and the include, which are not
+; rules. Until 2026-09-06 that test wrote the declarations by hand and was
+; pinned to fail the day this file started writing them; it did, and the pin
+; flipped in the same commit. docs/COMPLETED.md has the mechanism and the
+; rehearsal that settled its shape.
 ;
 ; **What the sigil buys.** Stage 1 stopped at `writeln` because printing a
 ; value means knowing its type, and nothing here has types. BASIC's answer is
@@ -38,7 +46,8 @@
 ; over the word and leave the line number standing alone as a statement, so
 ; the body comments with `'`, which several BASICs accept. GOSUB wants a
 ; return stack C does not have. Strings are assigned and printed, never
-; joined. And the declarations, above.
+; joined. And `main` and the include, which the test wraps around the output
+; the way tests/hygiene.sh does, because neither is a rule.
 
 @comment "'" eol
 
@@ -71,6 +80,14 @@
 ; A name in C: `A$` is not one, so the sigil becomes a suffix.
 @template var(v) { emit replace(v, "$", "_s") }
 
+; The declaration C wants, contributed by whichever rule mentions the name.
+; The type is the sigil again. A collection keeps one copy of each line, so
+; `T` said nine times is declared once, in the order names were first met.
+@template decl(v) {
+    if replace(v, "$", "") != v { contribute("vars", "const char *" + replace(v, "$", "_s") + ";") }
+    else                        { contribute("vars", "int " + v + ";") }
+}
+
 ; The type is on the name. A `$` is a string variable, a `"` is a string
 ; literal, and everything else is a number -- which is a rule about the
 ; *spelling* of the operand, the only thing a template can see, and it is
@@ -86,7 +103,7 @@
 ; Each statement is written once, as a template, and read twice: with a line
 ; number in front of it, as a line, and bare, after THEN. The line form is a
 ; led rule -- the number is its left operand -- and the bare form is a nud.
-@template let(v, e) { var(v); emit " = " + e }
+@template let(v, e) { decl(v); var(v); emit " = " + e }
 @template line(l)   { emit "L" + l + ": " }
 
 @syntax l "LET" v:name "=" e   5  => { line(l); let(v, e) }
@@ -104,7 +121,7 @@
 
 ; A label needs a statement after it and `}` is not one, hence the `;`.
 @syntax l "FOR" i:name "=" a "TO" b  5
-    => { line(l); emit "for (" + i + " = " + a + "; " + i + " <= " + b + "; " + i + "++) {" } terminated
+    => { line(l); decl(i); emit "for (" + i + " = " + a + "; " + i + " <= " + b + "; " + i + "++) {" } terminated
 @syntax l "NEXT" i:name  5  => { line(l); emit "; }" } terminated
 
 ; END is the last line, so no separator follows it and the `;` is its own.

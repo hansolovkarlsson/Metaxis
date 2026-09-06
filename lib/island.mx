@@ -9,10 +9,13 @@
 ; thing this tool lacked, and text mode turned out to have it already.
 ;
 ; The rewrite: every `fprintf(stderr, "mx: %s\n", X)` becomes `complain(X)`,
-; and `complain` is defined in front of `usage`, which is the one line that
-; file has where a definition can go. That landmark is a workaround and says
-; so: the honest place is *before the first function*, and nothing here can
-; say that -- docs/ROADMAP.md 4 is the same wall from the BASIC side.
+; and the rule that does it *contributes* the definition of `complain` to a
+; collection -- once, however many times it fires -- which the rule for
+; `usage` splices in front of that function. So the definition exists only
+; if something calls it, and the file that names the landmark does not have
+; to know what goes there. The landmark itself is still a workaround: the
+; honest place is *before the first function*, and nothing here can say
+; that without reading C.
 ;
 ; What text mode does not know, measured on this file and recorded in
 ; docs/ROADMAP.md 7: it has no tokens, so a word fires inside an identifier or
@@ -21,14 +24,19 @@
 ; C's comments would remove them. The two rules below are written to stay
 ; inside what it does know.
 ;
-; Two things about writing C from a string template. `{` is a hole, so C's
-; braces are `{{ }}`; and `\n` is a newline, so the C source's own `\n` is
-; `\\n`. A code template has neither problem and is the form to reach for
-; when the C gets longer than a line.
+; These are code templates, and the first draft's were strings. In a string
+; template `{` is a hole, so C's braces are `{{ }}`, and `\n` is a newline, so
+; the C source's own `\n` is `\\n`; a code template's strings have the second
+; rule and not the first, and `contribute` is a statement, which a string
+; template cannot say at all.
 
 @mode text
 
-@syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"  => "complain({e})"
+@syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"
+    => {
+        contribute("defs", "static void complain(const char *e) { fprintf(stderr, \"mx: %s\\n\", e); }")
+        emit "complain(" + e + ")"
+    }
 
 @syntax "static void usage(void)"
-    => "static void complain(const char *e) {{ fprintf(stderr, \"mx: %s\\n\", e); }}\n\nstatic void usage(void)"
+    => { emit splice("defs") + "\n\nstatic void usage(void)" }

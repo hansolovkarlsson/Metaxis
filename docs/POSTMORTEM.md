@@ -11,6 +11,42 @@ Newest first.
 
 ---
 
+## 20 · A roadmap item that vanished for one commit
+
+**Issue.** [ROADMAP.md](ROADMAP.md) 7, the island rule, was written on
+2026-09-06 and placed between items 4 and 5, where the page's own ordering
+put it. The next commit rewrote the tail of item 4 by replacing everything
+from a sentence inside it *up to the heading of item 5* — and item 7 was in
+between. It was gone from the page for one commit, pushed, and noticed only
+when the commit after that removed item 4 the same way and the section
+headings were listed.
+
+**Root cause.** An edit addressed by *the next heading I remember* rather
+than *the end of this item*, in a file whose items are not in numeric order.
+The slice was right the day the page was linear and wrong the day it was not,
+and nothing told it.
+
+**What found it.** Listing the headings after an edit, which is the check
+that should have run before it: `grep '^## '` costs nothing and would have
+shown 1, 2, 3, 5, 6 with no 7.
+
+**Solution.** Restored from the commit where it last existed, with the two
+wording changes the lost edit had meant to make to it, and a line in the item
+saying it was lost and for how long.
+
+**Learnings.** **A prose edit that is addressed by position needs the same
+check a transcript got yesterday: run something afterwards that would have
+failed.** `tests/docs.sh` runs the transcripts and could not see this, because
+no transcript was involved. What would see it is small: every `ROADMAP.md N`
+that any document names should resolve to a `## N ·` heading, and every
+heading that was on the page before an edit should be on it after unless the
+commit says it moved. The first is a grep; the second is `git diff | grep
+'^-## '`, read before committing. Neither is built yet, and the first would
+flag two references in `metaxis/src` that went stale when items were
+renumbered on 2026-09-05 — which is the argument for building it.
+
+---
+
 ## 19 · An example that was written instead of run
 
 **Issue.** [REFERENCE.md](REFERENCE.md) § 9 showed what `-g` prints:

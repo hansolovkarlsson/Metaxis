@@ -53,10 +53,17 @@
 @syntax a "and" b                 30           => { emit group(a, 30) + " && " + group(b, 31) }
 @syntax a "or" b                  25           => { emit group(a, 25) + " || " + group(b, 26) }
 
+; The include is not written here. `writeln` contributes it to a collection
+; called `head` -- once, however many times it fires -- and `program` says
+; where the aggregate goes with `splice("head")`. A program that never prints
+; gets no include, which is the difference between a head that is the body's
+; aggregate and one that was guessed. This was the first customer for the
+; mechanism, named in docs/prior-art.md the day before it was built.
+;
 ; Declarations. Nothing here is better in this form than in a string, and both
 ; files say it the same way -- a type is a quoted word because `integer` has to
 ; come out as `int`, and a hole would splice the token it matched.
-@syntax "program" n:name                       => { emit "/* " + n + " */\n#include <stdio.h>" } terminated
+@syntax "program" n:name                       => { emit "/* " + n + " */\n" + splice("head") } terminated
 @syntax a "," b                   20           => { emit a + ", " + b }
 ; A type is a rule of its own, a word alone, so that it can be *read* as well
 ; as matched. That is what lets a parameter list hold a hole where the type goes
@@ -147,8 +154,15 @@
 ; what is left, and put C's quotes back. `drop` and `replace` are the two
 ; smallest things a template needs to translate a literal rather than move it.
 @syntax "writeln" "(" x:string ")"
-    => { emit "puts(\"" + replace(drop(x, 1, 1), "''", "'") + "\")" }
-@syntax "writeln" "(" x ")"                    => { emit "printf(\"%d\\n\", " + x + ")" }
+    => {
+        contribute("head", "#include <stdio.h>")
+        emit "puts(\"" + replace(drop(x, 1, 1), "''", "'") + "\")"
+    }
+@syntax "writeln" "(" x ")"
+    => {
+        contribute("head", "#include <stdio.h>")
+        emit "printf(\"%d\\n\", " + x + ")"
+    }
 
 @syntax "for" i:name ":=" a "to" b "do" s
     => {

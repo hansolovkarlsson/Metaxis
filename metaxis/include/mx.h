@@ -166,8 +166,24 @@ typedef struct {
 
 #define LEVEL_ATOM 1000
 
+/* A collection: what rules *contributed* to a name, in first-seen order and
+   without repeats, and the placeholder a `splice` of that name left in the
+   output. The aggregate is not known until the last rule has run and the rule
+   that wants it usually ran first -- a program's head is expanded before its
+   body -- so the splice cannot be a splice. It is a mark, and collect_resolve()
+   is the second pass that replaces it once expansion is over. The mark is a
+   fresh name, so it is guaranteed to occur nowhere in the source or in any
+   template, exactly as `{~t}` is. */
+typedef struct {
+    char  *name;
+    char  *mark;
+    char **item; int nitem;
+    int    spliced;   /* a mark for it appeared in the output */
+} Coll;
+
 typedef struct {
     Class   *cls;   int ncls;
+    Coll    *coll;  int ncoll;
     Comment *com;   int ncom;
     char   **punct; int npunct;   /* every rule word, longest first */
     Rule    *rule;  int nrule;
@@ -243,6 +259,10 @@ int   code_check(Rule *r, char **err);
    finished and they are all in. Returns 0, or -1 with *err set. */
 int   code_check_calls(Grammar *g, char **err);
 char *code_eval(Grammar *g, Rule *r, Bind *b, int nb, char **err);
+/* The second pass: every `splice` mark becomes its collection's aggregate, and
+   a collection that was contributed to and never spliced goes first. Runs once,
+   over the whole output, in either mode. */
+char *collect_resolve(Grammar *g, const char *out);
 int   rule_has_hole(Rule *r, const char *name);
 int   code_mentions(Rule *r, const char *n);
 char *expand_text(Grammar *g, const char *src, size_t from,

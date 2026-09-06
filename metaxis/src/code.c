@@ -445,8 +445,16 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { "drop",    3, "a text with characters off each end"      },
     { "indent",  2, "a text with every line moved right"       },
     { "fresh",   1, "a name nobody else has"                  },
+    { "splice",  1, "where a collection's aggregate goes"      },
     { NULL, 0, NULL }
 };
+
+/* `contribute("vars", text)` is a statement, as `emit` is: it adds to a
+   collection and has no value. It is not a keyword -- a hole may still be
+   called `contribute`, because a name with `(` after it where a statement was
+   expected can be nothing but a call, and that is the only place this is
+   looked for. See collect_resolve() for what becomes of what it adds. */
+static int is_stmt_builtin(const char *n) { return !strcmp(n, "contribute"); }
 
 static int check_expr(Rule *r, const char *where, Expr *e, Scope *sc, char **err)
 {
@@ -704,6 +712,84 @@ static char *replace_all(const char *s, const char *from, const char *to)
 
 static int eval(Ev *ev, Expr *e, Val *out);
 
+/* ------------------------------------------------------------ collections
+ *
+ * The rehearsal that preceded this -- docs/ROADMAP.md 4 on 2026-09-06 --
+ * faked it with markers in the output text and an awk pass, and everything
+ * here is the shape that rehearsal settled: a contribution is a complete line
+ * of output, a collection is its distinct contributions in first-seen order,
+ * the file names the splice point, and the start of the output is the default
+ * for a source that has no head. The pass never looks between the marks. */
+
+static Coll *coll_get(Grammar *g, const char *name)
+{
+    for (int i = 0; i < g->ncoll; i++)
+        if (!strcmp(g->coll[i].name, name)) return &g->coll[i];
+    Coll *v = xmalloc(sizeof *v * (size_t)(g->ncoll + 1));
+    if (g->coll) memcpy(v, g->coll, sizeof *v * (size_t)g->ncoll);
+    g->coll = v;
+    Coll *c = &g->coll[g->ncoll++];
+    memset(c, 0, sizeof *c);
+    c->name = xstrdup(name);
+    c->mark = pt_fresh("splice");
+    return c;
+}
+
+static void coll_add(Grammar *g, const char *name, const char *text)
+{
+    Coll *c = coll_get(g, name);
+    for (int i = 0; i < c->nitem; i++) if (!strcmp(c->item[i], text)) return;
+    char **v = xmalloc(sizeof *v * (size_t)(c->nitem + 1));
+    if (c->item) memcpy(v, c->item, sizeof *v * (size_t)c->nitem);
+    v[c->nitem++] = xstrdup(text);
+    c->item = v;
+}
+
+/* A mark is replaced by the aggregate, one contribution per line, and every
+   line after the first is given the whitespace the mark had in front of it, so
+   a splice inside an indented block stays in the block. A mark alone on its
+   line with nothing to put there takes the line with it. That is all the pass
+   knows; it does not read what is between the marks, which is the property
+   the rehearsal was run to check and the one that keeps the tool agnostic. */
+char *collect_resolve(Grammar *g, const char *out)
+{
+    if (!g->ncoll) return (char *)out;
+    Buf b = {0};
+    for (const char *p = out; *p; ) {
+        Coll *c = NULL;
+        size_t ml = 0;
+        for (int i = 0; i < g->ncoll && !c; i++) {
+            size_t l = strlen(g->coll[i].mark);
+            if (!strncmp(p, g->coll[i].mark, l)) { c = &g->coll[i]; ml = l; }
+        }
+        if (!c) { buf_ch(&b, *p++); continue; }
+        c->spliced = 1;
+        size_t ls = b.n;
+        while (ls > 0 && b.p[ls - 1] != '\n') ls--;
+        int blank = 1;
+        for (size_t k = ls; k < b.n; k++) if (b.p[k] != ' ' && b.p[k] != '\t') blank = 0;
+        if (c->nitem == 0) {
+            if (blank && p[ml] == '\n') { b.n = ls; p += ml + 1; }
+            else p += ml;
+            continue;
+        }
+        char *pad = blank && b.n > ls ? xstrndup(b.p + ls, b.n - ls) : "";
+        for (int k = 0; k < c->nitem; k++) {
+            if (k) { buf_ch(&b, '\n'); buf_str(&b, pad); }
+            buf_str(&b, c->item[k]);
+        }
+        p += ml;
+    }
+    Buf head = {0};
+    for (int i = 0; i < g->ncoll; i++) {
+        Coll *c = &g->coll[i];
+        if (c->spliced || !c->nitem) continue;
+        for (int k = 0; k < c->nitem; k++) { buf_str(&head, c->item[k]); buf_ch(&head, '\n'); }
+    }
+    if (head.n) { buf_str(&head, buf_take(&b)); return buf_take(&head); }
+    return buf_take(&b);
+}
+
 static Tmpl *tmpl_find(Grammar *g, const char *name)
 {
     for (int i = 0; i < g->ntmpl; i++)
@@ -778,6 +864,10 @@ static int call(Ev *ev, Expr *e, Val *out)
     }
     if (!strcmp(e->s, "replace")) {
         *out = v_text(replace_all(as_text(a[0]), as_text(a[1]), as_text(a[2])));
+        return 0;
+    }
+    if (!strcmp(e->s, "splice")) {
+        *out = v_text(coll_get(ev->g, as_text(a[0]))->mark);
         return 0;
     }
     if (!strcmp(e->s, "drop")) {
@@ -913,6 +1003,13 @@ static int run(Ev *ev, Stmt *v, int n)
             else           { if (run(ev, s->alt,  s->nalt)  < 0) return -1; }
             break;
         case S_CALL: {
+            if (is_stmt_builtin(s->e->s)) {
+                Val name, text;
+                if (eval(ev, s->e->args[0], &name) < 0) return -1;
+                if (eval(ev, s->e->args[1], &text) < 0) return -1;
+                coll_add(ev->g, as_text(name), as_text(text));
+                break;
+            }
             Tmpl *t = tmpl_find(ev->g, s->e->s);
             if (!t) {   /* resolved at seal; unreachable unless that was skipped */
                 ev->err = xfmt("%s:%d: no template called '%s'",
@@ -1007,7 +1104,10 @@ static int resolve_expr(Grammar *g, const char *where, Expr *e, char **err)
 {
     if (!e) return 0;
     if (e->kind == E_CALL && !is_builtin(e->s)) {
-        if (tmpl_find(g, e->s))
+        if (is_stmt_builtin(e->s))
+            *err = xfmt("%s: '%s' is a statement -- it adds to a collection on a"
+                        " line of its own and has no value to use here", where, e->s);
+        else if (tmpl_find(g, e->s))
             *err = xfmt("%s: '%s' is a template -- it is called as a statement on a"
                         " line of its own and emits, so it has no value to use here",
                         where, e->s);
@@ -1034,6 +1134,15 @@ static int resolve_block(Grammar *g, const char *where, Stmt *v, int n, char **e
                 *err = xfmt("%s: '%s' is a builtin and gives a value -- put it in an"
                             " 'emit', not on a line of its own", where, v[i].e->s);
                 return -1;
+            }
+            if (is_stmt_builtin(v[i].e->s)) {
+                if (v[i].e->nargs != 2) {
+                    *err = xfmt("%s: '%s' takes 2 -- the collection's name and what to"
+                                " add to it -- and was given %d", where, v[i].e->s,
+                                v[i].e->nargs);
+                    return -1;
+                }
+                continue;
             }
             Tmpl *t = tmpl_find(g, v[i].e->s);
             if (!t) {

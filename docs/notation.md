@@ -345,6 +345,19 @@ entries in its table are not like this one.
 
 ## What it costs
 
+**The tool has a second pass, and it is blind on purpose.** Everything else
+here is one pass: the body is read once and each rule's output goes up to the
+rule above it. A collection (REFERENCE §8.4) cannot be, because the rule that
+splices the aggregate usually runs before the rules that contribute to it — a
+program's head is expanded before its body — so `splice` leaves a placeholder
+and a pass over the finished output replaces it. What that pass may know was
+settled before it was written: nothing. It replaces marks and reads nothing
+between them, and every line of the aggregate after the first is padded with
+the whitespace the mark had in front of it, which is a fact about the text and
+not about the language. The day this pass needs to know where in C a
+declaration may go is the day the mechanism is wrong, and that sentence is
+written down so that it can be checked.
+
 **Output parenthesisation is the author's problem, in a string template.**
 Metaxis knows the input grammar because the file declared it, and a string
 template can splice and nothing else. So `examples/pascal.mx` writes

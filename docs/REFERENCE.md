@@ -933,6 +933,7 @@ cannot leave one uncomputed. See its header for what that rules out.
 | `drop(s, front, back)` | `s` with that many characters off each end |
 | `indent(s, n)` | `s` with every line moved right by `n` spaces, **including the first**, and an empty line left empty. Block indentation, which is what a brace wants; nesting composes, because an inner block is already indented when the outer one indents it |
 | `fresh(label)` | a name nobody else has — §8.2 |
+| `splice(name)` | where the aggregate of the collection `name` goes — §8.4 |
 
 Everything in a code template is checked at the `@syntax` that wrote it: a name
 that is neither a hole nor a loop variable, a builtin nobody has, the wrong
@@ -967,6 +968,54 @@ common enough to be worth reaching for first.
 `tests/pascal.sh` compiles what the second one emits and runs it, and the first
 is expected **not** to compile: that literal is the only thing wrong with it,
 and no `@syntax` can reach it, because a rule cannot match a bare token.
+
+### 8.4 Collections
+
+A rule sees its own holes and nothing else, and some output has a head that
+depends on all of its body: the declarations C wants before the first
+statement, an include that is only needed if something prints, a definition
+that is only needed if something calls it. A **collection** is how a rule says
+what *it* adds to such a head without seeing anyone else's.
+
+```
+@syntax "let" v:name "=" e   => { contribute("vars", "int " + v + ";"); emit v + " = " + e }
+@syntax "program" n:name     => { emit "/* " + n + " */\n" + splice("vars") } terminated
+```
+
+- **`contribute(name, text)`** is a statement, beside `emit`, and has no value.
+  It adds `text` to the collection called `name`. A collection keeps **one copy
+  of each distinct text, in the order first contributed**, so a name mentioned
+  nine times is declared once. Two rules, or two `@use`d files, contributing to
+  one collection is the intended case and not a conflict: a contribution is
+  additive and unordered, and nothing here needs `override`.
+- **`splice(name)`** is an expression and gives a placeholder. Once the whole
+  body has been expanded, a second pass replaces every placeholder with its
+  collection's aggregate, one contribution per line. The placeholder is a fresh
+  name (§8.2), so it occurs nowhere in the source or in any template. Every
+  line of the aggregate after the first is given the whitespace the placeholder
+  had in front of it, so a splice inside an indented block stays in the block;
+  a placeholder alone on its line with nothing to put there takes the line with
+  it.
+- **A collection nothing splices goes at the start of the output**, in the
+  order collections were first contributed to. That is for a source with no
+  head — BASIC's first line is a statement, and no rule in such a file can say
+  *before the first statement* — and `examples/basic.mx` is the customer. A
+  source with a head names its splice point instead.
+- The pass replaces placeholders and reads nothing between them. It knows
+  nothing about the language it is patching, which is what keeps this the one
+  context mechanism that does not cost the tool its agnosticism.
+
+Both work in either mode. `contribute` is not a keyword — a hole may be called
+that — because a name with `(` after it where a statement was expected can be
+nothing but a call. Using it where a value is wanted is `'contribute' is a
+statement — it adds to a collection on a line of its own and has no value to
+use here`.
+
+`examples/basic.mx` contributes declarations and splices nothing;
+`examples/code.mx` has `writeln` contribute the include and `program` splice
+it, so a program that never prints gets none; `lib/island.mx` has the rule that
+introduces a call contribute the definition. All three are compiled and run by
+the suite.
 
 ---
 
@@ -1062,6 +1111,8 @@ Every message the tool can produce, and what it means.
 | `expected a kind after ':'` | a hole wrote `:` and stopped |
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
 | `'x:name' asks for one token of a class, and text mode has no tokens` | §7 |
+| `'contribute' is a statement — it adds to a collection on a line of its own and has no value to use here` | §8.4 |
+| `'contribute' takes 2 — the collection's name and what to add to it — and was given 1` | §8.4 |
 | `a rule that begins with a hole is infix, and text mode has nothing for it to continue — it could never fire` | §7 |
 | `a rule needs a pattern` | `@syntax => "…"` |
 | `trailing text after the template` | something after the template that is not `terminated` or `override` |

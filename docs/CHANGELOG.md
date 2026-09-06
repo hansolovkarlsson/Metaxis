@@ -10,6 +10,15 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**Collections.** `contribute("vars", text)` is a statement in a code template
+that adds a line to a named collection, once per distinct text; `splice("vars")`
+is an expression that marks where the aggregate goes, filled in by a second
+pass once expansion is over; and a collection nothing splices goes at the start
+of the output. `examples/basic.mx` now writes the declarations C wants, from
+the LET and FOR that mention the names, and `tests/basic.sh` no longer supplies
+them. `examples/code.mx` includes stdio only if a `writeln` fired. Three new
+errors for the ways to misuse them.
+
 **Stage 5: the tool rewrites its own front end.** `lib/island.mx` is a
 text-mode rewrite of one `fprintf` shape into a call, with the definition
 inserted; `tests/island.sh` runs it over `metaxis/cmd/mx.c`, compiles the

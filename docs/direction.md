@@ -167,6 +167,16 @@ holding `@use` together, and it should be built last for that reason. Two used
 files writing one key is the same problem two used files declaring one word had,
 and it will want the same kind of answer that `override` was.
 
+**2026-09-06: half of this landed in a different shape, and the half that
+compromises locality did not.** The survey found the known answer — collection
+attributes, JastAdd's and Silver's — and it was built as `contribute` and
+`splice` (REFERENCE §8.4). A rule *adds* to a named aggregate and never reads
+one, so nothing flows *down*: a collection is still synthesised, still upward,
+and two files contributing to one name is the intended case rather than a
+conflict. It answers the include, the declarations and the definition. It does
+not answer `writeln` wanting the type of its argument, which is the store above
+and is still last.
+
 ## Where it sits beside Phoenix and Futamura
 
 | | shape | what it makes |

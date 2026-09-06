@@ -45,33 +45,36 @@ if ! sh tests/limit.sh "$LIMIT" "$MX" examples/basic.mx > "$TMP/body.c" 2> "$TMP
     exit 1
 fi
 
-# The translator must not be declaring anything yet. If it is, the wall has
-# come down and this file is out of date -- see the note at the top.
-if grep -q '^ *\(int\|const char\) ' "$TMP/body.c"; then
-    echo "FAILED  basic.sh: examples/basic.mx has started emitting declarations."
-    echo "        That is the good news and this file is now wrong: the prologue"
-    echo "        below was the one thing the translator could not write. Take"
-    echo "        it out, rewrite that file's closing note and docs/ROADMAP.md,"
-    echo "        in the commit that did it."
-    grep -n '^ *\(int\|const char\) ' "$TMP/body.c"
+# The four declarations, each once, before the first statement. T, I and N
+# are the numbers the program mentions and A$ its one string; the translator
+# read the BASIC to know that, which is the whole point.
+for d in 'int T;' 'int I;' 'int N;' 'const char \*A_s;'; do
+    if [ "$(grep -c "^$d\$" "$TMP/body.c")" != 1 ]; then
+        echo "FAILED  basic.sh: '$d' is not declared exactly once"
+        echo "        A collection keeps one copy of each contribution and goes"
+        echo "        first when nothing splices it. One of those has changed."
+        grep -n 'int \|const char' "$TMP/body.c"
+        exit 1
+    fi
+done
+if [ "$(head -1 "$TMP/body.c")" != 'int T;' ]; then
+    echo "FAILED  basic.sh: the declarations are not at the start of the output"
+    head -3 "$TMP/body.c"
     exit 1
 fi
 
-# The prologue, by hand. T, I and N are the numbers the program mentions and
-# A$ is its one string, and a person read the BASIC to know that.
+# Nothing supplied but what is not a rule.
 {
     echo '#include <stdio.h>'
     echo 'int main(void) {'
-    echo '    int T, I, N;'
-    echo '    const char *A_s;'
     cat "$TMP/body.c"
     echo '}'
 } > "$TMP/prog.c"
 
 if ! "$CC" -o "$TMP/prog" "$TMP/prog.c" 2> "$TMP/cc.err"; then
     echo "FAILED  basic.sh: the C from examples/basic.mx does not compile"
-    echo "        Stage 4 is that this compiles once the declarations are"
-    echo "        supplied. Nothing else in the suite would have told you."
+    echo "        Stage 4 is that this compiles with nothing supplied but"
+    echo "        main. Nothing else in the suite would have told you."
     cat "$TMP/cc.err"
     exit 1
 fi
@@ -85,18 +88,6 @@ if [ "$got" != "$WANT" ]; then
     exit 1
 fi
 
-# And the other direction of the pin: without the prologue it must not build.
-# If it does, C has started accepting undeclared names, or the translator has
-# found a way round the wall that the grep above did not see.
-{ echo '#include <stdio.h>'; echo 'int main(void) {'; cat "$TMP/body.c"; echo '}'; } > "$TMP/bare.c"
-if "$CC" -o "$TMP/bare" "$TMP/bare.c" > /dev/null 2>&1; then
-    echo "FAILED  basic.sh: the C compiles without the hand-written prologue."
-    echo "        Either the compiler no longer wants declarations or the"
-    echo "        translator is writing them some way the check above does"
-    echo "        not see. Find out which before touching this file."
-    exit 1
-fi
-
 echo "ok      basic.sh: the C compiles, runs, and computes 39 4 40"
-echo "            with T, I, N and A\$ declared by hand -- as recorded"
+echo "            T, I, N and A\$ declared by the LET and FOR that met them"
 exit 0

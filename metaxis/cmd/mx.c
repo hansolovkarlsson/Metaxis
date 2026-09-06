@@ -118,6 +118,7 @@ int main(int argc, char **argv)
         if (trace) expand_summary();
     }
     if (!out) { fprintf(stderr, "mx: %s\n", err); return 1; }
+    out = collect_resolve(g, out);
 
     FILE *f = stdout;
     if (outpath && !(f = fopen(outpath, "wb"))) {

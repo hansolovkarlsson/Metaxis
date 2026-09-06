@@ -10,6 +10,75 @@ argued away.*
 
 Newest first.
 
+## Collections — the head of the output is its body's aggregate
+
+```
+$ mx examples/basic.mx
+int T;
+int I;
+int N;
+const char *A_s;
+…
+```
+
+**Three customers, one mechanism, and the rehearsal was the specification.**
+BASIC declares nothing, so the line C wants first is the set of every variable
+any line below mentions; `examples/code.mx` emitted `#include <stdio.h>`
+whether or not a `writeln` fired; and `lib/island.mx` wrote the definition of
+`complain` into the landmark it named rather than having the rule that needs
+it say so. Each is a rule that knows one thing and a head that needs all of
+them, and a rule sees its own holes and nothing else. On 2026-09-06 the whole
+mechanism was faked first with markers in the output and a twelve-line awk pass
+— [ROADMAP.md](ROADMAP.md) 4 as it then stood — and all three compiled and
+ran. What was built is the shape the markers rehearsed and nothing more.
+
+**`contribute("vars", text)`** is a statement in a code template, beside
+`emit`: it adds a line to a named collection. A collection keeps one copy of
+each distinct text, in the order first contributed — `T` said nine times is
+declared once — and `@use`d files contributing to one name is the intended case
+and not a conflict, because a contribution is additive and unordered and there
+is nothing for `override` to be needed for. Rule locality survives untouched: a
+rule still says only what *it* adds.
+
+**`splice("vars")`** is an expression: it gives a placeholder, and the second
+pass replaces the placeholder with the aggregate once expansion is over. The
+placeholder is a fresh name, so it occurs nowhere in the source or in any
+template, exactly as `{~t}` does not. Every line of the aggregate after the
+first is given the whitespace the placeholder had in front of it, so a splice
+inside an indented block stays in the block; a placeholder alone on its line
+with nothing to put there takes the line with it.
+
+**A collection nobody splices goes first.** BASIC has no head, and no rule in a
+file with no head can name where *before the first statement* is. So that is
+the default, for a source with no head; `examples/basic.mx` contributes and
+never splices, and the four declarations lead its output. A source with a head
+names its splice point — `program` in `code.mx`, `usage` in `island.mx` — and
+the rehearsal showed why the default would be wrong for it: C's definitions
+must follow its includes.
+
+**The pass knows nothing.** It replaces marks and never reads what is between
+them, which was the falsifier the roadmap item carried — *if the pass has to
+know anything about the output language, the agnosticism is spent* — and it
+did not fire in the rehearsal or in the build. The cost that stays is that the
+tool has a second pass over its output where it had one; it is
+`collect_resolve` in `metaxis/src/code.c`, and it is about the size the awk
+was.
+
+**What changed in the customers.** `tests/basic.sh` no longer writes a
+prologue: its pin flipped, and it now fails if the four declarations are not
+each there once and first. `code.mx`'s `program` rule no longer knows about
+stdio; a Pascal program that never prints gets no include. `lib/island.mx`
+became code templates so that the rewrite rule could contribute the definition
+it needs, and `tests/island.sh` still counts one. Neither recorded output for
+the last two changed by a byte.
+
+**Three errors** for the ways to get it wrong: `contribute` in an `emit`
+(*is a statement*), `contribute` with the wrong count, and `splice` with the
+wrong count. `tests/errors.sh` cases 48 to 50.
+
+Verified at 16 examples, 82 error cases and nine check scripts — 116 `ok`
+lines.
+
 ## Stage 5 — the tool rewrites its own front end, and text mode was the island
 
 ```
@@ -67,6 +136,10 @@ lines, seven of them transcripts, the one above included.
 
 ```
 $ mx examples/basic.mx
+int T;
+int I;
+int N;
+const char *A_s;
 L10: T = 0;
 L20: for (I = 1; I <= 20; I++) {
 L30: if (I % 3 == 0 && I != 9) goto L60;
@@ -84,11 +157,13 @@ cannot be translated *at all* without them is BASIC: it declares nothing, a
 variable exists because some line mentions it, and C wants every one declared
 before the first statement. That line is the aggregate of the whole program,
 and a rule sees its own holes and nothing else. So `examples/basic.mx` was
-written to reach that wall and record where it is, and `tests/basic.sh` writes
-the four declarations by hand, compiles the rest, runs it, and checks the
-numbers — and is pinned in both directions, so the program must not build
+written to reach that wall and record where it is, and `tests/basic.sh` wrote
+the four declarations by hand, compiled the rest, ran it, and checked the
+numbers — pinned in both directions, so that the program must not build
 without the hand-written line and the translator must not have started writing
-it. When it does, the test fails in the commit that did it.
+it. *(Later the same day it did — the entry above this one — and the pin
+flipped in that commit; the four lines at the top of the transcript are the
+translator's, and the transcript is checked.)*
 
 **It cost the tool nothing.** No directive, no builtin, no line of C. Four
 things the notation had to reach, and reached:

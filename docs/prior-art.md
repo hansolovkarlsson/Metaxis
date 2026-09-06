@@ -391,6 +391,12 @@ decision, and it is the same decision `@mode` already exists to make.
 *This is the survey's answer to [direction.md](direction.md)'s open question,
 and it is a better-shaped answer than the one that page proposes.*
 
+**Built 2026-09-06**, as `contribute` and `splice` — REFERENCE §8.4 and
+[COMPLETED.md](COMPLETED.md). The cost named at the end of this section, a
+second pass over the output, was measured first by faking the whole mechanism
+with markers and awk, and the falsifier did not fire. The rest of the section
+is as written the day before.
+
 **The question.** direction.md's second direction is *"let a file declare what
 flows down"*, sketched as a store the templates keep — `remember("type:" + x,
 t)` and `recall(…)`. That page names its own problem: *"It is also the one
@@ -639,7 +645,7 @@ it. It is [ROADMAP.md](ROADMAP.md) 4.
 | 1 | **A second backend without a second grammar**, `mx -b` (§3.1) | `examples/code.mx`, 272 duplicated lines, stated in the file | small — a tag namespace and a flag |
 | 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and it was the measurement that settled the backtracking budget | small |
 | 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/` | small, and the spelling is the decision |
-| 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx`; and since 2026-09-06 every declaration `examples/basic.mx` cannot write — **[ROADMAP.md](ROADMAP.md) 4** | medium — wants a second pass over the output, which the tool does not have |
+| 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx`; the declarations `examples/basic.mx` could not write — **built 2026-09-06**, see [COMPLETED.md](COMPLETED.md) | medium — a second pass over the output, which the tool now has |
 | 5 | **An island rule** (§3.3) | since 2026-09-06 `tests/island.sh`, which rewrites the tool's own front end; text mode had the rule, and what it lacks is **[ROADMAP.md](ROADMAP.md) 7** | medium, and it can make grammar bugs silent |
 | 6 | **A guard on a rule** (§3.2) | thin — two candidates, neither strong | very small; the backtracking is already there |
 | 7 | Editor mode from the header (§3.8) | none | small |

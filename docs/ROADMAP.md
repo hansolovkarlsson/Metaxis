@@ -67,8 +67,10 @@ left operand of an infix keyword, `FOR` and `NEXT` are two statements the way
 they are in BASIC, and the type of a variable is read off the sigil on its name
 with `replace`, which is the wall stage 1 hit at `writeln` dissolved by choice
 of source. **It cost the tool nothing** — no directive, no builtin, no line of
-C — and what it owes is 4 below. `tests/basic.sh` writes the four declarations
-by hand and is pinned to fail the day the translator starts writing them.
+C — and what it owed was collections, built the same day. `tests/basic.sh` wrote the four declarations
+by hand, pinned to fail the day the translator started writing them — and it
+did, the same evening: collections are built, in
+[COMPLETED.md](COMPLETED.md).
 
 Stage 5 landed on 2026-09-06 as `lib/island.mx`, `examples/island.mx` and
 `tests/island.sh`, the same day it was rehearsed. The survey had said the
@@ -257,79 +259,63 @@ is obviously right:
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing — one instance is a fact and two are a pattern.
 
-## 4 · Collection attributes — the head of the output is its body's aggregate
+## 7 · The island rule — text mode wants a lexer
 
-**The customer, three times over and once more.** `examples/basic.mx` emits
-every statement of a BASIC program and cannot emit the line C wants first:
-`int T, I, N;` is the set of every variable any `LET`, `FOR` or `PRINT` below
-mentions, and a rule sees its own holes and nothing else. `tests/basic.sh`
-writes that line by hand and is pinned to fail the day the translator starts
-writing it. Before it, `examples/code.mx` emits `#include <stdio.h>` whether or
-not a `writeln` fired, and `examples/asm.mx` has the same shape for a data
-section. And the smaller fourth: `basic.mx` labels every line because it cannot
-know which ones a `GOTO` names, and a C compiler forgives that where it would
-not forgive a missing declaration.
+*Numbered 7 because a number here is stable once given; by this page's own
+order it belongs first, being stage 5's. It was lost from this page for one
+commit on 2026-09-06 by an edit that sliced from item 4 to item 5, and the
+transcript check did not notice because no transcript was involved.*
 
-**The shape** is [prior-art.md](prior-art.md) §3.4's, from JastAdd and Silver:
-a rule *contributes* a value to a named collection, and one rule *splices the
-aggregate*. Contributions are unordered and additive, so two `@use`d files
-contributing to one collection is the intended case and not a conflict, and
-rule locality — the thing `override` exists to protect — survives untouched.
-It is still a synthesised attribute, flowing up, which is the direction this
-tool already flows: the one context mechanism that does not want a store, and
-the reason [direction.md](direction.md)'s `remember`/`recall` sketch is not the
-shape to build.
+**The customer.** `tests/island.sh` rewrites `metaxis/cmd/mx.c` with
+`lib/island.mx` and runs the result, so a rewrite over a real file exists and
+is checked. It works because its two rules stay inside what text mode knows.
+The rehearsal that preceded it — `scratch/island/` on the day, the journal
+after — tried the three things a rewrite over real C wants next, and each one
+failed in a way that is now measured:
 
-**What it costs.** The aggregate is not known until the last contribution is
-made, and the rule that wants it runs *first* — the head of a program is
-expanded before its body. So the splice cannot be a splice; it has to be a
-placeholder resolved after expansion, which is a second pass over the output
-text and a new thing in a tool that has one.
+- **No tokens.** Renaming `usage` also rewrote the word inside the usage string;
+  renaming `err` turned `stderr` into `stde`. A rename over real code is wrong
+  without an identifier boundary, and a text-mode hole is a run of characters.
+  [REFERENCE.md](REFERENCE.md) §7 already refuses a class kind in text mode
+  and says honouring it is this page's job *if anybody asks*. This is somebody
+  asking.
+- **No brackets.** A hole over `f(x, g(y))` stops at the first `)`. The rewrite
+  in `lib/island.mx` comes out right only because its template keeps the hole
+  last, so the leftover `))` is copied through behind it; a template that reused
+  the hole wrote `log(f(x, g(y); complain(f(x, g(y)))`. `examples/island.mx`
+  records the accident on purpose.
+- **Comment-aware means comment-removing.** Declaring C's `/* */` so that rules
+  stop firing inside comments deleted the comments from the output — six lines
+  of `mx.c` — because a text-mode comment is removed, which is right for a
+  document and wrong for a rewrite that must give the file back.
 
-**Rehearsed 2026-09-06, by the stage 3 method, and the pass did not need to
-know C.** The whole mechanic was faked with no tool change: rules emitted
-`@@vars:int T;@@` markers into their output where a contribution would go and
-`@@splice:vars@@` where the aggregate would, and a twelve-line awk pass over
-the output collected the distinct contributions in first-seen order, replaced
-the splice, and deleted the markers. `scratch/collect/` on the day, the journal
-after. Three customers, three results:
+**What this says about the shape.** The survey offered three shapes for
+islands in *expression* mode — skip a token, skip to the separator, a declared
+fallback rule — and the rehearsal did not ask for any of them. What the rewrite
+wants is text mode plus the three things Comby knows and nothing more:
+identifiers, balanced brackets, and strings and comments that are *skipped over*
+rather than removed. That is a smaller mechanic than any of the three, it does
+not touch expression mode, and it does not touch the completeness that lets an
+expression grammar report its own bugs. Each piece has its own decision:
 
-- **BASIC.** `LET` and `FOR` contribute `int T;` or `const char *A_s;`, the
-  sigil deciding. Nothing splices, so the aggregate went first, and
-  `examples/basic.out` compiled and ran **without the hand-written prologue
-  `tests/basic.sh` supplies** — 39, 4, it's middling, 40.
-- **Pascal.** `writeln` contributes the include and `program` splices it.
-  `examples/code.out` compiled and ran; a copy with every `writeln` removed got
-  no include, which is the customer's whole point.
-- **The island.** The `fprintf` rule contributes the definition of `complain`
-  and the `usage` rule splices it. The rewritten `mx.c` compiled against the
-  tree's objects and ran.
+- a class kind in text mode would have to mean *one token of this class, at a
+  boundary* — which is a lexer inside a scan, and where the token ends is the
+  question;
+- a bracket-aware hole needs to know which characters are brackets, and
+  [ROADMAP.md](ROADMAP.md) 2 has already met the question of whether a bracket
+  is declared (`@bracket "(" ")"`) or known;
+- a comment that is skipped rather than removed is a third thing `@comment`
+  would mean, and may want its own word.
 
-**What the rehearsal settled**, which is the plan:
+**And one thing the stage could not do**, which is not this item's: the
+definition of `complain` goes in front of `usage` because that line happens to
+exist. Collections let the rule that needs it contribute it, but the honest
+place is *before the first function*, and saying that means reading C.
 
-- **A contribution is a complete line of output text**, and a collection is its
-  distinct contributions in first-seen order, joined with newlines. Dedup by
-  exact text was enough for every case; `T` was contributed nine times and
-  declared once.
-- **The file names the splice point; the start of the output is the default
-  when it does not.** The default is right for BASIC, which has no head, and
-  would be wrong for C, where the definition must follow the includes — and C
-  did not need it, because the rewrite could name `usage` as its landmark. So
-  the default is for sources with no head and is not a guess about where a
-  head is.
-- **The pass is text and knows nothing.** It replaced markers and never looked
-  between them, and every output compiled. The falsifier did not fire.
-- **An empty aggregate leaves an empty line** at its splice, which is cosmetic
-  and is the one thing the awk pass got slightly wrong.
-
-**What to build, in the shape the markers rehearsed:** `contribute("vars",
-text)` as a statement in a code template, one per rule per application, into
-expander state rather than the output text; `splice("vars")` as an expression
-that emits a placeholder; a directive for the file with no head to say a
-collection goes first; and the pass, run once over the whole output after
-expansion, which the markers have already written the specification of. The
-cost that stays is the pass itself — the tool has one pass today and this is a
-second — and it was measured at twelve lines of awk.
+**Why it is not built today.** Each piece has a customer in the rehearsal and
+none in a file that ships; the rewrite that ships was written to need none of
+them. Build the first piece when a rewrite is wanted that a bare-word rule gets
+wrong, which will be the first rename.
 
 ## 5 · Source maps
 
