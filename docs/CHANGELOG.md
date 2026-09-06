@@ -14,7 +14,10 @@ are grouped by the day the work happened, newest first.
 `docs/tutorial/`: one concept per section, every statement and builtin a code
 template has in two tables, and every transcript checked by `make check`.
 REFERENCE.md gained a contents table at the top and an index of terms at the
-end.
+end. **A glossary**, `docs/glossary.md`: the concepts in the order they depend
+on each other — grammar, lexing, parsing and its families, expansion,
+attribute grammars, context, hygiene, islands — and then every term of art
+the documents use, defined.
 
 **A statement that ends in a word like `end` needs no separator after it**,
 as the reference always said. It did: the check asked whether the last token

@@ -6,7 +6,9 @@ file under `docs/tutorial/` that you can run, and shows what the tool prints
 when you do. It explains and it does not argue: [REFERENCE.md](REFERENCE.md)
 states what every part of a file means, [notation.md](notation.md) argues for
 why it is shaped that way, and where this page and either of those disagree,
-they are right and this page is wrong. **Every transcript here is run by
+they are right and this page is wrong. A word this page uses without
+explaining — nud, led, Pratt, attribute grammar — is in
+[glossary.md](glossary.md). **Every transcript here is run by
 `make check`** — `tests/docs.sh` finds each `$ mx …` line in `docs/`, runs it,
 and compares — so nothing on this page can drift from the tool without the
 suite going red.*

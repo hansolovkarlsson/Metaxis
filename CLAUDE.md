@@ -51,9 +51,10 @@ In `docs/`: `work-journal/` (why, in order — **one file per working day**),
 `ROADMAP.md` (what exists and what does not — an item moves when it is settled,
 including settled against), `CHANGELOG.md` (when).
 
-Five more are about the thing rather than the work: `tutorial.md` teaches it
-one concept at a time with runnable files under `docs/tutorial/`, `REFERENCE.md`
-states what every part of a `.mx` file means, `notation.md` argues for why it is
+Six more are about the thing rather than the work: `tutorial.md` teaches it
+one concept at a time with runnable files under `docs/tutorial/`, `glossary.md`
+explains the terms of art the others lean on and the concepts behind them,
+`REFERENCE.md` states what every part of a `.mx` file means, `notation.md` argues for why it is
 shaped that way and what it costs, `direction.md` argues for where it could go
 and which futures are being declined, and `prior-art.md` surveys the tools that
 do something like this and scores this one against them. Where any of them

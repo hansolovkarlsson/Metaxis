@@ -57,9 +57,11 @@ not.
 
 [docs/tutorial.md](docs/tutorial.md) teaches the tool one concept at a time,
 each with a file under `docs/tutorial/` you can run and the output it gives —
-and every transcript in it is checked by `make check`. [docs/REFERENCE.md](docs/REFERENCE.md)
-states what every part of a file means; [docs/notation.md](docs/notation.md)
-says why it is shaped that way.
+and every transcript in it is checked by `make check`. [docs/glossary.md](docs/glossary.md)
+explains the terms of art — PEG, Pratt, nud and led, attribute grammar, hygiene
+— and the concepts behind them, for a reader meeting them here first.
+[docs/REFERENCE.md](docs/REFERENCE.md) states what every part of a file means;
+[docs/notation.md](docs/notation.md) says why it is shaped that way.
 
 ## Build
 
