@@ -1,5 +1,5 @@
 #!/bin/sh
-# hygiene.sh -- the four checks that read the tree instead of running it.
+# hygiene.sh -- the five checks that read the tree instead of running it.
 #
 # The last one is the file's original job and most of what is below. The
 # first is the limit guard, added because it is the same kind of check -- a
@@ -8,7 +8,8 @@
 # docs/COMPLETED.md's "The limit guard" now. The second is the roadmap's
 # numbers, added on the same reasoning, for docs/POSTMORTEM.md 20. The third
 # is the prose rule in CLAUDE.md, added so that a sweep of the documents had a
-# finish line the suite could see, and so that new writing has a guard.
+# finish line the suite could see, and so that new writing has a guard. The
+# fourth is the errors page against the source, for docs/POSTMORTEM.md 24.
 #
 # ---------------------------------------------------------------------------
 # 1 - the limit guard
@@ -91,7 +92,33 @@
 # the rule is about prose.
 #
 # ---------------------------------------------------------------------------
-# 4 - hygiene: one half fixed, one half charged, run rather than argued.
+# 4 - the errors page: every message it quotes is one the source prints.
+#
+# docs/REFERENCE.md 10 lists every message in backticks, and a backticked
+# message is a claim that the tool says this. Twenty-five of them once showed
+# an em dash where the tool prints two hyphens, typeset into the page and
+# compared to nothing (docs/POSTMORTEM.md 24). tests/errors.sh pins a message
+# by a fragment, which is a different claim: that the tool says it *there*.
+# This one is that the page says it *right*, and it reads the two files
+# rather than running anything.
+#
+# A message on the page is fixed text around placeholders, and the check knows
+# four shapes of placeholder: a quoted span opened at the start or after a
+# space ('x', 'f:n', '{~name}'), an ellipsis (… or ...), `f:n` and `file:line`
+# bare, and a run of digits. The fixed pieces between them must stand in one
+# string literal of metaxis/src or metaxis/cmd, in order; a quoted span must
+# be in that literal verbatim unless the literal has a `%` where a value goes.
+# Adjacent literals are joined the way the C compiler joins them, since a long
+# message is written across two lines. Cells that list several messages with
+# `·` between them are several messages.
+#
+# What it cannot see: a word the source chooses at run time. `'at' was given
+# 9 and there are 2` is printed from `... and there %s %d`, so the page ends
+# that one with an ellipsis rather than the check learning English. It is run
+# under LC_ALL=C so that both awks read bytes, the ellipsis being three.
+
+# ---------------------------------------------------------------------------
+# 5 - hygiene: one half fixed, one half charged, run rather than argued.
 #
 # It expands examples/hygiene.mx, compiles the C that comes out and runs it.
 # Three outcomes are named below and each says something different, because
@@ -238,6 +265,101 @@ if [ -n "$prose" ]; then
     exit 1
 fi
 echo "ok      hygiene.sh: no em dash in general prose"
+
+# --- 4: the errors page against the source. Described at the head of the file.
+unmatched=$(LC_ALL=C awk -v q="'" '
+    FNR == 1 { incomment = 0; pendingline = 0 }
+    FILENAME != "docs/REFERENCE.md" {
+        line = $0; n = length(line); i = 1
+        join = (pendingline && line ~ /^[ \t]*"/); pendingline = 0
+        while (i <= n) {
+            c = substr(line, i, 1)
+            if (incomment) { j = index(substr(line, i), "*/"); if (!j) break; incomment = 0; i += j + 1; continue }
+            if (c == "/" && substr(line, i + 1, 1) == "*") { incomment = 1; i += 2; continue }
+            if (c == "/" && substr(line, i + 1, 1) == "/") break
+            if (c == q) { i += (substr(line, i + 1, 1) == "\\") ? 4 : 3; continue }
+            if (c == "\"") {
+                if (join) { s = lit[nlit]; join = 0 } else { s = ""; nlit++ }
+                i++
+                while (i <= n) {
+                    c = substr(line, i, 1)
+                    if (c == "\\") { d = substr(line, i + 1, 1); s = s ((d == "n") ? "\n" : (d == "t") ? "\t" : d); i += 2; continue }
+                    if (c == "\"") { i++; break }
+                    s = s c; i++
+                }
+                lit[nlit] = s
+                k = i; while (k <= n && substr(line, k, 1) ~ /[ \t]/) k++
+                if (k > n) pendingline = 1
+                else if (substr(line, k, 1) == "\"") { join = 1; i = k }
+                continue
+            }
+            i++
+        }
+        next
+    }
+    /^## 10 / { insec = 1; next }
+    /^## 11 / { insec = 0 }
+    !insec || !/^\| `/ { next }
+    {
+        cell = substr($0, 3); j = index(cell, " | "); if (j) cell = substr(cell, 1, j - 1)
+        m = split(cell, parts, " · ")
+        for (p = 1; p <= m; p++) {
+            msg = parts[p]
+            if (msg !~ /^`.*`$/) continue
+            msg = substr(msg, 2, length(msg) - 2)
+            nmsg++
+            if (!found(msg)) print msg
+        }
+    }
+    function found(msg,    n, i, c, nf, nq, k, s, l, pos, j, ok, prev) {
+        n = length(msg); nf = 0; nq = 0; s = ""; prev = " "
+        for (i = 1; i <= n; i++) {
+            c = substr(msg, i, 1)
+            if (c == q && prev == " ") {
+                k = index(substr(msg, i + 1), q); if (!k) { s = s c; prev = c; continue }
+                frag[++nf] = s; s = ""; quoted[++nq] = substr(msg, i, k + 1); i += k; prev = q; continue
+            }
+            if (substr(msg, i, 3) == "…" || substr(msg, i, 3) == "...") { frag[++nf] = s; s = ""; i += 2; prev = "."; continue }
+            if (substr(msg, i, 3) == "f:n") { frag[++nf] = s; s = ""; i += 2; prev = "n"; continue }
+            if (substr(msg, i, 9) == "file:line") { frag[++nf] = s; s = ""; i += 8; prev = "e"; continue }
+            if (c ~ /[0-9]/) { frag[++nf] = s; s = ""; while (substr(msg, i + 1, 1) ~ /[0-9]/) i++; prev = "0"; continue }
+            s = s c; prev = c
+        }
+        frag[++nf] = s
+        for (l = 1; l <= nlit; l++) {
+            pos = 1; ok = 1
+            for (j = 1; j <= nf; j++) {
+                if (frag[j] == "") continue
+                k = index(substr(lit[l], pos), frag[j]); if (!k) { ok = 0; break }
+                pos += k - 1 + length(frag[j])
+            }
+            if (!ok) continue
+            for (j = 1; j <= nq; j++) if (!index(lit[l], quoted[j]) && !index(lit[l], "%")) { ok = 0; break }
+            if (ok) return 1
+        }
+        return 0
+    }
+    END {
+        if (nlit == 0) { print "NONE: the scan found no string literal in the source"; exit 1 }
+        if (nmsg == 0) { print "NONE: the scan found no message on the errors page"; exit 1 }
+        print "COUNT " nmsg
+    }
+' metaxis/src/*.c metaxis/cmd/mx.c docs/REFERENCE.md) || {
+    echo "FAILED  hygiene.sh: the errors-page scan did not run -- awk exited $?."
+    echo "$unmatched" | sed 's/^/        /'
+    exit 1
+}
+nmsg=$(echo "$unmatched" | sed -n 's/^COUNT //p')
+unmatched=$(echo "$unmatched" | grep -v '^COUNT ')
+if [ -n "$unmatched" ]; then
+    echo "FAILED  hygiene.sh: docs/REFERENCE.md 10 quotes a message the source does not print."
+    echo "        Each line below is a backticked message on the errors page whose"
+    echo "        fixed text is in no string literal of metaxis/. Check the line"
+    echo "        that prints it and make the page verbatim, with … where a value goes."
+    echo "$unmatched" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: every message the errors page quotes is one the source prints ($nmsg)"
 
 TMP="${TMPDIR:-/tmp}/mx-hygiene.$$"
 mkdir -p "$TMP" || exit 1

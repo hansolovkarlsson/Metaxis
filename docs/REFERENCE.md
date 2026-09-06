@@ -1253,7 +1253,7 @@ not read, or memory it could not get.
 | `the loop variable 'a' is also a hole -- one of them has to be called something else` | §8.3 |
 | `expected a name after ',' in 'for'` | `for i, in h`, §8.3 |
 | `'for i, i' names the position and the turn the same thing` | §8.3 |
-| `'at' was given 9 and there are 2` | a position past the end of a list, §8.3 |
+| `'at' was given 9 and there …` | a position past the end of a list; the message ends with how many there are, §8.3 |
 | `'*' wants two numbers and was given 'x' and '2' -- num(h) reads a hole as one` | §8.3; likewise `-`, `/`, `%` |
 | `'num' wants a number and was given 'x'` | §8.3 |
 | `'/' by zero` | §8.3; likewise `%` |
@@ -1269,7 +1269,7 @@ not read, or memory it could not get.
 | `a template takes at most 8 parameters` | §11 |
 | `templates called more than 64 deep -- 't' calls itself without stopping` | §11 |
 | `loops nested more than 32 deep` | §11 |
-| `cannot open path` | `@use` |
+| `cannot open …` | `@use`, naming the path |
 | `a used file holds directives and nothing else` | §3.5 |
 | `@use nested more than 64 deep` | §3.5 |
 | `this pattern is already declared at f:n -- write 'override' after the template to mean it` | §3.10 |
@@ -1296,7 +1296,7 @@ not read, or memory it could not get.
 | `'indent' needs a separator with a newline in it` | §3.3 |
 | `'b:block' wants a block, and nothing here opens one` | a `block` hole and no `@separator … indent`, §4.3 |
 | `'b:block' asks for an indented run of statements, and text mode has no tokens…` | §7 |
-| `trailing text after @token` · `trailing text after @separator` · `trailing text after @mode` · `trailing text after @fragment` | a word after the directive that is not one of its own |
+| `trailing text after …` | a word after `@token`, `@separator`, `@mode`, `@bracket`, `@template` or `@fragment` that is not one of its own; the directive is named |
 
 ### In the body
 

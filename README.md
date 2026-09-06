@@ -181,9 +181,10 @@ metaxis/cmd/mx.c       mx [-o out] [-b backend] [-t] [-g] file.mx
 lib/                     files meant to be @use'd
 examples/                .mx beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong
-tests/hygiene.sh         four properties: every run goes through limit.sh, a
+tests/hygiene.sh         five properties: every run goes through limit.sh, a
                          roadmap number cited anywhere resolves, no em dash in
-                         prose, and what a string template cannot do, run
+                         prose, every message the reference quotes is one the
+                         source prints, and what a string template cannot do, run
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
 tests/asm.sh             C in, arm64 out, assembled and run on a CPU
 tests/python.sh          Python in, C out -- and the same text run as Python too
