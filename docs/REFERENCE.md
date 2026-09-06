@@ -970,7 +970,7 @@ and no `@syntax` can reach it, because a rule cannot match a bare token.
 ## 9 · The command line
 
 ```
-mx [-o output] [-b backend] [-g] file.mx
+mx [-o output] [-b backend] [-t] [-g] file.mx
 ```
 
 | | |
@@ -978,6 +978,7 @@ mx [-o output] [-b backend] [-g] file.mx
 | *(no flag)* | the expansion, to standard output |
 | `-o path` | the expansion, to `path` |
 | `-b name` | each rule emits from its `as name` template, falling back to its untagged one (§3.4) |
+| `-t` | trace the parse to **standard error**, and count what it tried |
 | `-g` | the grammar the header declared, then stop |
 
 `-b` naming something no rule emits is refused rather than ignored, and the
@@ -985,6 +986,13 @@ message lists what the file does emit. **A file whose every template is tagged
 has no default**, and running it without `-b` is an error naming the rule: the
 first declaration winning would let position decide the output, which is the
 question this tool declines to answer by position everywhere else (§3.10).
+
+`-t` writes one line per candidate tried, indented by how deep the parse is,
+and one more when a candidate fails saying which token it could not get past —
+which is what a grammar under construction is nearly always wrong about. It ends
+with totals. It is on **stderr**, so `mx -t f.mx > out` still writes the
+expansion and nothing else, and it is expression mode only: text mode is a
+search with a budget of its own.
 
 `-g` comes before the choice and needs no `-b`, so a file can be inspected
 whatever it emits. It lists the tags first:

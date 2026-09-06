@@ -10,6 +10,20 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`mx -t`** — the parse, traced to standard error: one line per candidate tried,
+indented by depth, saying which token it could not get past, and totals at the
+end. Expression mode only.
+
+**Expansion is no longer quadratic in the size of the input.** A generated
+4985-line Pascal program took **67 seconds** and now takes **174ms**; 16000
+statements expand in 524ms. `regexec` measures the whole remaining file on every
+call, so each token cost O(rest of file) across every declared class; class
+patterns are compiled anchored, so matching now happens against a bounded window
+that grows only when a match reaches its edge. Two smaller quadratics went with
+it — the per-token line count and the token array's growth. Nothing about what
+is emitted changed. One consequence worth knowing: a `@token` pattern that
+anchors its end with `$` now sees the window rather than the whole file.
+
 **`as <name>` on a template, and `mx -b <name>`** — a rule may now carry more
 than one template, so one grammar can be read out to more than one target. The
 untagged template is the default and the fallback, so a second target costs only

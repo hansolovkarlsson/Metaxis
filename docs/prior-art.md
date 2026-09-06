@@ -234,7 +234,7 @@ The convergence is worth writing down rather than hiding. What Metaxis has
 that META II did not is the level number in the directive rather than a rule
 per precedence tier, holes named and spliced rather than an output stack, and
 the declaration living in the same file as the thing it reads. What META II had
-that Metaxis does not is **alternation** (`/`), which is [ROADMAP.md](ROADMAP.md) 6,
+that Metaxis does not is **alternation** (`/`), which is [ROADMAP.md](ROADMAP.md) 5,
 and which every tool in this survey has.
 
 ## 3 · What they have that this does not
@@ -519,7 +519,7 @@ currently no instrument for it.
 
 **Cost: small.** `mx -t` printing each candidate tried, its pattern, and the
 token it failed on, indented by depth. **And it is two features for one price**:
-[ROADMAP.md](ROADMAP.md) 3 wants a *measurement* of expression-mode
+[ROADMAP.md](ROADMAP.md)'s backtracking budget wanted a *measurement* of expression-mode
 backtracking before a budget is picked, and says so — *"a budget picked without
 one is a number somebody made up."* A trace with a counter is that instrument.
 
@@ -620,7 +620,7 @@ ones that could become one without inventing a reason.
 | | | customer | cost |
 | --- | --- | --- | --- |
 | 1 | **A second backend without a second grammar**, `mx -b` (§3.1) | `examples/code.mx`, 272 duplicated lines, stated in the file | small — a tag namespace and a flag |
-| 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and [ROADMAP.md](ROADMAP.md) 3 wants the measurement | small |
+| 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and it was the measurement that settled the backtracking budget | small |
 | 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/` | small, and the spelling is the decision |
 | 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx` | medium — wants a second pass over the output, which the tool does not have |
 | 5 | **An island rule** (§3.3) | none yet, and it would change what the tool can be pointed at | medium, and it can make grammar bugs silent |

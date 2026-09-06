@@ -10,6 +10,54 @@ argued away.*
 
 Newest first.
 
+## `mx -t`, and the quadratic it found
+
+```
+$ mx -t examples/first.mx 2>&1 >/dev/null
+   try 1/1  a "=" b  [examples/first.mx:15]
+    ok
+   try 1/1  "twice" e  [examples/first.mx:17]
+     try 1/1  a "+" b  [examples/first.mx:16]
+      ok
+    ok
+trace: 3 candidates tried, 0 restored, deepest 2
+```
+
+`mx -g` prints the grammar a header declared and nothing printed the parse it
+attempted, which is the half that cannot be reasoned about from outside:
+candidates are tried longest-first with the cursor restored, so a rule that
+never fires looks exactly like a rule that was never reached. One line per
+candidate, indented by depth, saying which token it could not get past. **It
+goes to stderr**, so `mx -t f.mx > out` still writes the expansion and nothing
+else.
+
+**It is an instrument before it is a convenience.** The roadmap's **budget for
+expression-mode backtracking** asked for a measurement before a budget was picked — *a budget
+chosen without one is a number somebody made up* — and specified a large
+program in a declared dialect, timed. That measurement is now taken, and it
+settles the item **against**:
+
+| | |
+| --- | --- |
+| heaviest example (`pascal.mx`) | 104 candidates, 24 restored, deepest 6 |
+| generated 4985-line Pascal | 31,206 candidates, **0 restored**, deepest 5 |
+| the depth limit it runs against | 400 |
+
+**Backtracking was never the problem, and there is no budget to pick.** What
+the measurement found instead is in [POSTMORTEM.md](POSTMORTEM.md) 18: expansion
+was **quadratic in the size of the input** — 4985 lines took 67 seconds — and
+the cause was `regexec()` measuring the whole remaining file on every call,
+three classes per token. Matching against a bounded window took the same file to
+**174ms**, and lexing is now linear: 16000 statements in 524ms.
+
+Two other quadratics were found and fixed on the way and **neither was the
+cause**: `line_at()` rescanning from byte 0 per token, and `push()` copying the
+whole token array per token. Both are kept because they are right; their
+comments say plainly that they were not it.
+
+Verified at 14 examples, 78 error cases and five check scripts — 99 `ok` lines,
+unchanged before and after, because none of this changes what is emitted.
+
 ## `as`: a rule may emit more than once — and the reason it was built is half wrong
 
 ```
@@ -221,7 +269,7 @@ scored by evidence from outside the repository.
 pattern side and quoted output inside `.OUT` in 1964, which is this notation's
 premise, both halves, on a machine with 8K of six-bit memory. `examples/code.mx`
 is 272 lines duplicated from `examples/pascal.mx` and that is a maintenance cost
-rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 4. And **collection
+rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 3. And **collection
 attributes** (JastAdd, Silver) are a better-shaped answer to
 [direction.md](direction.md)'s declared environment than the key/value store it
 sketches: contribution is union rather than assignment, so two `@use`'d files
@@ -340,7 +388,7 @@ operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
 print `40 80 50`.
 
 **What the example does not do, in its own closing note.** `elif` is one rule
-per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 6 declines to build
+per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 5 declines to build
 for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
 thing rather than reading it. C's types come off Python's annotations or nowhere,
 which is the stage-1 wall in its honest form. And the example says `twice`

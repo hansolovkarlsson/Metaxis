@@ -11,6 +11,81 @@ Newest first.
 
 ---
 
+## 18 · An item that named its suspect, and two fixes for the wrong thing
+
+**Issue.** Expansion was quadratic in the size of the input. 125 statements of
+generated Pascal took 78ms, 2000 took 13.3 seconds, and 4985 took **67
+seconds**. Nothing in the tree could see it: every example here is a few dozen
+lines, and `make check` runs green in three seconds.
+
+**What found it.** `mx -t`, built to answer the roadmap's **budget for
+expression-mode backtracking** — which asked for *a large program in one of the
+declared dialects, timed*, before a budget was picked. Generating that program was the whole of the
+work; the defect announced itself on the first run.
+
+**Root cause, and it is three deep.**
+
+The item **named its suspect in its title**: *a budget for expression-mode
+backtracking*. The measurement cleared the suspect completely. The heaviest
+example restores 24 candidates; the 4985-line program restores **zero** out of
+31,206 tried, at depth 5 against a limit of 400. Backtracking was never
+anything.
+
+Then I guessed twice, and shipped both guesses as fixes with comments claiming
+they were the cause:
+
+- **`line_at()`** rescans from byte 0 for every token. Genuinely quadratic.
+  Fixing it changed nothing measurable.
+- **`push()`** reallocated and copied the whole token array per token. Also
+  genuinely quadratic — about 12 million `Tok` copies at that size. Took 67
+  seconds to 51.
+
+The cause was `regexec()`. **It takes a NUL-terminated string, and the C library
+measures it**, so handing it `src + i` costs O(rest of file) on every call,
+three classes per token. The match is anchored and short; the measuring is not.
+The proof is a file with **the same tokens** and 200KB of trailing comment:
+4.1s became 32.6s.
+
+**Solution.** Match against a bounded window that doubles only when a match
+reaches its edge — sound because every class pattern is already compiled
+anchored. 4985 lines went from **67107ms to 174ms**, and lexing is linear:
+16000 statements in 524ms. The two earlier fixes are kept, because they are
+right and the second would have become the bottleneck once this one was gone,
+and their comments are rewritten to say they were not the cause.
+
+**Learnings.**
+
+**A performance item that names its suspect will find the suspect guilty unless
+it measures.** This one named backtracking in its own title and was written by
+someone who had read the parser and not run it. What saved it was the clause it
+added against itself — *what the item is really asking for is the measurement,
+because a budget picked without one is a number somebody made up.* That
+sentence is why the instrument got built instead of the budget, and the
+instrument is what cleared the suspect.
+
+**And the profiler is four commands, which is fewer than one wrong guess.** I
+read the lexer, formed a hypothesis, fixed it, and re-measured — twice, both
+times wrong, both times having written a comment asserting the cause. `sample`
+on the running process pointed at `regexec` immediately and would have done so
+before either. **Reading code produces plausible causes; only measurement
+produces the cause**, and this is the same lesson as
+[16](#16--a-number-counted-by-hand) one layer down: prose about the tree drifts
+from the tree, and a hypothesis about the tree is prose.
+
+**A footnote that is its own small entry.** Writing this up renumbered the
+roadmap again, and **both records written in the same hour cited the closed item
+by number** — the fourth time that has happened today, an hour after an entry
+was added saying a completion record must cite what it closed rather than where
+it sat. Knowing a rule and applying it are different acts, and the only thing
+that has actually caught this is `grep` after each renumber.
+
+**What would have caught it earlier.** Nothing here, and that is the honest
+answer: every example is small on purpose, and a suite that runs in three
+seconds cannot see an O(n²). The tree has no large input and now knows it wants
+one.
+
+---
+
 ## 17 · A claim the page could not check, on the page that says it checks every claim
 
 **Issue.** [direction.md](direction.md) closed with **"One property, and no

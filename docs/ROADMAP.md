@@ -190,31 +190,7 @@ Nothing has asked yet: the example does not need it, and Python without wrapped
 calls is still Python. It is here so that the next file that wants one finds the
 question already asked.
 
-## 3 · A budget for expression-mode backtracking
-
-Candidates under one leading word are retried with the cursor restored, and the
-only thing that stops it is a recursion depth of 400. Text mode was in the same
-position until its matcher became a search, and got a budget of 200000 attempts
-per rule at the same time — and a measurement, 113KB of markdown in 60ms. The
-expression side has neither.
-
-Nothing has hit it, which is why it is here rather than done: a grammar that is
-slow to parse would have to be written on purpose, and none has been. What the
-item is really asking for is the **measurement** — a large program in one of the
-declared dialects, timed — because a budget picked without one is a number
-somebody made up. `programs/` in Proto is where that kind of evidence lives
-there; there is no equivalent here yet.
-
-**And the instrument is now specified, one page over.** `mx -g` prints the
-grammar a header built and nothing prints the parse it attempted, so a candidate
-list ordered longest-first with the cursor restored is invisible from outside. A
-trace flag that names each candidate tried, its pattern and the token it died
-on — with a counter — is the measurement this item is asking for and a debugging
-aid for a grammar under construction at the same time.
-[prior-art.md](prior-art.md) § 3.7 has it, and the tools that treat *watching
-the parse* as part of the job rather than a luxury.
-
-## 4 · The three rules `as` cannot share
+## 3 · The three rules `as` cannot share
 
 **The mechanic is built and this is what it did not reach.** `as` and `mx -b`
 are in ([COMPLETED.md](COMPLETED.md)), `examples/backends.mx` is one grammar
@@ -253,7 +229,7 @@ is obviously right:
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing — one instance is a fact and two are a pattern.
 
-## 5 · Source maps
+## 4 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
 downstream compiler points into text nobody wrote. Proto emits a `.map` beside
@@ -262,7 +238,7 @@ this far down.
 
 ---
 
-## 6 · Alternation inside a pattern — explored, not wanted yet
+## 5 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
 can wait to later, if we even need it.* It is last on this page for that reason
