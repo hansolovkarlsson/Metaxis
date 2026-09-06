@@ -10,6 +10,18 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**`@bracket "(" ")"`, and a text-mode hole that stops only where brackets
+balance.** A new directive declares two words that nest. A text hole now
+stops only where the declared brackets are balanced from where it began, and
+a close bracket with no opener behind it ends the hole, so a hole over
+`f(x, g(y))` is the whole call and a template may put text after it. In
+expression mode the directive is refused: `@bracket belongs to @mode text --
+in expression mode nothing reads it yet`. Two more refusals for a bracket
+whose sides are the same and a word declared twice. `mx -g` prints a
+`bracket` line. With it the island rule is finished and leaves the roadmap;
+`lib/island.mx` declares C's brackets and rewrites the one `!(` in
+`metaxis/cmd/mx.c` with its nested call whole.
+
 **Text mode moves by tokens where a declared class matches.** A `@token`
 class in a text-mode file now makes the scan take the token whole: a rule's
 word fires only on a whole identifier, a hole stops only where a token ends,

@@ -38,6 +38,7 @@ where one names a file it is lifted from that file.
 | 3.8 | `@template` | | |
 | 3.9 | `@fragment` | | Index, at the end of the page |
 | 3.10 | `override` | | |
+| 3.11 | `@bracket` | | |
 | 4 | Patterns | | |
 | 4.1 | What shape a pattern is | | |
 | 4.2 | What a pattern may not be | | |
@@ -146,6 +147,7 @@ directive   = "@use"       string
             | "@mode"      ( "expression" | "text" ) [ "override" ]
             | "@token"     name string [ "override" ]
             | "@comment"   string ( string | "eol" )
+            | "@bracket"   string string
             | "@separator" string [ "=>" string ] [ "indent" ] [ "override" ]
             | "@syntax"    pattern [ level ] { "=>" template { "terminated" | "as" name } } [ "override" ]
             | "@template"  name "(" [ name { "," name } ] ")" code [ "override" ]
@@ -470,6 +472,36 @@ b.mx:1: this pattern is already declared at a.mx:3
   `override`, nothing wins: it is refused. This is the one question the tool
   declines to answer by position, for the same reason it declines to guess
   precedence.
+
+### 3.11 `@bracket "open" "close"`
+
+Declares two words that nest. **Text mode reads it and nothing else does**: a
+hole stops only where the brackets the file declares are balanced from where
+the hole began, and a close bracket with no opener behind it ends the hole
+(§7). So under `@bracket "(" ")"` the hole in `"log(" m ")"` over
+`log(f(x, g(y)))` is all of `f(x, g(y))`; without the declaration it was
+`f(x, g(y)` with the last `)` copied through behind, right only when the
+template kept the hole last.
+
+```
+@bracket "(" ")"
+@bracket "[" "]"
+@bracket "{" "}"
+```
+
+- A bracket is matched whole, as a rule's word is (§7): one standing inside a
+  string or a comment the file declared as a class is never seen.
+- **The two sides must differ**: `a bracket opens with one word and closes
+  with another, and '|' is both`. A word that is already a side of a declared
+  bracket is `'x' is already a bracket, declared at file:line`; an empty word
+  is `an empty word matches nothing`.
+- **In expression mode it is refused**, once the header has finished:
+  `@bracket belongs to @mode text -- in expression mode nothing reads it yet`.
+  The lexer does not read brackets, and a line that continues inside one is
+  [ROADMAP.md](ROADMAP.md) 2; this directive is the declaration that item had
+  asked the shape of.
+- **Nothing may follow the two words.** Anything else is `trailing text after
+  @bracket`.
 
 ---
 
@@ -804,8 +836,11 @@ else is copied through unchanged.
   string is. `lib/island.mx` declares four classes for C and renames a variable
   that a bare word got wrong; `examples/island.mx` shows it.
 - **Every hole but a class is text** and takes the shortest run that lets the
-  rest of the pattern match, stopping only where a token ends. A hole with
-  nothing after it takes the rest of the enclosing text.
+  rest of the pattern match, stopping only where a token ends and, under
+  `@bracket` (§3.11), only where the declared brackets are balanced from where
+  it began. A close bracket with no opener behind it ends the hole, so a hole
+  with nothing after it takes the rest of the enclosing construct, and the
+  rest of the text where no bracket is declared.
 - **A `block` kind is refused here, and for the same reason as a class.** A
   block is delimited by two tokens the lexer makes out of the whitespace between
   the others, and text mode has no tokens to measure the indentation of. It is
@@ -1186,6 +1221,9 @@ not read, or memory it could not get.
 | `'contribute' is a statement -- it adds to a collection on a line of its own and has no value to use here` | §8.4 |
 | `'contribute' takes 2 -- the collection's name and what to add to it -- and was given 1` | §8.4 |
 | `a rule that begins with a hole is infix, and text mode has nothing for it to continue -- it could never fire` | §7 |
+| `@bracket belongs to @mode text -- in expression mode nothing reads it yet` | §3.11 |
+| `a bracket opens with one word and closes with another, and '|' is both` | §3.11 |
+| `'x' is already a bracket, declared at file:line` | §3.11 |
 | `a rule needs a pattern` | `@syntax => "…"` |
 | `trailing text after the template` | something after the template that is not `terminated` or `override` |
 | `an empty word matches nothing` | `""` as a pattern element |
@@ -1336,6 +1374,7 @@ Where a term has one home and several mentions, the home is first.
 | `-g`, printing the grammar | 9 |
 | `-o`, writing to a file | 9 |
 | `-t`, tracing the parse | 9, 6.2 |
+| `@bracket` | 3.11, 7 |
 | `@comment` | 3.2, 2.3, 6.1, 7 |
 | `@end` | 3.7, 2.2 |
 | `@fragment`, `@name` splice | 3.9, 4 |

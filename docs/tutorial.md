@@ -976,6 +976,7 @@ static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
 static void usage(void)
 {
     if (!src) { complain(msg); return 1; }
+    complain(f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
 }
 ```
@@ -990,7 +991,14 @@ inside `stderr`, inside the string, or inside the comment; without those
 three lines all of them would have changed. A file that declares no class is
 scanned one character at a time, as `12-text.mx` is. A class hole, `x:name`,
 takes exactly one token of that class here, as it does in expression mode.
-Where did the definition of `complain` come from? That is §13.
+
+The `@bracket` line is the other half of reading real code. **A hole stops
+only where the brackets the file declares are balanced**, so `e` in the
+second call is the whole of `f(x, g(y))`. Without the line it would have
+stopped at the first `)`, and the output would read the same only because
+the template puts nothing after the hole; `examples/island.mx` has a rule
+where the difference shows. Where did the definition of `complain` come
+from? That is §13.
 
 ---
 

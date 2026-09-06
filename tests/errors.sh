@@ -204,6 +204,25 @@ expect "text mode has nothing for it to continue" <<'EOF'
 @mode text
 EOF
 
+# @bracket is read by text mode's holes and by nothing else, so in expression
+# mode it would be a directive that reads as if it worked. Refused once the
+# header has finished, for the same reason as the two above.
+expect "@bracket belongs to @mode text" <<'EOF'
+@bracket "(" ")"
+@syntax "a" => "b"
+EOF
+
+expect "a bracket opens with one word and closes with another" <<'EOF'
+@mode text
+@bracket "|" "|"
+EOF
+
+expect "is already a bracket" <<'EOF'
+@mode text
+@bracket "(" ")"
+@bracket "[" ")"
+EOF
+
 # Two files declaring one thing. The hole names differ on purpose: what makes
 # the second rule unreachable is its pattern, and a pattern does not know what
 # its holes were called.

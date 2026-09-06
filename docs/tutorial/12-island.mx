@@ -2,12 +2,14 @@
 ; variable is renamed, and the rest of the C passes through, comments and
 ; all. The three @token lines are what hold the rename to whole identifiers:
 ; where a class matches, the scan moves by the token, so `err` is not found
-; inside `stderr`, inside the string, or inside the comment.
+; inside `stderr`, inside the string, or inside the comment. The @bracket
+; line is what makes the hole over `f(x, g(y))` the whole call.
 
 @mode text
 @token name    "[A-Za-z_][A-Za-z0-9_]*"
 @token string  "\"([^\"\\\\]|\\\\.)*\""
 @token comment "/\\*([^*]|\\*+[^*/])*\\*+/"
+@bracket "(" ")"
 @syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"
     => {
         contribute("defs", "static void complain(const char *e) { fprintf(stderr, \"mx: %s\\n\", e); }")
@@ -21,5 +23,6 @@
 static void usage(void)
 {
     if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }
+    fprintf(stderr, "mx: %s\n", f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
 }

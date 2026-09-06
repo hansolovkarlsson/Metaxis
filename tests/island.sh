@@ -55,8 +55,9 @@ fi
 # left is the `[-o out]` in the file's first comment, which is a comment token
 # and never scanned; `outpath` is a longer identifier and is not split; the
 # `output` in the usage string is inside a string token; and the comments are
-# all still there. Before text mode moved by tokens, the rehearsal that became
-# docs/ROADMAP.md 7 measured every one of these going wrong.
+# all still there. Before text mode moved by tokens, the rehearsal recorded in
+# docs/COMPLETED.md's *The island rule, finished* measured every one of these
+# going wrong.
 #
 # Identifiers are counted by splitting the file into them first. `grep -ow`
 # would read better and is wrong here: BSD grep misses the second of two
@@ -73,6 +74,18 @@ if [ "$res" != 10 ] || [ "$out" != 1 ] || [ "$path" != 5 ] || [ "$put" != 1 ] ||
     echo "FAILED  island.sh: the rename did not stop at the identifier, the string and the comment"
     echo "        res: $res (want 10)   out left: $out (want 1, the first comment)"
     echo "        outpath: $path (want 5)   usage string: $put (want 1)   comments: $com (want $was)"
+    exit 1
+fi
+
+# The bracket, on the one `!(` in the file. The hole in `"!(" x ")"` is
+# `f = fopen(outpath, "wb")`, whole, and the template puts text after it.
+# Before a hole knew brackets this came out as `(f = fopen(outpath, "wb") == 0))`,
+# which compiles and assigns f the result of a comparison.
+neg=$(grep -cF 'if (outpath && (f = fopen(outpath, "wb")) == 0) {' "$TMP/mx.c")
+if [ "$neg" != 1 ]; then
+    echo "FAILED  island.sh: the hole over the nested call did not come out whole"
+    echo "        rewritten '!(' lines: $neg (want 1)"
+    grep -nF 'fopen(outpath' "$TMP/mx.c" | sed 's/^/        /'
     exit 1
 fi
 
@@ -105,5 +118,6 @@ fi
 
 echo "ok      island.sh: mx.c rewritten by its own tool compiles, runs, and says the same"
 echo "            6 calls became complain(), 1 left alone, definition inserted,"
-echo "            out renamed 10 times and kept in outpath, a string and a comment"
+echo "            out renamed 10 times and kept in outpath, a string and a comment,"
+echo "            and the one !( rewritten with its nested call whole"
 exit 0

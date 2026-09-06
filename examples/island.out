@@ -6,5 +6,6 @@ static void usage(void)
     if (!src) { complain(err); return 1; }
     complain(f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
+    if (outpath && (f = fopen(outpath, "wb")) == 0) return 1;
     fputs("usage: mx [-o output]\n", stderr); fputs(res, f); <out> = [12];
 }

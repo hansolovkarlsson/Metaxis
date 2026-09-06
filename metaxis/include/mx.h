@@ -34,6 +34,10 @@ enum { REP_ONE, REP_STAR, REP_PLUS };
 
 typedef struct { char *name, *src; regex_t re; char *file; int line; } Class;
 typedef struct { char *open, *close; int eol; } Comment;
+/* `@bracket "(" ")"`: two words that nest. Text mode's holes stop only where
+   these are balanced (§7); the lexer does not read them yet, which is why the
+   directive is refused in expression mode. */
+typedef struct { char *open, *close; char *file; int line; } Bracket;
 
 typedef struct Elem Elem;
 struct Elem {
@@ -185,6 +189,7 @@ typedef struct {
     Class   *cls;   int ncls;
     Coll    *coll;  int ncoll;
     Comment *com;   int ncom;
+    Bracket *br;    int nbr;
     char   **punct; int npunct;   /* every rule word, longest first */
     Rule    *rule;  int nrule;
     Tmpl    *tmpl;  int ntmpl;

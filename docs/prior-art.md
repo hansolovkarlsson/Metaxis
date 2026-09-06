@@ -332,10 +332,11 @@ pointed at.*
 the tool's own front end, is stage 5, `lib/island.mx` and `tests/island.sh`, and
 needed nothing built. What it *does* need next is none of the three shapes
 below: the rehearsal asked for identifiers, balanced brackets, and comments
-skipped rather than removed, which is [ROADMAP.md](ROADMAP.md) 7. The first
-and the third landed the same evening as one mechanic, a scan that moves by the
-classes a file declares; the bracket remains. The rest of this section is as it
-was written, the day before.
+skipped rather than removed, which became roadmap item 7. All three landed the
+same evening: identifiers and kept comments as one mechanic, a scan that moves
+by the classes a file declares, and brackets as `@bracket`;
+[COMPLETED.md](COMPLETED.md)'s *The island rule, finished* is the account. The
+rest of this section is as it was written, the day before.
 
 **Who has it.** TXL calls it **agile parsing**: the effective grammar is a base
 grammar plus explicit *overrides*, and *"grammar overrides are used to express
@@ -649,7 +650,7 @@ it. It was the roadmap's item 4 for one day and landed the same evening; it is
 | 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and it was the measurement that settled the backtracking budget | small |
 | 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/` | small, and the spelling is the decision |
 | 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx`; the declarations `examples/basic.mx` could not write. **Built 2026-09-06**, see [COMPLETED.md](COMPLETED.md) | medium: a second pass over the output, which the tool now has |
-| 5 | **An island rule** (§3.3) | since 2026-09-06 `tests/island.sh`, which rewrites the tool's own front end; text mode had the rule, and what it lacks is **[ROADMAP.md](ROADMAP.md) 7** | medium, and it can make grammar bugs silent |
+| 5 | **An island rule** (§3.3) | since 2026-09-06 `tests/island.sh`, which rewrites the tool's own front end; text mode had the rule, and the three things it lacked landed the same day, [COMPLETED.md](COMPLETED.md)'s *The island rule, finished*** | medium, and it can make grammar bugs silent |
 | 6 | **A guard on a rule** (§3.2) | thin: two candidates, neither strong | very small; the backtracking is already there |
 | 7 | Editor mode from the header (§3.8) | none | small |
 | 8 | More than one error per run (§3.9) | none | small |

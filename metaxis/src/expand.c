@@ -669,12 +669,16 @@ static int text_word(Grammar *g, const char *s, size_t len, size_t pos, const ch
     return j == pos + n;
 }
 
-/* The first boundary at or after `pos` where `w` stands, or `len` for nowhere. */
-static size_t find_word(Grammar *g, const char *s, size_t len, size_t pos, const char *w)
+/* A declared bracket standing whole at `pos`: 1 for an opener, -1 for a
+   closer, 0 for neither, with `*n` its length. Whole means text_word's whole,
+   so a bracket inside a string token is never one. */
+static int text_bracket(Grammar *g, const char *s, size_t len, size_t pos, size_t *n)
 {
-    for (size_t j = pos; j < len; j = text_step(g, s, len, j))
-        if (text_word(g, s, len, j, w)) return j;
-    return len;
+    for (int i = 0; i < g->nbr; i++) {
+        if (text_word(g, s, len, pos, g->br[i].open))  { *n = strlen(g->br[i].open);  return 1; }
+        if (text_word(g, s, len, pos, g->br[i].close)) { *n = strlen(g->br[i].close); return -1; }
+    }
+    return 0;
 }
 
 /* Matching a text-mode pattern is a search, not a scan.
@@ -815,17 +819,29 @@ static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
         return 0;
     }
 
-    /* A text hole. Shortest first, stopping only where a token ends, and never
-       past the word that closes the rule. */
-    size_t cap = t->closer ? find_word(t->g, t->s, t->len, pos, t->closer) : t->len;
-    for (size_t stop = pos;; stop = text_step(t->g, t->s, t->len, stop)) {
-        Bind *snap = tm_save(t);
-        char *v = text_expand(t->g, t->s + pos, stop - pos, t->depth + 1, t->err);
-        if (!v) return 0;
-        bind_put(t->b, t->nb, e->hole, v, append, join, LEVEL_ATOM, 0);
-        if (tm_match(t, el, nel, k + 1, stop, cont, append, join)) return 1;
-        tm_load(t, snap);
-        if (stop >= cap) break;
+    /* A text hole. Shortest first, stopping only where a token ends and only
+       where the brackets the file declared are balanced from where the hole
+       began. Two things end the search: the word that closes the rule, and a
+       close bracket with no opener behind it, which belongs to the construct
+       around this one. So a hole over `f(x, g(y))` is all of it and not
+       `f(x, g(y)` with the last `)` copied through behind. */
+    int depth = 0;
+    for (size_t stop = pos;;) {
+        if (depth == 0) {
+            Bind *snap = tm_save(t);
+            char *v = text_expand(t->g, t->s + pos, stop - pos, t->depth + 1, t->err);
+            if (!v) return 0;
+            bind_put(t->b, t->nb, e->hole, v, append, join, LEVEL_ATOM, 0);
+            if (tm_match(t, el, nel, k + 1, stop, cont, append, join)) return 1;
+            tm_load(t, snap);
+            if (t->closer && text_word(t->g, t->s, t->len, stop, t->closer)) break;
+        }
+        if (stop >= t->len) break;
+        size_t bn;
+        int b = text_bracket(t->g, t->s, t->len, stop, &bn);
+        if (b > 0)      { depth++; stop += bn; }
+        else if (b < 0) { if (depth == 0) break; depth--; stop += bn; }
+        else stop = text_step(t->g, t->s, t->len, stop);
     }
     return 0;
 }

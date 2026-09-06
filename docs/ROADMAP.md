@@ -220,6 +220,17 @@ Nothing has asked yet: the example does not need it, and Python without wrapped
 calls is still Python. It is here so that the next file that wants one finds the
 question already asked.
 
+**The declaration exists since 2026-09-06, and it is the second shape.**
+`@bracket "(" ")"` is a directive of its own, built for text mode's holes as
+the last piece of the island rule ([COMPLETED.md](COMPLETED.md)'s *The island
+rule, finished*), taken because one declaration serves both modes and keeps
+the foreign text inside a string. In expression mode it is refused until the
+lexer reads it, `@bracket belongs to @mode text -- in expression mode nothing
+reads it yet`, so that a file cannot declare a bracket nothing consults. What
+is left here is the mechanic: between an opener and its match, the lexer
+suppresses the newline separator and the indent and dedent it would have made.
+The shape question this item was written around is answered.
+
 ## 3 · The three rules `as` cannot share
 
 **The mechanic is built and this is what it did not reach.** `as` and `mx -b`
@@ -258,127 +269,6 @@ is obviously right:
 
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing: one instance is a fact and two are a pattern.
-
-## 7 · The island rule: text mode wants a lexer
-
-*Numbered 7 because a number here is stable once given; by this page's own
-order it belongs first, being stage 5's. It was lost from this page for one
-commit on 2026-09-06 by an edit that sliced from item 4 to item 5, and the
-transcript check did not notice because no transcript was involved.*
-
-**The customer.** `tests/island.sh` rewrites `metaxis/cmd/mx.c` with
-`lib/island.mx` and runs the result, so a rewrite over a real file exists and
-is checked. It works because its two rules stay inside what text mode knows.
-The rehearsal that preceded it, `scratch/island/` on the day and the journal
-after, tried the three things a rewrite over real C wants next, and each one
-failed in a way that is now measured:
-
-- **No tokens.** Renaming `usage` also rewrote the word inside the usage string;
-  renaming `err` turned `stderr` into `stde`. A rename over real code is wrong
-  without an identifier boundary, and a text-mode hole is a run of characters.
-  [REFERENCE.md](REFERENCE.md) §7 already refuses a class kind in text mode
-  and says honouring it is this page's job *if anybody asks*. This is somebody
-  asking.
-- **No brackets.** A hole over `f(x, g(y))` stops at the first `)`. The rewrite
-  in `lib/island.mx` comes out right only because its template keeps the hole
-  last, so the leftover `))` is copied through behind it; a template that reused
-  the hole wrote `log(f(x, g(y); complain(f(x, g(y)))`. `examples/island.mx`
-  records the accident on purpose.
-- **Comment-aware means comment-removing.** Declaring C's `/* */` so that rules
-  stop firing inside comments deleted the comments from the output, six lines
-  of `mx.c`, because a text-mode comment is removed, which is right for a
-  document and wrong for a rewrite that must give the file back.
-
-**What this says about the shape.** The survey offered three shapes for
-islands in *expression* mode: skip a token, skip to the separator, a declared
-fallback rule. The rehearsal did not ask for any of them. What the rewrite
-wants is text mode plus the three things Comby knows and nothing more:
-identifiers, balanced brackets, and strings and comments that are *skipped over*
-rather than removed. That is a smaller mechanic than any of the three, it does
-not touch expression mode, and it does not touch the completeness that lets an
-expression grammar report its own bugs. Each piece has its own decision:
-
-- a class kind in text mode would have to mean *one token of this class, at a
-  boundary*, which is a lexer inside a scan, and where the token ends is the
-  question;
-- a bracket-aware hole needs to know which characters are brackets, and
-  [ROADMAP.md](ROADMAP.md) 2 has already met the question of whether a bracket
-  is declared (`@bracket "(" ")"`) or known;
-- a comment that is skipped rather than removed is a third thing `@comment`
-  would mean, and may want its own word.
-
-**Scoped, 2026-09-06, against the code, and the first change landed the same
-evening.** The three pieces are two changes, and the first needed no new
-syntax; it is [COMPLETED.md](COMPLETED.md)'s *Text mode moves by tokens*. What
-is left of this item is the second, the bracket.
-
-*Pieces 1 and 3 are one mechanic.* The identifier problem and the string and
-comment problem are the same defect: the scan in `text_expand` visits every
-character, so a word fires inside a token and a hole's closer is found inside
-a string. The fix is that a declared `@token` class makes the scan token-wise
-where it matches. At each position the longest class match is taken, the way
-the lexer takes it; a rule's leading word may fire only if it covers that
-token; if no rule fires, the whole token is copied through and the cursor
-moves past it; and a hole's candidate stops advance by tokens too, so the
-search for the closing word cannot land inside a string. That answers the
-three questions above at once:
-
-- *where the token ends* is the class regex, which is what the lexer already
-  decides. `match_here` in `metaxis/src/lex.c` is static and is exposed rather
-  than rewritten: it exists because of a measured slowdown, and `tests/scale.sh`
-  is the check that matters here;
-- *strings* are declared as five expression-mode examples already declare
-  them, `@token string "…"`;
-- *a kept comment is a token.* `@token comment "/\\*([^*]|\\*+[^*/])*\\*+/"`
-  is skipped whole and copied through, and `@comment` keeps its one text-mode
-  meaning, removal. The third thing `@comment` would mean needs no word at all.
-
-With that in, the class-kind refusal in `seal_check` is lifted: a class hole in
-text mode means one regex match at the cursor, taken exactly, no search. No
-shipping text-mode file declares a class today, so every recorded output is
-unchanged by construction.
-
-*Piece 2, brackets, is the second change*, and its declaration is
-[ROADMAP.md](ROADMAP.md) 2's question. A hole's candidate stop is valid only at
-bracket depth zero from where the hole began, and a close bracket that takes
-the depth negative ends the hole, which is Comby's rule. It is a small change
-to `tm_match` once the scan is token-wise, since the walk already skips
-strings. Of item 2's three shapes, `@bracket "(" ")"` as a directive of its
-own is the one to take: one declaration serves both modes and both items, and
-it keeps the foreign text inside a string. Reading pairs off the shape of the
-rules is declined there already, and stays declined.
-
-*The customer that makes it honest* is `tests/island.sh`, which gains the rules
-the rehearsal proved wrong: a rename of `err` that must leave `stderr` and the
-usage string alone, and a template that reuses the nested hole. The rewritten
-front end still has to compile and run, so a wrong answer is caught and not
-merely a changed one, and the run is kept, which [POSTMORTEM.md](POSTMORTEM.md)
-25 asks of every verdict.
-
-*What it touches besides code.* [REFERENCE.md](REFERENCE.md) §7 loses three
-bullets and §3 gains `@bracket` and its errors; [languages.md](languages.md)
-property 6 is reworded and the rows it stops move, the formatter that must
-give the file back, C as an island, any language in text mode, and TeX's
-second gap; item 2 here cites the directive; the glossary, the survey's §3.3,
-`docs/tutorial/12-island.mx` and `examples/island.mx` each carry a sentence
-that becomes history and should say so. Roughly 150 to 200 lines of C across
-`expand.c`, `header.c` and `mx.h`; the documents are the larger half.
-
-*Order.* The token-wise scan first, since it is the rename customer and needs
-no decision; brackets second, once `@bracket` is settled with item 2. About a
-day for the first with its documents, half for the second.
-
-**And one thing the stage could not do**, which is not this item's: the
-definition of `complain` goes in front of `usage` because that line happens to
-exist. Collections let the rule that needs it contribute it, but the honest
-place is *before the first function*, and saying that means reading C.
-
-**Why the bracket is not built today.** The rename was the customer for the
-first change and it came; the bracket's customer is a template that reuses a
-hole over a nested call, and the two that ship keep the hole last. Build it
-when one is wanted, and settle `@bracket` with item 2 in the same commit. The
-scope above is so that the day it is wanted starts at the code and not at the
-question.
 
 ## 5 · Source maps
 

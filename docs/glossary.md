@@ -205,10 +205,10 @@ work on real C and thirty other languages this way: they know brackets,
 strings and comments, and nothing else about any language, which is exactly
 why they work on all of them. TXL calls the same idea **agile parsing**.
 Metaxis's text mode is an island grammar, and stage 5 pointed it at the
-tool's own source. It has two of the three things Comby knows since
-2026-09-06, identifiers and strings and comments to pass over, both by
-declaring them as classes the scan moves by; ROADMAP item 7 holds the third,
-brackets.
+tool's own source. Since 2026-09-06 it has the three things Comby knows,
+each as a declaration: identifiers, strings and comments as `@token` classes
+the scan moves by, and brackets as `@bracket` pairs a hole must balance.
+COMPLETED.md's *The island rule, finished* is the account.
 
 ### Stack machines and Futamura
 
@@ -279,6 +279,10 @@ REFERENCE §2.2.
 **Bottom-up.** Building structure from the tokens upward, recognising a
 rule once its pieces are all present; also, computing a node's value from
 its children's. Metaxis is bottom-up in both senses.
+
+**Bracket.** `@bracket "(" ")"`: two words that nest. A text-mode hole stops
+only where they balance, and a close with no opener behind it ends the hole.
+REFERENCE §3.11, §7.
 
 **Budget.** A cap on how much work a search may do before it is declared
 stuck. Text mode has one: 200,000 match attempts per rule. Expression mode has
@@ -375,7 +379,7 @@ COMPLETED.md, direction.md.
 
 **Island grammar.** A grammar for only the constructs you care about, with
 everything else passed through. Text mode is one. Part one; prior-art.md
-§3.3; ROADMAP 7.
+§3.3; COMPLETED.md, *The island rule, finished*.
 
 **Kind.** What a hole takes: `expr`, `stmts`, `text`, `block`, or a class.
 REFERENCE §4.3.
@@ -511,8 +515,9 @@ statement, so no separator follows it; also the builtin that asks a hole the
 same. REFERENCE §3.4, §6.3, §8.3.
 
 **Text mode.** `@mode text`: the body is scanned, rules fire where they
-match, everything else passes through; where a declared class matches, the
-scan moves by the token. REFERENCE §7.
+match, everything else passes through; where a declared class matches the
+scan moves by the token, and a hole stops only where the declared brackets
+balance. REFERENCE §7.
 
 **Token.** The smallest unit of text that means something on its own; what
 the lexer produces. Part one; REFERENCE §6.1.

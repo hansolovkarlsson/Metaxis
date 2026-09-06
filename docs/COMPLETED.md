@@ -9,6 +9,68 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## The island rule, finished: `@bracket`, and a hole that stops at depth zero
+
+```
+$ mx examples/island.mx
+/* mx.c -- mx [-o out] file.mx, and [err] is what it says when it cannot */
+static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
+
+static void usage(void)
+{
+    if (!src) { complain(err); return 1; }
+    complain(f(x, g(y)));
+    fprintf(stderr, "mx: cannot write %s\n", outpath);
+    if (outpath && (f = fopen(outpath, "wb")) == 0) return 1;
+    fputs("usage: mx [-o output]\n", stderr); fputs(res, f); <out> = [12];
+}
+```
+
+**The last of the three pieces, and the one that needed a word.** A text-mode
+hole took the shortest run up to the word that closes the rule, so over
+`f(x, g(y))` it stopped at the first `)`, and `examples/island.mx` was right
+only because its template kept the hole last. `@bracket "open" "close"`
+declares two words that nest, and a hole now stops only where the declared
+brackets are balanced from where it began; a close bracket with no opener
+behind it ends the hole, which is Comby's rule, so a hole with nothing after
+it takes the rest of the enclosing construct rather than the file. A bracket
+is matched whole, as a word is, so one inside a string token is never seen:
+the probe crossed `"wb)"` on its way to the real close. The closing-word
+bound stays and is now checked at each candidate stop rather than found
+ahead, which is the same set of stops where no bracket is declared, and no
+recorded output changed but the island example's.
+
+**The declaration is item 2's answer.** [ROADMAP.md](ROADMAP.md) 2 had met the
+question of whether a bracket is declared or known and offered three shapes;
+this is the second, a directive of its own, taken because one declaration
+serves both modes and keeps the foreign text inside a string. Reading pairs
+off the shape of rules was declined there and stays declined. In expression
+mode the directive is refused once the header has finished, `@bracket belongs
+to @mode text -- in expression mode nothing reads it yet`, so that a file
+cannot declare a bracket nothing consults; the lexer state that would read it
+is what remains of item 2, and its shape question is closed. `mx -g` prints
+`bracket ( )`.
+
+**The customer is the one `!(` in the front end.** `lib/island.mx` declares
+C's three bracket pairs and a fourth rule, `"!(" x ")"` to `({x}) == 0`, whose
+template puts text after the hole. Over `if (outpath && !(f = fopen(outpath,
+"wb")))` the hole is `f = fopen(outpath, "wb")` whole, and `tests/island.sh`
+greps for the rewritten line; before the bracket it came out as
+`(f = fopen(outpath, "wb") == 0))`, which compiles and assigns `f` the result
+of a comparison. The example and the tutorial's island file carry a nested
+call each, and the tutorial's §12 says what the directive does.
+
+**Three refusals**: the two sides the same, a word already a side of another
+bracket, and the directive in expression mode. `tests/errors.sh`.
+
+**What the item leaves behind.** Roadmap item 7 is settled and its number
+retired. Every document that cited it now cites this entry and the one below,
+and the languages page's property 6 says what text mode knows rather than
+what it lacked: everything Comby knows, declared in six lines, and no column.
+
+Verified at 16 examples, 85 error cases and nine check scripts: 155 `ok`
+lines, the transcript above among them.
+
 ## Text mode moves by tokens: the island rule's first change
 
 ```
@@ -19,12 +81,15 @@ static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
 static void usage(void)
 {
     if (!src) { complain(msg); return 1; }
+    complain(f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
 }
 ```
 
-**One mechanic for two of the three pieces.** [ROADMAP.md](ROADMAP.md) 7 had
-measured three things text mode lacked for a rewrite over real code: a word
+*(The nested call in the transcript came with the bracket, the entry above.)*
+
+**One mechanic for two of the three pieces.** Roadmap item 7, the island
+rule, had measured three things text mode lacked for a rewrite over real code: a word
 fired inside an identifier or a string, a hole stopped at the first `)`, and a
 declared comment was removed. Scoping it against the code found the first and
 the third to be one defect, that the scan visited every character, and one
@@ -250,13 +315,14 @@ static void usage(void)
     if (!src) { complain(err); return 1; }
     complain(f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
+    if (outpath && (f = fopen(outpath, "wb")) == 0) return 1;
     fputs("usage: mx [-o output]\n", stderr); fputs(res, f); <out> = [12];
 }
 ```
 
-*(The transcript is the example as it stands: the first line and the last
-came with the token-wise scan, the entry above this one, and were not part of
-the stage.)*
+*(The transcript is the example as it stands: the first line, the `fopen`
+line and the last came with the two island-rule entries above and were not
+part of the stage.)*
 
 **Rehearsed first, by the stage 3 method, and the rehearsal was the stage.** The
 survey's strongest finding was the island rule, that text a file has no rule for
@@ -274,8 +340,8 @@ two can never drift, compiles what comes out against the tree's own objects, and
 runs the binary on `examples/first.mx` and on a missing file. Same output, same
 message, through `complain`.
 
-**What the rehearsal measured**, each by running it, is
-[ROADMAP.md](ROADMAP.md) 7: a bare word fires inside identifiers and strings
+**What the rehearsal measured**, each by running it, became roadmap item 7
+and is *The island rule, finished* above: a bare word fires inside identifiers and strings
 (`usage` → `help` rewrote the usage string; `err` → `e` made `stde`), a hole
 stops at the first `)` and is right only when the template keeps it last, and
 declaring C's comments removes them. The example's third line records the

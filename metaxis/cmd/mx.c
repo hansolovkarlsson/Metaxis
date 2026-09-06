@@ -46,6 +46,8 @@ static void dump(Grammar *g)
     for (int i = 0; i < g->ncom; i++)
         printf("comment    %s %s\n", g->com[i].open,
                g->com[i].eol ? "eol" : g->com[i].close);
+    for (int i = 0; i < g->nbr; i++)
+        printf("bracket    %s %s\n", g->br[i].open, g->br[i].close);
     printf("words     ");
     for (int i = 0; i < g->npunct; i++) printf(" '%s'", g->punct[i]);
     printf("\n");

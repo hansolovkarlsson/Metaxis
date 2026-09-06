@@ -676,6 +676,33 @@ static int directive(Grammar *g, D *d, const char *file, int line,
         g->com[g->ncom++] = c;
         return 0;
     }
+    if (!strcmp(name, "bracket")) {
+        char *open = dstring(d);
+        if (!open) goto fail;
+        char *close = dstring(d);
+        if (!close) goto fail;
+        if (dend(d, "@bracket") < 0) goto fail;
+        if (!*open || !*close) { derr(d, "an empty word matches nothing"); goto fail; }
+        if (!strcmp(open, close)) {
+            derr(d, xfmt("a bracket opens with one word and closes with another,"
+                         " and '%s' is both", open));
+            goto fail;
+        }
+        for (int i = 0; i < g->nbr; i++) {
+            const char *dup = NULL;
+            if (!strcmp(g->br[i].open, open) || !strcmp(g->br[i].close, open)) dup = open;
+            if (!strcmp(g->br[i].open, close) || !strcmp(g->br[i].close, close)) dup = close;
+            if (dup) {
+                derr(d, xfmt("'%s' is already a bracket, declared at %s:%d",
+                             dup, g->br[i].file, g->br[i].line));
+                goto fail;
+            }
+        }
+        Bracket b = { open, close, xstrdup(file), line };
+        g->br = grow(g->br, g->nbr, sizeof *g->br);
+        g->br[g->nbr++] = b;
+        return 0;
+    }
     if (!strcmp(name, "separator")) {
         char *in = dstring(d);
         if (!in) goto fail;
@@ -1199,6 +1226,16 @@ int grammar_seal(Grammar *g, char **err)
         seal_elems(g, g->rule[r].el, g->rule[r].nel);
     if (g->sep_in && !g->sep_nl) seal_word(g, g->sep_in);
     qsort(g->punct, (size_t)g->npunct, sizeof *g->punct, cmp_len);
+
+    /* A bracket is read by text mode's holes and by nothing else. Accepting
+       it in expression mode would be a directive that reads as if it worked,
+       so it is refused until the lexer reads it (docs/ROADMAP.md 2). Checked
+       here for seal_check's reason: @mode may come after it, or from @use. */
+    if (g->mode != MODE_TEXT && g->nbr) {
+        *err = xfmt("%s:%d: @bracket belongs to @mode text -- in expression mode"
+                    " nothing reads it yet", g->br[0].file, g->br[0].line);
+        return -1;
+    }
 
     if (g->mode == MODE_TEXT)
         for (int r = 0; r < g->nrule; r++) {

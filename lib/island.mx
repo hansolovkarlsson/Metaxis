@@ -18,18 +18,21 @@
 ; that without reading C.
 ;
 ; What text mode did not know on the day this was written, measured on this
-; file and recorded in docs/ROADMAP.md 7: it had no tokens, so a word fired
-; inside an identifier or a string; it has no brackets, so a hole over
-; `f(x, g(y))` stops at the first `)` and is right only when the template
-; keeps the hole last; and declaring C's comments as @comment removed them.
-; The first and the third are one thing and are now one mechanic: the four
-; @token classes below make the scan move by tokens where they match, so a
+; file and recorded in docs/COMPLETED.md's *The island rule, finished*: it
+; had no tokens, so a word fired inside an identifier or a string; it had no
+; brackets, so a hole over `f(x, g(y))` stopped at the first `)` and was
+; right only when the template kept the hole last; and declaring C's
+; comments as @comment removed them. All three are declarations now. The
+; four @token classes make the scan move by tokens where they match, so a
 ; word fires only on a whole identifier, and a string, a character literal
-; or a comment is passed over rather than searched. The third rule is the
-; rename that used to go wrong: `out` is the buffer the front end writes,
-; and `outpath`, the `output` in the usage string and the `out` in the file's
-; first comment are all left alone. The bracket is still ROADMAP 7's, and the
-; first two rules still keep the hole last.
+; or a comment is passed over rather than searched. The three @bracket pairs
+; make a hole stop only where they balance, so `e` below is the whole
+; argument. The third rule is the rename that used to go wrong: `out` is the
+; buffer the front end writes, and `outpath`, the `output` in the usage
+; string and the `out` in the file's first comment are all left alone. The
+; fourth puts text after its hole, which is right only because the hole is
+; whole: without the brackets it wrote `(f = fopen(outpath, "wb") == 0))`,
+; which compiles and means something else.
 ;
 ; These are code templates, and the first draft's were strings. In a string
 ; template `{` is a hole, so C's braces are `{{ }}`, and `\n` is a newline, so
@@ -44,6 +47,10 @@
 @token char    "'([^'\\\\]|\\\\.)*'"
 @token comment "/\\*([^*]|\\*+[^*/])*\\*+/"
 
+@bracket "(" ")"
+@bracket "[" "]"
+@bracket "{" "}"
+
 @syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"
     => {
         contribute("defs", "static void complain(const char *e) { fprintf(stderr, \"mx: %s\\n\", e); }")
@@ -54,3 +61,5 @@
     => { emit splice("defs") + "\n\nstatic void usage(void)" }
 
 @syntax "out" => "res"
+
+@syntax "!(" x ")" => "({x}) == 0"
