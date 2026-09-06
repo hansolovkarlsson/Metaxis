@@ -16,7 +16,9 @@ they are right.*
 
 ## Part one · The concepts, in the order they depend on each other
 
-### A language is a set of strings, and a grammar is a finite way to say which
+### Grammar
+
+*A language is a set of strings, and a grammar is a finite way to say which.*
 
 Take every possible piece of text. Some are Pascal programs and most are not.
 The set that are is "the Pascal language", and it is infinite, so nobody can
@@ -37,7 +39,9 @@ grammar, written as `@syntax` rules, and each rule's pattern is one way an
 expression can be spelled. The nonterminals are not named: there is one
 category, *expression*, and every hole is one.
 
-### Lexing: text becomes tokens
+### Lexing
+
+*Text becomes tokens.*
 
 Before structure is looked for, text is cut into **tokens**: the smallest
 pieces that mean something on their own. `total := total + 1` is five
@@ -61,7 +65,9 @@ line is deeper or shallower than the one before and produce **indent** and
 **dedent** tokens that no character in the file spells. Metaxis does this
 under `@separator "\n" indent`, and a `block` hole is what reads them.
 
-### Parsing: tokens become structure
+### Parsing
+
+*Tokens become structure.*
 
 A **parser** takes the token stream and finds the structure the grammar says
 is there. The structure is a tree: `1 + 2 * 3` is a `+` node whose right
@@ -122,7 +128,9 @@ relative to its operands: *prefix* before (`-x`), *postfix* after (`n!`),
 parser needs a rule for it; in Metaxis it falls out of *longest pattern
 first*.
 
-### Expansion: structure becomes text
+### Expansion
+
+*Structure becomes text.*
 
 A compiler turns the tree into machine code; an interpreter walks it and does
 what it says. Metaxis does a third thing: it turns the tree back into *text*,
@@ -139,7 +147,9 @@ already end a statement*. Those two questions are all a Metaxis rule can ask
 about its children, and [notation.md](notation.md) says why that is the
 price of not knowing the output language.
 
-### Attribute grammars: values that ride on the tree
+### Attribute grammars
+
+*Values that ride on the tree.*
 
 An **attribute grammar** is a grammar in which every node can carry values —
 *attributes* — computed by rules attached to the grammar's productions. A
@@ -156,7 +166,9 @@ collection's value is the aggregate of every contribution. It is still
 synthesised — nothing flows down — which is why Metaxis could add it without
 gaining context. `contribute` and `splice` are that (REFERENCE §8.4).
 
-### Context, and the walls
+### Context
+
+*What a rule would need to know that is not in its own pattern, and the walls it makes.*
 
 **Context** is anything a rule would need to know that is not in its own
 pattern: what type `x` was declared with, whether `Banner` is a procedure or
@@ -168,7 +180,9 @@ language is one that cannot be parsed without it, and C is one. Metaxis has
 no symbol table by decision, and ROADMAP item 1 records the three places the
 Pascal translator hit that wall.
 
-### Hygiene: whose name is it
+### Hygiene
+
+*Whose name is it.*
 
 A **macro** is a rule that rewrites one piece of code into another before it
 is compiled — C's `#define`, Lisp's `defmacro`, and every Metaxis rule. The
@@ -181,7 +195,9 @@ half where a template *reaches out* for a name the caller has shadowed,
 because a text template cannot see a scope. `examples/hygiene.mx` shows both
 halves and `tests/hygiene.sh` runs them.
 
-### Islands: reading only what you declare
+### Islands
+
+*Reading only what you declare.*
 
 An **island grammar** describes just the constructs you care about and treats
 everything else as water to pass through. Tools like Comby and Coccinelle
@@ -192,7 +208,9 @@ Metaxis's text mode is an island grammar, and stage 5 pointed it at the
 tool's own source; ROADMAP item 7 is what it would take to give it the three
 things Comby knows.
 
-### Two more ideas the direction page uses
+### Stack machines and Futamura
+
+*Two more ideas the direction page uses.*
 
 A **stack machine** is a computer, real or imagined, whose instructions take
 their operands from a stack and push their results back; it is the easiest
