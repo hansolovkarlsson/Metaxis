@@ -1257,7 +1257,7 @@ Both take a file that declares its own grammar. Where they part:
 | rule directives | `@infix`, `@infixr`, `@prefix`, `@syntax` | `@syntax` |
 | repetition and optional parts | declined three times, no customer | `[ … ]`, `[ … ]*`, `[ … ]+` — §4.4 |
 | the shape of a rule | named by the directive | read off the pattern |
-| operator characters | a closed set; `. , : ; |` are spoken for | whatever a string says |
+| operator characters | a closed set; `. , : ; \|` are spoken for | whatever a string says |
 | literals | the lexer's, fixed | `@token` |
 | comments | `;`, fixed | `@comment` |
 | statement separator | `.`, fixed | `@separator` |
