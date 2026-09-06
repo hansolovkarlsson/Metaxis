@@ -1,7 +1,13 @@
-; 12-island.mx -- text mode over real code. Two constructs are rewritten and
-; the rest of the C passes through, comments and all.
+; 12-island.mx -- text mode over real code. Two constructs are rewritten, a
+; variable is renamed, and the rest of the C passes through, comments and
+; all. The three @token lines are what hold the rename to whole identifiers:
+; where a class matches, the scan moves by the token, so `err` is not found
+; inside `stderr`, inside the string, or inside the comment.
 
 @mode text
+@token name    "[A-Za-z_][A-Za-z0-9_]*"
+@token string  "\"([^\"\\\\]|\\\\.)*\""
+@token comment "/\\*([^*]|\\*+[^*/])*\\*+/"
 @syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"
     => {
         contribute("defs", "static void complain(const char *e) { fprintf(stderr, \"mx: %s\\n\", e); }")
@@ -9,8 +15,9 @@
     }
 @syntax "static void usage(void)"
     => { emit splice("defs") + "\n\nstatic void usage(void)" }
+@syntax "err" => "msg"
 @end
-/* a fragment of a C file */
+/* a fragment of a C file: err goes to stderr */
 static void usage(void)
 {
     if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }

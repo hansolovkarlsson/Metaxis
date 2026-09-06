@@ -188,6 +188,10 @@ applies, so `"0x[0-9a-fA-F]+|[0-9]+"` takes all of `0x0c` and not just the `0`.
   namespace with either (§3.9).
 - A bad pattern is `bad pattern for 'name': …` with the regex library's own
   words after it.
+- **In text mode a class is what the scan moves by** (§7): where one matches,
+  the token is taken whole, so a rule's word cannot fire inside it and a hole
+  cannot stop inside it. Declaring a language's identifiers, strings and
+  comments is how a rewrite over a real file is held to whole tokens.
 - **Nothing may follow but `override`.** Anything else is `trailing text after
   @token`, as it has always been after a template.
 
@@ -543,7 +547,7 @@ block*.
 | `stmts` | statements separated by the declared separator, up to the pattern's next word. Expanded, and joined with the separator's output form. |
 | `text` | raw source text up to the pattern's next word. Text mode only (§7); in expression mode it is `a 'text' hole belongs to @mode text`. |
 | `block` | the indented run of statements that follows, expanded and joined the way `stmts` is. Requires `@separator "…\n…" indent` (§3.3); without one it is `'b:block' wants a block, and nothing here opens one`. Expression mode only. |
-| *a class name* | exactly one token of that class, spliced as its source text. Expression mode only (§7); in text mode it is `'x:name' asks for one token of a class, and text mode has no tokens`. |
+| *a class name* | exactly one token of that class, spliced as its source text. In text mode (§7) it is the token the scan would take at the cursor, and the rule fails where none of that class stands. |
 
 **A `block` hole owns both of its delimiters**, which is what makes it the one
 hole that needs no word after it to stop at:
@@ -789,22 +793,33 @@ else is copied through unchanged.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else: `examples/poem.mx`
   declares `-`, `--` and `---` in that order and `---` still wins.
-- **Every hole is text** and takes the shortest run that lets the rest of the
-  pattern match. A hole with nothing after it takes the rest of the enclosing
-  text.
+- **A declared class makes the scan move by tokens where it matches.** At each
+  position the longest match of any `@token` class is the token there, exactly
+  as the lexer decides it (§6.1). A rule's word may begin only where a token
+  begins and must end where one ends, so `err` is not found inside `stderr`; a
+  hole's candidate stops are the same places; and a token no rule fired on is
+  copied through whole, so a string or a comment that the file declares as a
+  class is passed over rather than searched. A file that declares no class is
+  scanned one character at a time, and nothing else tells text mode what a
+  string is. `lib/island.mx` declares four classes for C and renames a variable
+  that a bare word got wrong; `examples/island.mx` shows it.
+- **Every hole but a class is text** and takes the shortest run that lets the
+  rest of the pattern match, stopping only where a token ends. A hole with
+  nothing after it takes the rest of the enclosing text.
 - **A `block` kind is refused here, and for the same reason as a class.** A
   block is delimited by two tokens the lexer makes out of the whitespace between
   the others, and text mode has no tokens to measure the indentation of. It is
   `'b:block' asks for an indented run of statements, and text mode has no tokens
   to measure the indentation of`.
-- **A class kind is refused here.** `expr` and `stmts` both mean *read up to the
-  word that stops you*, which is what a text-mode hole does anyway, so those
-  degrade honestly and are left alone. A class says something else: *one token,
-  matching this regex*. Text mode has no tokens, so `"[" x:name "]"` took
-  everything up to the `]` and never consulted the kind. It read as if it had
-  worked, which is why it is now refused rather than honoured; honouring it is
-  [ROADMAP.md](ROADMAP.md)'s job if anybody asks. **The check runs once the
-  header has finished**, not in the rule that declared it, because `@mode` is a
+- **A class kind takes one token** of that class at the cursor, the longest
+  match of any class there, spliced as its source text and not expanded; where
+  no such token stands the rule fails and the next is tried. `expr` and
+  `stmts` both mean *read up to the word that stops you*, which is what a text
+  hole does anyway, so those degrade honestly and are left alone. Until
+  2026-09-06 a class was refused here, because the scan had no tokens and
+  `"[" x:name "]"` took everything up to the `]` without consulting the kind:
+  it read as if it had worked. **The block check above runs once the header
+  has finished**, not in the rule that declared it, because `@mode` is a
   directive like any other and may be written after the rule, or in the file
   that `@use`d it.
 - **A hole may not span the word that closes the rule**: the last literal word
@@ -817,9 +832,11 @@ else is copied through unchanged.
   Depth is capped at 64 (`a text rule expands into itself`).
 - If a rule's pattern does not complete, nothing is consumed and the next rule is
   tried; if none matches, one character is copied and the scan moves on.
-- A comment is removed. **A comment that is alone on its line takes the line
-  with it**, indentation and newline included; one that follows text on a line
-  is removed only as far as the end of the line.
+- A comment declared with `@comment` is removed. **A comment that is alone on
+  its line takes the line with it**, indentation and newline included; one that
+  follows text on a line is removed only as far as the end of the line. A
+  comment the output must keep is declared as a class instead, and passes
+  through whole with nothing fired inside it.
 - `@separator` is not used.
 
 ---
@@ -1166,7 +1183,6 @@ not read, or memory it could not get.
 | `'expr' is a kind, so a class called that could never be used` | §3.1; likewise `stmts` and `text` |
 | `expected a kind after ':'` | a hole wrote `:` and stopped |
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
-| `'x:name' asks for one token of a class, and text mode has no tokens` | §7 |
 | `'contribute' is a statement -- it adds to a collection on a line of its own and has no value to use here` | §8.4 |
 | `'contribute' takes 2 -- the collection's name and what to add to it -- and was given 1` | §8.4 |
 | `a rule that begins with a hole is infix, and text mode has nothing for it to continue -- it could never fire` | §7 |
@@ -1327,7 +1343,7 @@ Where a term has one home and several mentions, the home is first.
 | `@separator` | 3.3, 6.3, 6.1 |
 | `@syntax` | 3.4, 4, 5, 8 |
 | `@template` | 3.8, 8.3 |
-| `@token` | 3.1, 4.3, 6.1 |
+| `@token` | 3.1, 4.3, 6.1, 7 |
 | `@use` | 3.5, 3.10 |
 | `as name`, tagging a template | 3.4, 9 |
 | `at(h, n)` | 8.3 |
@@ -1396,7 +1412,7 @@ Where a term has one home and several mentions, the home is first.
 | String template `=> "…"` | 8.1, 8 |
 | Strings, Metaxis | 2.4 |
 | `terminated` | 3.4, 6.3, 8.3 |
-| Text mode | 7, 3.6 |
+| Text mode | 7, 3.6, 3.1 |
 | `text` kind | 4.3, 7 |
 | Token | 6.1, 3.1 |
 | Trace | 9 |

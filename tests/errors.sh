@@ -184,18 +184,20 @@ expect "cannot open" <<'EOF'
 @use "no-such-file.mx"
 EOF
 
-# The mode is named after the rule on purpose: this is checked once the header
-# has finished speaking, not by the rule that declared it, so the order a file
-# writes its directives in cannot let it through.
-expect "text mode has no tokens" <<'EOF'
-@token name "[a-z]+"
-@syntax "[" x:name "]" => "<{x}>"
+# A block hole in text mode. The mode is named after the rule on purpose: this
+# is checked once the header has finished speaking, not by the rule that
+# declared it, so the order a file writes its directives in cannot let it
+# through. (A class hole was refused here too until 2026-09-06, when text mode
+# began consulting the classes a file declares; examples/island.mx has one.)
+expect "text mode has no tokens to measure the indentation of" <<'EOF'
+@separator "\n" indent
+@syntax "if" c ":" b:block => "{c}{b}"
 @mode text
 EOF
 
 # A led rule in text mode. Until 2026-09-06 this was accepted and the rule never
 # fired: `p->f` came through a text-mode file unchanged, with no message and
-# exit 0. Same shape as the class-kind case above -- a rule that reads as if it
+# exit 0. Same shape as the block case above -- a rule that reads as if it
 # worked -- and refused at the same place, once the header has finished.
 expect "text mode has nothing for it to continue" <<'EOF'
 @syntax a "->" b 50 => "{a}.{b}"

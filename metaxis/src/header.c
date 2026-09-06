@@ -1000,15 +1000,17 @@ static void seal_elems(Grammar *g, Elem *el, int nel)
     }
 }
 
-/* A class-kind hole is the one kind text mode cannot honour.
+/* A block-kind hole is the one kind text mode cannot honour.
  *
  * `expr` and `stmts` both mean *read up to the word that stops you*, which is
- * what a text-mode hole does anyway, so those degrade honestly. A class says
- * something else entirely -- **one token, matching this regex** -- and text
- * mode has no tokens to say it about, so `"[" x:name "]"` took everything up
- * to the `]` and the kind was never consulted. It did not fail; it read as if
- * it had worked. That is the shape of defect this project keeps meeting, so
- * the hole is refused where it cannot mean what it says.
+ * what a text-mode hole does anyway, so those degrade honestly. A class means
+ * *one token, matching this regex*, and since 2026-09-06 text mode consults
+ * the classes a file declares, so that is honoured too (text_tok in expand.c).
+ * Before that it was refused here, because `"[" x:name "]"` took everything up
+ * to the `]` and the kind was never consulted: it did not fail, it read as if
+ * it had worked, which is the shape of defect this project keeps meeting. A
+ * block is still that: its delimiters are two tokens the lexer makes out of
+ * whitespace, and the scan measures no indentation.
  *
  * The check is here rather than in the rule that declared it because `@mode`
  * is a directive like any other: a rule may be written before the mode is, or
@@ -1016,22 +1018,16 @@ static void seal_elems(Grammar *g, Elem *el, int nel)
  * the header has finished speaking, the mode is settled and every rule is in. */
 static int seal_check(Grammar *g, Rule *r, Elem *el, int nel, char **err)
 {
+    (void)g;
     for (int i = 0; i < nel; i++) {
         if (el[i].kind == EL_GROUP) {
             if (seal_check(g, r, el[i].sub, el[i].nsub, err) < 0) return -1;
             continue;
         }
-        if (el[i].kind != EL_HOLE) continue;
-        if (el[i].hk == K_BLOCK) {
-            *err = xfmt("%s:%d: '%s:block' asks for an indented run of statements,"
-                        " and text mode has no tokens to measure the indentation of",
-                        r->file, r->line, el[i].hole);
-            return -1;
-        }
-        if (el[i].hk != K_CLASS) continue;
-        *err = xfmt("%s:%d: '%s:%s' asks for one token of a class, and text mode"
-                    " has no tokens -- every hole there is text",
-                    r->file, r->line, el[i].hole, g->cls[el[i].cls].name);
+        if (el[i].kind != EL_HOLE || el[i].hk != K_BLOCK) continue;
+        *err = xfmt("%s:%d: '%s:block' asks for an indented run of statements,"
+                    " and text mode has no tokens to measure the indentation of",
+                    r->file, r->line, el[i].hole);
         return -1;
     }
     return 0;

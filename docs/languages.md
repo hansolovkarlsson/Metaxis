@@ -74,15 +74,17 @@ reference states it, and each has a list of languages it settles.
    layout rule that opens a block at the column of the next token, or a
    language where the tab is not eight columns, is not that shape.
 
-6. **Text mode is a scan with no tokens.** REFERENCE §7 and
-   [ROADMAP.md](ROADMAP.md) 7. A rule fires where its words match and
-   everything else passes through, which is the island grammar every tool
-   that works on real code has. What it lacks is the three things those
-   tools know: a rename over `err` also hits `stderr`, a hole over
-   `f(x, g(y))` stops at the first `)`, and a declared comment is removed
-   rather than skipped. So text mode is for markup, and for a rewrite shaped
-   like `lib/island.mx`, and not for a formatter that must give the file
-   back.
+6. **Text mode is a scan, and a declared class is the only token it has.**
+   REFERENCE §7 and [ROADMAP.md](ROADMAP.md) 7. A rule fires where its words
+   match and everything else passes through, which is the island grammar
+   every tool that works on real code has. Of the three things those tools
+   know it has two, since 2026-09-06: where a `@token` class matches, the
+   scan moves by the token, so a rename over `err` leaves `stderr` alone and
+   a string or a comment declared as a class is passed over whole. What it
+   lacks is the third: a hole over `f(x, g(y))` stops at the first `)`. So
+   text mode is for markup, for a rewrite shaped like `lib/island.mx`, and
+   for a rename; a formatter would want the brackets and the columns it does
+   not have.
 
 7. **Output is text, built upward, and any language can be written.** The
    question on the output side is never the grammar, since there is none to
@@ -127,8 +129,8 @@ grammar**, since that is the question a reader with a codebase is asking:
 
 | language | reads | why |
 | --- | --- | --- |
-| **C, as an island** | a rewrite, with the hole kept last | Stage 5. `lib/island.mx` rewrites `metaxis/cmd/mx.c`, the tool's own front end, and `tests/island.sh` compiles and runs the result. What holds it to that shape is property 6: a template that reused the hole wrote `log(f(x, g(y); complain(f(x, g(y)))`, and `examples/island.mx` records the accident on purpose. |
-| **Any language, in text mode** | a rewrite of the same shape | The rule is the same for all of them, which is why Comby works on thirty languages: a rewrite whose pattern is words the language does not use inside strings, whose hole does not cross a bracket, and whose output keeps the hole last. [ROADMAP.md](ROADMAP.md) 7 is what would widen it. |
+| **C, as an island** | a rewrite, with the hole kept last, and a rename | Stage 5. `lib/island.mx` rewrites `metaxis/cmd/mx.c`, the tool's own front end, and `tests/island.sh` compiles and runs the result. What holds it to that shape is property 6: a template that reused the hole wrote `log(f(x, g(y); complain(f(x, g(y)))`, and `examples/island.mx` records the accident on purpose. The rename in the same file, `out` to `res`, leaves `outpath`, the usage string and the first comment alone, because the file declares C's identifiers, strings, character literals and comments as classes. |
+| **Any language, in text mode** | a rewrite of the same shape | The rule is the same for all of them, which is why Comby works on thirty languages: declare the language's identifiers, strings and comments as classes, and write a rewrite whose hole does not cross a bracket and whose output keeps the hole last. The bracket is what [ROADMAP.md](ROADMAP.md) 7 still holds, and is what would widen it. |
 
 ---
 
@@ -157,7 +159,7 @@ rewrite is still worth having, the row says so.*
 | **Make, Dockerfile** | A line whose tail is another language, property 2: a recipe line is shell, and a `RUN` line is shell, and a class that could match the tail swallows the keyword. Make adds a tab that means *recipe* and a space that does not, where the indent stack counts a tab as eight spaces (property 5). Text mode edits either. |
 | **YAML** | The indentation reads, since it is Python's shape. What stops it is a block scalar, `key: \|` followed by indented lines that are *text*, which is a lexer state beyond the indent stack (property 2); an anchor and its alias, `&a` and `*a`, which is a lookup (property 1); and flow style wrapped across lines (property 4). The subset of maps, lists and one-line scalars reads, and most configuration files are outside it somewhere. |
 | **Fortran** (fixed form), **COBOL** | Column-significant: a label in columns 1 to 5, a continuation mark in 6, code from 7 to 72. The lexer counts columns for indentation and for nothing else (property 2). Fortran adds insignificant spaces, so `DO 10 I = 1.10` is an assignment, and COBOL adds a period whose scope depends on position and a `PICTURE` clause that is a language of its own. |
-| **TeX, LaTeX** | `\catcode` reprograms the lexer from inside the document, which is property 2 with nothing left of it, and a macro takes arguments delimited by whatever it declared. **Text mode** rewrites a LaTeX document in place, `\emph{…}` to `\textit{…}`, and a brace nested inside the argument is the second gap of [ROADMAP.md](ROADMAP.md) 7. |
+| **TeX, LaTeX** | `\catcode` reprograms the lexer from inside the document, which is property 2 with nothing left of it, and a macro takes arguments delimited by whatever it declared. **Text mode** rewrites a LaTeX document in place, `\emph{…}` to `\textit{…}`, and a brace nested inside the argument is the one gap left in [ROADMAP.md](ROADMAP.md) 7. |
 | **Regular expressions, EBNF** | Both put sequence by juxtaposition, `ab` and `a b`, at the centre of the notation, which is property 3. The cleanest statement of the property is that this tool cannot read the EBNF its own reference is written in, and reads its own token patterns only by handing them to `regcomp`. |
 
 ---
@@ -200,6 +202,6 @@ seven properties, read that way:
 | **a rewrite over a real file** | fit, shaped like `lib/island.mx` | property 6 |
 | **a front end for an industrial language** | unfit | property 1; [direction.md](direction.md)'s *what it should not become* |
 | **a codemod over a tree** | unfit, by decision | the grammar belongs to the file, not the tool; [prior-art.md](prior-art.md) § 5 |
-| **a formatter** | unfit | text mode removes comments and expression mode refuses what it has no rule for; a formatter must give the file back |
+| **a formatter** | unfit | text mode gives the file back but has no brackets and no columns, and expression mode refuses what it has no rule for |
 | **a syntax highlighter** | unfit | the lexer cannot run without the header (notation.md, *What it costs*), and a rule cannot fire on a bare token |
 | **a linter** | unfit | one error per run, no source maps, [ROADMAP.md](ROADMAP.md) 5 |

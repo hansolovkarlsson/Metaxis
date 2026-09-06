@@ -307,8 +307,10 @@ expression grammar report its own bugs. Each piece has its own decision:
 - a comment that is skipped rather than removed is a third thing `@comment`
   would mean, and may want its own word.
 
-**Scoped, 2026-09-06, against the code.** The three pieces are two changes,
-and the first needs no new syntax.
+**Scoped, 2026-09-06, against the code, and the first change landed the same
+evening.** The three pieces are two changes, and the first needed no new
+syntax; it is [COMPLETED.md](COMPLETED.md)'s *Text mode moves by tokens*. What
+is left of this item is the second, the bracket.
 
 *Pieces 1 and 3 are one mechanic.* The identifier problem and the string and
 comment problem are the same defect: the scan in `text_expand` visits every
@@ -327,8 +329,8 @@ three questions above at once:
   is the check that matters here;
 - *strings* are declared as five expression-mode examples already declare
   them, `@token string "…"`;
-- *a kept comment is a token.* `@token comment "/\\*([^*]|\\*[^/])*\\*/"` is
-  skipped whole and copied through, and `@comment` keeps its one text-mode
+- *a kept comment is a token.* `@token comment "/\\*([^*]|\\*+[^*/])*\\*+/"`
+  is skipped whole and copied through, and `@comment` keeps its one text-mode
   meaning, removal. The third thing `@comment` would mean needs no word at all.
 
 With that in, the class-kind refusal in `seal_check` is lifted: a class hole in
@@ -371,11 +373,12 @@ definition of `complain` goes in front of `usage` because that line happens to
 exist. Collections let the rule that needs it contribute it, but the honest
 place is *before the first function*, and saying that means reading C.
 
-**Why it is not built today.** Each piece has a customer in the rehearsal and
-none in a file that ships; the rewrite that ships was written to need none of
-them. Build the first change when a rewrite is wanted that a bare-word rule
-gets wrong, which will be the first rename. The scope above is so that the
-day it is wanted starts at the code and not at the question.
+**Why the bracket is not built today.** The rename was the customer for the
+first change and it came; the bracket's customer is a template that reuses a
+hole over a nested call, and the two that ship keep the hole last. Build it
+when one is wanted, and settle `@bracket` with item 2 in the same commit. The
+scope above is so that the day it is wanted starts at the code and not at the
+question.
 
 ## 5 · Source maps
 

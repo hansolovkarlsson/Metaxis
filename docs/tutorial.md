@@ -958,31 +958,39 @@ Some <b>bold</b> words and a <a href="http://x.y">link</a> and a bare <a href="h
 Nothing else here is touched: {braces}, "quotes", `backticks`.
 ```
 
-In text mode there are no tokens: a hole is a run of characters, and takes
-the *shortest* run that lets the rest of the pattern match. `t:text` in the
-`**` rule stops at the next `**`. Only rules that begin with a word apply,
-since there is nothing for an infix rule to continue.
+A text-mode hole is a run of characters, and takes the *shortest* run that
+lets the rest of the pattern match. `t:text` in the `**` rule stops at the
+next `**`. Only rules that begin with a word apply, since there is nothing for
+an infix rule to continue.
 
 Because everything unmatched passes through, text mode can be pointed at a
-**real file** and asked to change two things in it. `docs/tutorial/12-island.mx`
-rewrites one C construct in a fragment of C and leaves the rest, comments
-included:
+**real file** and asked to change a few things in it. `docs/tutorial/12-island.mx`
+rewrites one C construct in a fragment of C, renames a variable, and leaves
+the rest, comments included:
 
 ```
 $ mx docs/tutorial/12-island.mx
-/* a fragment of a C file */
+/* a fragment of a C file: err goes to stderr */
 static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
 
 static void usage(void)
 {
-    if (!src) { complain(err); return 1; }
+    if (!src) { complain(msg); return 1; }
     fprintf(stderr, "mx: cannot write %s\n", outpath);
 }
 ```
 
 The `fprintf` with a different format string was left alone, because the
-rule's pattern is the whole call up to the argument. Where did the definition
-of `complain` come from? That is §13.
+rule's pattern is the whole call up to the argument. The rename is where the
+three `@token` lines earn their place. **Where a declared class matches, the
+scan moves by the token**: a rule's word fires only where it is a whole
+token, a hole stops only where a token ends, and a token no rule fired on is
+copied through whole. So `err` became `msg` where it stood on its own and not
+inside `stderr`, inside the string, or inside the comment; without those
+three lines all of them would have changed. A file that declares no class is
+scanned one character at a time, as `12-text.mx` is. A class hole, `x:name`,
+takes exactly one token of that class here, as it does in expression mode.
+Where did the definition of `complain` come from? That is §13.
 
 ---
 

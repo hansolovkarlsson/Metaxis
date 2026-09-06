@@ -9,6 +9,64 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## Text mode moves by tokens: the island rule's first change
+
+```
+$ mx docs/tutorial/12-island.mx
+/* a fragment of a C file: err goes to stderr */
+static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
+
+static void usage(void)
+{
+    if (!src) { complain(msg); return 1; }
+    fprintf(stderr, "mx: cannot write %s\n", outpath);
+}
+```
+
+**One mechanic for two of the three pieces.** [ROADMAP.md](ROADMAP.md) 7 had
+measured three things text mode lacked for a rewrite over real code: a word
+fired inside an identifier or a string, a hole stopped at the first `)`, and a
+declared comment was removed. Scoping it against the code found the first and
+the third to be one defect, that the scan visited every character, and one
+fix: **where a declared `@token` class matches, the scan moves by the token.**
+At each position the longest class match is the token there, decided by the
+lexer's own `class_at`, which `lex.c` now exports. A rule's word may begin only
+where a token begins and must end where one ends, so `err` is not found inside
+`stderr`; a hole's candidate stops are the same places, so the search for the
+closing word cannot land inside a string; and a token no rule fired on is
+copied through whole, so a string, a character literal or a comment declared
+as a class is passed over rather than searched. A file that declares no class
+gets the scan it always had, and no recorded output changed. **No new syntax**:
+a comment to keep is a token, and `@comment` keeps its one text-mode meaning.
+
+**The class hole is honoured** rather than refused. `x:name` in text mode takes
+one token of that class at the cursor, the longest match of any class there,
+spliced as its source text and not expanded, as in expression mode. Where no
+such token stands the rule fails and the next is tried: `[12]` under a `name`
+rule passes through. The refusal in `seal_check` is gone with its error and
+its case in `tests/errors.sh`, which now pins the block refusal that shares the
+place instead.
+
+**The customer is the rename the rehearsal got wrong.** `lib/island.mx`
+declares C's four token classes and a third rule, `out` to `res`, and
+`tests/island.sh` counts what it did to `metaxis/cmd/mx.c`: ten renames, one
+`out` kept in the file's first comment, `outpath` unsplit five times, the
+usage string's `output` intact, every comment still there, and the rewritten
+front end compiled, run on `examples/first.mx` and on a missing file, and
+saying the same. `examples/island.mx` gained two lines shaped like those and a
+class-hole rule; the tutorial's island file gained the classes and a rename,
+and §12 says what the three `@token` lines do.
+
+**What the count found.** The first version counted identifiers with
+`grep -ow`, and the test read 9 where the hand count read 10 on a file that
+`diff` called identical. BSD grep misses the second of two word matches on one
+line, `res[strlen(res) - 1]`, and the number depended on which grep was on the
+path. The test splits the file into identifiers with `tr` first and counts
+lines, which every grep agrees on, and says why.
+
+Verified at 16 examples, 82 error cases and nine check scripts: 150 `ok`
+lines, the transcript above among them.
+
 ## The prose rule: no em dash in general prose, and the sweep that made it true
 
 `CLAUDE.md` gained a style guide on 2026-09-06: the em dash is not used in
@@ -184,6 +242,7 @@ Verified at 16 examples, 82 error cases and nine check scripts: 116 `ok` lines.
 
 ```
 $ mx examples/island.mx
+/* mx.c -- mx [-o out] file.mx, and [err] is what it says when it cannot */
 static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
 
 static void usage(void)
@@ -191,8 +250,13 @@ static void usage(void)
     if (!src) { complain(err); return 1; }
     complain(f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
+    fputs("usage: mx [-o output]\n", stderr); fputs(res, f); <out> = [12];
 }
 ```
+
+*(The transcript is the example as it stands: the first line and the last
+came with the token-wise scan, the entry above this one, and were not part of
+the stage.)*
 
 **Rehearsed first, by the stage 3 method, and the rehearsal was the stage.** The
 survey's strongest finding was the island rule, that text a file has no rule for

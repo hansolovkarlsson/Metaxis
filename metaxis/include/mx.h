@@ -241,6 +241,16 @@ typedef struct {
 int lex(Grammar *g, const char *src, size_t from, const char *file,
         Toks *out, char **err);
 
+/* One lexer step, shared with text mode: the longest match from a declared
+   class at `s`, of which `avail` bytes may be read, or 0 for none; `*which` is
+   the class it came from. `Win` is the bounded copy regexec() is handed -- see
+   match_here() in lex.c for why there is one -- and lives as long as the caller
+   wants to keep the allocation. */
+typedef struct { char *p; size_t cap; } Win;
+size_t class_at(Grammar *g, Win *w, const char *s, size_t avail, int *which);
+/* The same for one class. */
+size_t class_match(Win *w, const regex_t *re, const char *s, size_t avail);
+
 /* --------------------------------------------------------------- expansion */
 
 char *expand_expr(Grammar *g, Toks *tk, char **err);

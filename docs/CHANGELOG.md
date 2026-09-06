@@ -10,6 +10,17 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**Text mode moves by tokens where a declared class matches.** A `@token`
+class in a text-mode file now makes the scan take the token whole: a rule's
+word fires only on a whole identifier, a hole stops only where a token ends,
+and a string or a comment declared as a class passes through with nothing
+fired inside it. A class hole, `x:name`, is honoured in text mode and takes
+one token; the refusal `'x:name' asks for one token of a class, and text mode
+has no tokens` is gone. A file that declares no class is scanned as before.
+`lib/island.mx` declares C's four token classes and renames `out` to `res`
+across `metaxis/cmd/mx.c` without touching `outpath`, the usage string or a
+comment; `tests/island.sh` counts it and runs the result.
+
 **The reference says what a second engine must match.** §3.1: a token
 pattern is POSIX extended, leftmost-longest, the engine's to implement rather
 than its host's. §8.2: a fresh name is `label__N` on one counter for the run,

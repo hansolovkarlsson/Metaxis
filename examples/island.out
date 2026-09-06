@@ -1,3 +1,4 @@
+/* mx.c -- mx [-o out] file.mx, and [err] is what it says when it cannot */
 static void complain(const char *e) { fprintf(stderr, "mx: %s\n", e); }
 
 static void usage(void)
@@ -5,4 +6,5 @@ static void usage(void)
     if (!src) { complain(err); return 1; }
     complain(f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
+    fputs("usage: mx [-o output]\n", stderr); fputs(res, f); <out> = [12];
 }

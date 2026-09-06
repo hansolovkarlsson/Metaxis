@@ -2,7 +2,9 @@
 # island.sh -- stage 5: the tool rewrites its own front end, and the result runs.
 #
 # lib/island.mx is a text-mode rewrite of `fprintf(stderr, "mx: %s\n", X)`
-# into `complain(X)`, with the definition inserted. This points it at the real
+# into `complain(X)`, with the definition inserted, and since 2026-09-06 a
+# rename of `out` to `res` that the four @token classes there hold to whole
+# identifiers outside strings and comments. This points it at the real
 # metaxis/cmd/mx.c -- concatenated at test time, so it can never drift from
 # the file in the tree -- compiles what comes out against the tool's own
 # objects in build/, and runs the binary that results on an example and on an
@@ -49,6 +51,31 @@ if [ "$calls" != 6 ] || [ "$defs" != 1 ] || [ "$left" != 0 ] || [ "$other" != 1 
     exit 1
 fi
 
+# The rename, counted. Ten `out`s are the buffer and become `res`; the one
+# left is the `[-o out]` in the file's first comment, which is a comment token
+# and never scanned; `outpath` is a longer identifier and is not split; the
+# `output` in the usage string is inside a string token; and the comments are
+# all still there. Before text mode moved by tokens, the rehearsal that became
+# docs/ROADMAP.md 7 measured every one of these going wrong.
+#
+# Identifiers are counted by splitting the file into them first. `grep -ow`
+# would read better and is wrong here: BSD grep misses the second of two
+# matches on one line, so `res[strlen(res) - 1]` counted for one, and the
+# number depended on which grep was on the path.
+idents() { tr -c 'A-Za-z0-9_' '\n' < "$TMP/mx.c" | grep -cx "$1"; }
+res=$(idents res)
+out=$(idents out)
+path=$(idents outpath)
+put=$(grep -c 'usage: mx \[-o output\]' "$TMP/mx.c")
+com=$(grep -c '/\*' "$TMP/mx.c")
+was=$(grep -c '/\*' metaxis/cmd/mx.c)
+if [ "$res" != 10 ] || [ "$out" != 1 ] || [ "$path" != 5 ] || [ "$put" != 1 ] || [ "$com" != "$was" ]; then
+    echo "FAILED  island.sh: the rename did not stop at the identifier, the string and the comment"
+    echo "        res: $res (want 10)   out left: $out (want 1, the first comment)"
+    echo "        outpath: $path (want 5)   usage string: $put (want 1)   comments: $com (want $was)"
+    exit 1
+fi
+
 # The rewritten front end, linked against the tree's own objects.
 objs=$(ls build/*.o | grep -v '/mx\.o$')
 if ! "$CC" -std=c11 -Imetaxis/include -D_POSIX_C_SOURCE=200809L -o "$TMP/mx2" "$TMP/mx.c" $objs 2> "$TMP/cc.err"; then
@@ -77,5 +104,6 @@ if [ "$msg" != "mx: cannot open examples/no-such-file.mx" ]; then
 fi
 
 echo "ok      island.sh: mx.c rewritten by its own tool compiles, runs, and says the same"
-echo "            6 calls became complain(), 1 left alone, definition inserted"
+echo "            6 calls became complain(), 1 left alone, definition inserted,"
+echo "            out renamed 10 times and kept in outpath, a string and a comment"
 exit 0

@@ -17,12 +17,19 @@
 ; honest place is *before the first function*, and nothing here can say
 ; that without reading C.
 ;
-; What text mode does not know, measured on this file and recorded in
-; docs/ROADMAP.md 7: it has no tokens, so a word fires inside an identifier or
-; a string; it has no brackets, so a hole over `f(x, g(y))` stops at the first
-; `)` and is right only when the template keeps the hole last; and declaring
-; C's comments would remove them. The two rules below are written to stay
-; inside what it does know.
+; What text mode did not know on the day this was written, measured on this
+; file and recorded in docs/ROADMAP.md 7: it had no tokens, so a word fired
+; inside an identifier or a string; it has no brackets, so a hole over
+; `f(x, g(y))` stops at the first `)` and is right only when the template
+; keeps the hole last; and declaring C's comments as @comment removed them.
+; The first and the third are one thing and are now one mechanic: the four
+; @token classes below make the scan move by tokens where they match, so a
+; word fires only on a whole identifier, and a string, a character literal
+; or a comment is passed over rather than searched. The third rule is the
+; rename that used to go wrong: `out` is the buffer the front end writes,
+; and `outpath`, the `output` in the usage string and the `out` in the file's
+; first comment are all left alone. The bracket is still ROADMAP 7's, and the
+; first two rules still keep the hole last.
 ;
 ; These are code templates, and the first draft's were strings. In a string
 ; template `{` is a hole, so C's braces are `{{ }}`, and `\n` is a newline, so
@@ -32,6 +39,11 @@
 
 @mode text
 
+@token name    "[A-Za-z_][A-Za-z0-9_]*"
+@token string  "\"([^\"\\\\]|\\\\.)*\""
+@token char    "'([^'\\\\]|\\\\.)*'"
+@token comment "/\\*([^*]|\\*+[^*/])*\\*+/"
+
 @syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"
     => {
         contribute("defs", "static void complain(const char *e) { fprintf(stderr, \"mx: %s\\n\", e); }")
@@ -40,3 +52,5 @@
 
 @syntax "static void usage(void)"
     => { emit splice("defs") + "\n\nstatic void usage(void)" }
+
+@syntax "out" => "res"

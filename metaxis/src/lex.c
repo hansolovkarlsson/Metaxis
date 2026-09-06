@@ -123,8 +123,6 @@ static int lc_line(LC *c, size_t off)
    the window's end rather than the file's. No `@token` here writes one, and a
    class is by definition a token rather than a line, so `$` in one was already
    asking for something the lexer does not offer. */
-typedef struct { char *p; size_t cap; } Win;
-
 static int match_here(Win *w, const regex_t *re, const char *s,
                       size_t avail, size_t *len)
 {
@@ -144,6 +142,23 @@ static int match_here(Win *w, const regex_t *re, const char *s,
         if (got < n || n == avail) { *len = got; return 1; }
         n *= 2;   /* the match ran to the edge, so it may run past it */
     }
+}
+
+size_t class_match(Win *w, const regex_t *re, const char *s, size_t avail)
+{
+    size_t len;
+    return match_here(w, re, s, avail, &len) ? len : 0;
+}
+
+size_t class_at(Grammar *g, Win *w, const char *s, size_t avail, int *which)
+{
+    size_t best = 0;
+    *which = -1;
+    for (int c = 0; c < g->ncls; c++) {
+        size_t len = class_match(w, &g->cls[c].re, s, avail);
+        if (len > best) { best = len; *which = c; }
+    }
+    return best;
 }
 
 static void mark(Toks *out, LC *lc, const char *src, size_t i, int kind)
@@ -213,13 +228,8 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
             break;
         }
 
-        size_t best_cls = 0;
-        int    which    = -1;
-        for (int c = 0; c < g->ncls; c++) {
-            size_t len;
-            if (!match_here(&win, &g->cls[c].re, src + i, srclen - i, &len)) continue;
-            if (len > best_cls) { best_cls = len; which = c; }
-        }
+        int    which;
+        size_t best_cls = class_at(g, &win, src + i, srclen - i, &which);
 
         size_t best_pun = 0;
         for (int w = 0; w < g->npunct; w++) {

@@ -332,8 +332,10 @@ pointed at.*
 the tool's own front end, is stage 5, `lib/island.mx` and `tests/island.sh`, and
 needed nothing built. What it *does* need next is none of the three shapes
 below: the rehearsal asked for identifiers, balanced brackets, and comments
-skipped rather than removed, which is [ROADMAP.md](ROADMAP.md) 7. The rest of
-this section is as it was written, the day before.
+skipped rather than removed, which is [ROADMAP.md](ROADMAP.md) 7. The first
+and the third landed the same evening as one mechanic, a scan that moves by the
+classes a file declares; the bracket remains. The rest of this section is as it
+was written, the day before.
 
 **Who has it.** TXL calls it **agile parsing**: the effective grammar is a base
 grammar plus explicit *overrides*, and *"grammar overrides are used to express

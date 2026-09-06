@@ -205,8 +205,10 @@ work on real C and thirty other languages this way: they know brackets,
 strings and comments, and nothing else about any language, which is exactly
 why they work on all of them. TXL calls the same idea **agile parsing**.
 Metaxis's text mode is an island grammar, and stage 5 pointed it at the
-tool's own source; ROADMAP item 7 is what it would take to give it the three
-things Comby knows.
+tool's own source. It has two of the three things Comby knows since
+2026-09-06, identifiers and strings and comments to pass over, both by
+declaring them as classes the scan moves by; ROADMAP item 7 holds the third,
+brackets.
 
 ### Stack machines and Futamura
 
@@ -509,7 +511,8 @@ statement, so no separator follows it; also the builtin that asks a hole the
 same. REFERENCE §3.4, §6.3, §8.3.
 
 **Text mode.** `@mode text`: the body is scanned, rules fire where they
-match, everything else passes through. REFERENCE §7.
+match, everything else passes through; where a declared class matches, the
+scan moves by the token. REFERENCE §7.
 
 **Token.** The smallest unit of text that means something on its own; what
 the lexer produces. Part one; REFERENCE §6.1.

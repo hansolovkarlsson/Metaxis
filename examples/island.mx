@@ -4,18 +4,30 @@
 ; that file itself, compiles what comes out against the tool's own objects,
 ; and runs the result. Stage 5.
 ;
-; Three of the four lines change and one does not: the last is a different
-; format string, and the rule's pattern is the whole call up to the
+; Three of the four call lines change and one does not: the last is a
+; different format string, and the rule's pattern is the whole call up to the
 ; argument, so it passes through. The third is the nested case -- a hole
 ; over `f(x, g(y))` stops at the first `)` and the template keeps the hole
 ; last, so the leftover `))` is copied through and the result is right.
 ; Reorder the template and it would not be; lib/island.mx says why.
+;
+; The rename is the other thing to watch. `out` becomes `res` once, in
+; `fputs(out, f)`, and is left alone three times: inside `outpath`, inside
+; the usage string's `output`, and inside the comment on the first line.
+; The four @token classes in lib/island.mx are what make that so -- without
+; them the word fired at every one -- and the `[` rule shows a class hole in
+; text mode taking exactly one name, and refusing `12`. The `out` inside it
+; is not renamed: a class hole is spliced as its source text, as it is in
+; expression mode, and only a text hole is expanded in its turn.
 
 @use "../lib/island.mx"
+@syntax "[" x:name "]" => "<{x}>"
 @end
+/* mx.c -- mx [-o out] file.mx, and [err] is what it says when it cannot */
 static void usage(void)
 {
     if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }
     fprintf(stderr, "mx: %s\n", f(x, g(y)));
     fprintf(stderr, "mx: cannot write %s\n", outpath);
+    fputs("usage: mx [-o output]\n", stderr); fputs(out, f); [out] = [12];
 }

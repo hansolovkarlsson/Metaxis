@@ -630,12 +630,50 @@ static int text_comment(Grammar *g, const char *s, size_t len, size_t i,
     return 0;
 }
 
-/* The first place at or after `pos` where `w` occurs, or `len` for nowhere. */
-static size_t find_word(const char *s, size_t len, size_t pos, const char *w)
+/* Text mode's one lexer step. Where a declared class matches, the scan moves
+   by the token and not by the character: a rule's word may begin only where a
+   token begins and end only where one ends, a hole's candidate stops are the
+   same places, and a token no rule fired on is copied through whole. That is
+   how `err` is not found inside `stderr`, and how a string or a comment that
+   the file declared as a class is passed over rather than searched. A file
+   that declares no class gets the scan it always had, one character at a time.
+
+   The window is one for the run: text mode nests, a hole's text being expanded
+   in its turn, and the copy grows to the longest token, not to the file. */
+static Win text_win;
+
+static size_t text_tok(Grammar *g, const char *s, size_t len, size_t pos)
+{
+    int which;
+    if (!g->ncls || pos >= len) return 0;
+    return class_at(g, &text_win, s + pos, len - pos, &which);
+}
+
+/* The next place the scan may stop after `pos`. */
+static size_t text_step(Grammar *g, const char *s, size_t len, size_t pos)
+{
+    size_t n = text_tok(g, s, len, pos);
+    return pos + (n ? n : 1);
+}
+
+/* Whether `w` stands at `pos` and ends where a token ends. `pos` is always a
+   boundary, since everything here moves by text_step, so only the far end is
+   asked: a word that would stop inside a token, `err` at `errno`, does not
+   match. */
+static int text_word(Grammar *g, const char *s, size_t len, size_t pos, const char *w)
 {
     size_t n = strlen(w);
-    for (size_t j = pos; j + n <= len; j++)
-        if (!memcmp(s + j, w, n)) return j;
+    if (pos + n > len || memcmp(s + pos, w, n)) return 0;
+    size_t j = pos;
+    while (j < pos + n) j = text_step(g, s, len, j);
+    return j == pos + n;
+}
+
+/* The first boundary at or after `pos` where `w` stands, or `len` for nowhere. */
+static size_t find_word(Grammar *g, const char *s, size_t len, size_t pos, const char *w)
+{
+    for (size_t j = pos; j < len; j = text_step(g, s, len, j))
+        if (text_word(g, s, len, j, w)) return j;
     return len;
 }
 
@@ -746,9 +784,8 @@ static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
     Elem *e = &el[k];
 
     if (e->kind == EL_WORD) {
-        size_t n = strlen(e->word);
-        if (pos + n > t->len || memcmp(t->s + pos, e->word, n)) return 0;
-        return tm_match(t, el, nel, k + 1, pos + n, cont, append, join);
+        if (!text_word(t->g, t->s, t->len, pos, e->word)) return 0;
+        return tm_match(t, el, nel, k + 1, pos + strlen(e->word), cont, append, join);
     }
 
     if (e->kind == EL_GROUP) {
@@ -762,16 +799,33 @@ static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
         return tm_match(t, el, nel, k + 1, pos, cont, append, join);
     }
 
-    /* A hole. Shortest first, and never past the word that closes the rule. */
-    size_t cap = t->closer ? find_word(t->s, t->len, pos, t->closer) : t->len;
-    for (size_t stop = pos; stop <= cap; stop++) {
+    /* A class hole: one token of that class at the cursor, taken exactly, with
+       no search. It has to be the token the scan would take, the longest match
+       of any class, so that `x:int` does not take the `3` from `3.14` when a
+       class that reads the whole number was declared. Spliced as its source
+       text, as in expression mode, and not expanded. */
+    if (e->hk == K_CLASS) {
+        if (pos >= t->len) return 0;
+        size_t n = class_match(&text_win, &t->g->cls[e->cls].re, t->s + pos, t->len - pos);
+        if (!n || n != text_tok(t->g, t->s, t->len, pos)) return 0;
+        Bind *snap = tm_save(t);
+        bind_put(t->b, t->nb, e->hole, xstrndup(t->s + pos, n), append, join, LEVEL_ATOM, 0);
+        if (tm_match(t, el, nel, k + 1, pos + n, cont, append, join)) return 1;
+        tm_load(t, snap);
+        return 0;
+    }
+
+    /* A text hole. Shortest first, stopping only where a token ends, and never
+       past the word that closes the rule. */
+    size_t cap = t->closer ? find_word(t->g, t->s, t->len, pos, t->closer) : t->len;
+    for (size_t stop = pos;; stop = text_step(t->g, t->s, t->len, stop)) {
         Bind *snap = tm_save(t);
         char *v = text_expand(t->g, t->s + pos, stop - pos, t->depth + 1, t->err);
         if (!v) return 0;
         bind_put(t->b, t->nb, e->hole, v, append, join, LEVEL_ATOM, 0);
         if (tm_match(t, el, nel, k + 1, stop, cont, append, join)) return 1;
         tm_load(t, snap);
-        if (cap == t->len && stop == t->len) break;
+        if (stop >= cap) break;
     }
     return 0;
 }
@@ -823,20 +877,23 @@ static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char 
             Rule *r = &g->rule[k];
             if (r->led || r->el[0].kind != EL_WORD) continue;
             size_t n = strlen(r->el[0].word);
-            if (n > best && i + n <= len && !memcmp(s + i, r->el[0].word, n)) best = n;
+            if (n > best && text_word(g, s, len, i, r->el[0].word)) best = n;
         }
         for (size_t n = best; n > 0 && !res; n--)
             for (int k = 0; k < g->nrule && !res; k++) {
                 Rule *r = &g->rule[k];
                 if (r->led || r->el[0].kind != EL_WORD) continue;
                 if (strlen(r->el[0].word) != n) continue;
-                if (i + n > len || memcmp(s + i, r->el[0].word, n)) continue;
+                if (!text_word(g, s, len, i, r->el[0].word)) continue;
                 res = text_rule(g, r, s, len, i, &end, depth, err);
                 if (*err) return NULL;
             }
         if (res) { buf_str(&out, res); i = end; continue; }
-        buf_ch(&out, s[i]);
-        i++;
+        /* Nothing fired: the token, or the character, goes through whole. */
+        size_t n = text_tok(g, s, len, i);
+        if (!n) n = 1;
+        buf_add(&out, s + i, n);
+        i += n;
     }
     if (!out.p) buf_str(&out, "");
     return out.p;
