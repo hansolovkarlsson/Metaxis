@@ -223,7 +223,7 @@ could not.** The examples are translators taken far enough to be compiled and
 run, and a translator writes the source language the way its speakers do,
 `end;`, so a corner that idiom never visits is never visited. A tutorial file is
 written to *show one sentence of the reference*, and that is the input the suite
-did not have: the same lesson as [18](#18)'s `scale.sh`, from the other side.
+did not have: the same lesson as [18](#18--an-item-that-named-its-suspect-and-two-fixes-for-the-wrong-thing)'s `scale.sh`, from the other side.
 The rule that follows: **when a document claims a behaviour, the smallest file
 that would demonstrate it belongs in the tree, run.** That is what
 `docs/tutorial/` now is, and the transcript check is what makes it a test rather
@@ -285,7 +285,7 @@ time and is **accurate**, elisions and all, so this was one invented example
 among two rather than a habit.
 
 **Root cause.** It was **born false**, and that is what makes it a different
-defect from [16](#16). Sixteen was a count that was true when written and rotted
+defect from [16](#16--a-number-counted-by-hand-wrong-on-the-day-it-was-written-that-a-close-out-read-and-did-not-check). Sixteen was a count that was true when written and rotted
 when the tree changed under it; the fix there is to re-check. This one was never
 true for a moment. Nothing rotted, nothing drifted: a plausible transcript was
 composed to illustrate a feature that had just been built, in the same commit
@@ -367,7 +367,7 @@ times wrong, both times having written a comment asserting the cause. `sample`
 on the running process pointed at `regexec` immediately and would have done so
 before either. **Reading code produces plausible causes; only measurement
 produces the cause**, and this is the same lesson as
-[16](#16--a-number-counted-by-hand) one layer down: prose about the tree drifts
+[16](#16--a-number-counted-by-hand-wrong-on-the-day-it-was-written-that-a-close-out-read-and-did-not-check) one layer down: prose about the tree drifts
 from the tree, and a hypothesis about the tree is prose.
 
 **A footnote that is its own small entry.** Writing this up renumbered the
