@@ -19,9 +19,10 @@ main{min-width:0}
 .eyebrow{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 .5rem}
 .masthead{grid-column:1/-1;border-bottom:1px solid var(--rule);padding-bottom:1.25rem;margin-bottom:2rem}
 h1{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:2.3rem;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
-h2{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:1.5rem;line-height:1.2;margin:3rem 0 1rem;text-wrap:balance;display:flex;gap:.75rem;align-items:baseline}
-h2 .num,h3 .num,.rail .num{font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--kw);font-size:.85em;min-width:1.6em}
-h3{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:1.1rem;margin:2rem 0 .6rem;display:flex;gap:.6rem;align-items:baseline}
+h2{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:1.5rem;line-height:1.2;margin:3rem 0 1rem}
+h2 .num,h3 .num,.rail .num{font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--kw);font-size:.85em;display:inline-block;width:1.9em;margin-left:-1.9em}
+h2 .num,h3 .num{margin-left:0;width:auto;margin-right:.5em}
+h3{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:1.1rem;margin:2rem 0 .6rem}
 h4{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:1rem;margin:1.5rem 0 .5rem}
 p{margin:0 0 1rem}
 .note{font-style:italic;color:var(--mute);border-left:2px solid var(--rule);padding-left:1rem}
@@ -49,7 +50,7 @@ th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--rule);v
 th{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
 .rail ol{list-style:none;padding:0;margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.85rem;line-height:1.35}
 .rail li{margin:.3rem 0}
-.rail a{text-decoration:none;color:var(--ink);display:flex;gap:.5rem;align-items:baseline}
+.rail a{text-decoration:none;color:var(--ink);display:block;padding-left:1.9em}
 .rail a:hover{color:var(--kw)}
 .rail .num{font-size:.75rem}
 .foot{border-top:1px solid var(--rule);padding:1.5rem 1.25rem;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.8rem;color:var(--mute);text-align:center}
