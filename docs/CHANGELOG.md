@@ -16,8 +16,9 @@ template has in two tables, and every transcript checked by `make check`.
 REFERENCE.md gained a contents table at the top and an index of terms at the
 end. **A logo.** Hans drew up three candidates and chose the third: a solid block
 and a wireframe cube interlocked, in isometric — the thing and its
-declaration. It is `site/logo.svg`, traced as a vector from the sheet, and it
-is the site's mark and favicon and the README's.
+declaration. `site/logo.png` is that drawing with its background made
+transparent, and it is the site's mark and favicon and the README's;
+`docs/logo3.png` is the drawing as chosen.
 
 **A website**, at hansolovkarlsson.github.io/Metaxis: an introduction, the
 tutorial, the glossary, the reference, every example with its recorded

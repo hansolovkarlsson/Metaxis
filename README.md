@@ -1,4 +1,4 @@
-<p align="center"><img src="site/logo.svg" width="150" alt="The Metaxis mark"></p>
+<p align="center"><img src="site/logo.png" width="150" alt="The Metaxis mark"></p>
 
 # Metaxis
 

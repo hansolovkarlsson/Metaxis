@@ -199,16 +199,16 @@ def page(name, navtitle, title, body, toc):
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(re.sub(r"<[^>]+>", "", title))} · Metaxis</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
-<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="icon" type="image/png" href="logo.png">
 <style>{CSS}</style></head>
-<body><header class="top"><a class="brand" href="index.html"><img class="mark" src="logo.svg" alt="">Metaxis</a><nav class="site" aria-label="Site">{nav}<a href="{GH}">GitHub</a></nav></header>
-<div class="wrap"><header class="masthead{" hero" if name == "index" else ""}">{"<img class=\"hero-mark\" src=\"logo.svg\" alt=\"The Metaxis mark: a solid block and a wireframe cube, interlocked\">" if name == "index" else ""}<div><p class="eyebrow">{esc(navtitle)}</p><h1>{title}</h1></div></header>{rail}<main>{body}</main></div>
+<body><header class="top"><a class="brand" href="index.html"><img class="mark" src="logo.png" alt="">Metaxis</a><nav class="site" aria-label="Site">{nav}<a href="{GH}">GitHub</a></nav></header>
+<div class="wrap"><header class="masthead{" hero" if name == "index" else ""}">{"<img class=\"hero-mark\" src=\"logo.png\" alt=\"The Metaxis mark: a solid block and a wireframe cube, interlocked\">" if name == "index" else ""}<div><p class="eyebrow">{esc(navtitle)}</p><h1>{title}</h1></div></header>{rail}<main>{body}</main></div>
 <footer class="foot"><p>Generated from the documents in the tree by <code>site/build.py</code>. Every transcript on these pages is run by the test suite.</p></footer></body></html>'''
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     import shutil
-    shutil.copy(os.path.join(ROOT, 'site', 'logo.svg'), os.path.join(OUT, 'logo.svg'))
+    shutil.copy(os.path.join(ROOT, 'site', 'logo.png'), os.path.join(OUT, 'logo.png'))
     for name, navtitle, srcpath in PAGES:
         if srcpath is None: title, body, toc = examples_page()
         else:
