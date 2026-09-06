@@ -11,6 +11,42 @@ Newest first.
 
 ---
 
+## 22 · A test's own watchdog wrote into what the test compared
+
+**Issue.** The first deploy of the website went out green while the suite's
+macOS row failed beside it, on one transcript out of thirty-five, with the
+tool's output correct. The captured output had gained a line:
+`tests/limit.sh: line 61: 3332 Terminated: 15 ( sleep "$LIMIT"; … )`.
+
+**Root cause.** `tests/limit.sh` races every command against a watchdog and
+kills the watchdog when the command finishes first. The watchdog's own output
+had been closed off deliberately since the file was written — the comment
+above it says why. But the *announcement* of a killed background job is not
+the job's output; it is the shell's, printed on the shell's stderr at the next
+`wait`, and `tests/docs.sh` captures stderr into what it compares, because a
+transcript shows what a terminal shows. Bash prints that notice sometimes,
+depending on timing, and a loaded runner is where the timing lands. Three
+hundred local runs never produced it.
+
+**What found it.** CI, once. Not the suite locally, which had run the same
+transcript dozens of times that day.
+
+**Solution.** The shell's stderr is parked on a spare descriptor for the two
+lines that kill and reap the watchdog, and restored after. Timeouts, errors
+and exit codes still pass through; the next push ran clean on both rows.
+
+**Learnings.** **A check that compares captured stderr owns everything that
+can reach that descriptor, including what the shell says about the check's
+own machinery.** `hygiene.sh` already had the sibling rule — *a check that
+passes when its own machinery breaks is worse than no check* — and this is
+the same rule from the other side: a check that *fails* because of its own
+machinery is one nobody trusts on the next red run. The specific form to
+keep: anything a test script backgrounds and kills is a source of stderr
+that is the shell's, not the process's, and closing the process's output
+does not close it.
+
+---
+
 ## 21 · A sentence in the reference that no file had ever exercised
 
 **Issue.** REFERENCE §6.3 has said since the first day that a separator is
