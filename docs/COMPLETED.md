@@ -10,6 +10,47 @@ argued away.*
 
 Newest first.
 
+## `tests/scale.sh`: one input large enough to hide nothing
+
+```
+ok      scale.sh: 4000 statements expand inside 10s, 4006 lines out
+            1000 in 73ms, 4000 in 166ms -- reported, not asserted
+            (four times the statements. When this was quadratic, the
+             second number was 38767ms -- see docs/POSTMORTEM.md 18)
+```
+
+[POSTMORTEM.md](POSTMORTEM.md) 18 ends *"nothing here would have caught it, and
+that is the honest answer: every example is small on purpose, and a suite that
+runs in three seconds cannot see an O(n²)."* This is the answer to that
+sentence, and it is the only check here whose reason for existing is a defect
+the suite could not have found.
+
+**It generates rather than stores.** 4000 statements of Pascal, in
+`examples/pascal.mx`'s own grammar so that it measures a dialect the tree
+actually declares, built by `awk` into a temp directory. Nothing 4000 lines long
+goes into the repository.
+
+**The check is that it finishes, not that it finished quickly.** A wall-clock
+threshold on a shared runner is a flaky test, and what this guards against is
+not a machine 20% slower — it is a cost that squares. The old lexer took ~39
+seconds on this input and is killed by `tests/limit.sh`; the fixed one takes a
+sixth of a second. The limit is not a budget, it is the gap between those two
+answers. The times either side are **printed rather than asserted**, because a
+number that is reported gets read and a number that is asserted gets tuned.
+
+**And it checks the answer, not only the clock.** The two programs share a
+preamble character for character, so the difference in output lines must equal
+the difference in statements exactly — which assumes nothing about how many
+lines a `program` and a `var` section become. A lexer that got fast by dropping
+tokens would pass a stopwatch and fails this.
+
+**Proved by breaking it.** The window in `metaxis/src/lex.c` was reverted, the
+tool rebuilt, and `scale.sh` reported the timeout with the right message; then
+restored. A check nobody has watched fail is a check nobody knows the shape of.
+
+Verified at 14 examples, 78 error cases and **six** check scripts — 100 `ok`
+lines.
+
 ## `mx -t`, and the quadratic it found
 
 ```

@@ -57,8 +57,9 @@ not.
 
 ```
 make            # bin/mx
-make check      # every example against the .out beside it, then the five
-                # scripts in tests/ -- four of which run what they produced
+make check      # every example against the .out beside it, then the six
+                # scripts in tests/ -- four of which run what they produced,
+                # and one of which is large enough to show a quadratic
 ```
 
 `make check` runs on every push, on Linux and macOS, through
