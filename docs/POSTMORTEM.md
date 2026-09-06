@@ -12,6 +12,52 @@ Newest first.
 
 ---
 
+## 25 · Two verdicts written from the documents, and both refuted by a six-line file
+
+**Issue.** A page of languages, [languages.md](languages.md), was drafted
+from the reference and the direction page: which languages the tool reads and
+which it does not, each verdict on a stated property. The draft put Lisp on
+the fit list, on the reasoning that `"(" f:name [ x ]* ")"` is one rule and
+parentheses delimit everything, and XML on the fit list, on the reasoning
+that an element is a mixfix rule with a class for the text between tags.
+Both were wrong. The header refuses the Lisp rule: a repeated group whose
+turns are expressions needs a `sep` word, and whitespace is never one. The
+XML class for character data is the longest match after `<` as well and
+swallows the tag name.
+
+**Root cause.** Each verdict was a prediction reasoned from properties the
+reference states, and the reference states them truly: §4.4 says a turn is
+told from the next by `sep`, and §6.1 says the longest class match wins.
+What neither says is which language each property stops, because that is
+not the reference's job, and reading the two sentences did not produce the
+consequence. The consequence appeared on the first run. Every one of the
+thirty rows was drafted the same way, so the two that failed are the two
+that happened to be tried in a shape that could fail.
+
+**What found it.** The rule the page set itself, that every property is run
+against the tool before it is written down, applied to the verdicts as well
+as the properties: seven scratch files, six lines each, thrown away after.
+The two refutations came in under a minute apiece.
+
+**Solution.** Both rows moved to the unfit list with the day they were run,
+and the property that stops them was sharpened in the page's own list:
+a list separated by whitespace alone is not read, and a token that exists
+only by position is lexer state.
+
+**Learnings.** **A verdict about what the tool reads is a claim the suite
+could hold, and the page holds none.** The tutorial's claims are files under
+`docs/tutorial/` with transcripts `tests/docs.sh` runs; the languages page's
+claims are prose, and the files that decided two of them were deleted the
+same hour. What would catch the next drift, a change to groups or to the
+lexer that moves a verdict, is the shape the tree already has: keep the probe
+beside the page and let the page show the transcript. That is not built, and
+until it is, the page is right on the day it says and unchecked after.
+Entries 11 and 15 said the same about distance; this is the same about
+reading. A property stated truly in one place still has to be run to learn
+what it stops in another.
+
+---
+
 ## 24 · A reference that typeset the messages it quoted
 
 **Issue.** Twenty-five error messages quoted in backticks in
