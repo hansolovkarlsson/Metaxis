@@ -11,6 +11,40 @@ Newest first.
 
 ---
 
+## 21 · A sentence in the reference that no file had ever exercised
+
+**Issue.** REFERENCE §6.3 has said since the first day that a separator is
+wanted between two statements *and not after one that ended in a word — that
+is what lets `}` and `end` stand on their own*. `end` could not. A tutorial
+file wrote `block … end` on one line and `while …` on the next, with no `;`
+between, and got `no rule reads 'while' here`.
+
+**Root cause.** The check asked whether the last token consumed was
+*punctuation*. `}` is; `end` is not — the class wins a tie, so `end` lexes as
+a `name` token whose text happens to be a word, and the token's kind cannot
+say which of the two the rule made of it. The sentence was true of `}` and
+false of every alphabetic closing word, and every example that had one wrote
+`end;` — Pascal's own habit — so nothing in `examples/` had ever put the
+sentence to the test.
+
+**Solution.** The parser now records the index of the last token a rule
+consumed *as a word*, restores it wherever it restores the cursor, and asks
+that instead of the token's kind. `docs/tutorial/05-statements.mx` is the
+pin: its transcript is run by `tests/docs.sh`.
+
+**Learnings.** **Writing the tutorial was a test, and it found what the
+examples could not.** The examples are translators taken far enough to be
+compiled and run, and a translator writes the source language the way its
+speakers do — `end;` — so a corner that idiom never visits is never visited.
+A tutorial file is written to *show one sentence of the reference*, and
+that is the input the suite did not have: the same lesson as
+[18](#18)'s `scale.sh`, from the other side. The rule that follows: **when
+a document claims a behaviour, the smallest file that would demonstrate it
+belongs in the tree, run.** That is what `docs/tutorial/` now is, and the
+transcript check is what makes it a test rather than prose.
+
+---
+
 ## 20 · A roadmap item that vanished for one commit
 
 **Issue.** [ROADMAP.md](ROADMAP.md) 7, the island rule, was written on

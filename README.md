@@ -53,6 +53,14 @@ that do something like this — TXL, Stratego, Rascal, Comby, Ohm, Coq's
 `Notation`, Seed7, and META II in 1964 — and says what they have that this does
 not.
 
+## Reading it
+
+[docs/tutorial.md](docs/tutorial.md) teaches the tool one concept at a time,
+each with a file under `docs/tutorial/` you can run and the output it gives —
+and every transcript in it is checked by `make check`. [docs/REFERENCE.md](docs/REFERENCE.md)
+states what every part of a file means; [docs/notation.md](docs/notation.md)
+says why it is shaped that way.
+
 ## Build
 
 ```

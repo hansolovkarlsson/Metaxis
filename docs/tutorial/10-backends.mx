@@ -1,0 +1,14 @@
+; 10-backends.mx -- one grammar, two targets. A rule whose output is the same
+; for both writes one template; a rule that differs adds a tagged one.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax a "=" b   10 right   => "{a} = {b}"
+@syntax a "+" b   60         => "{a} + {b}"
+@syntax "print" x            => "printf(\"%d\\n\", {x})"
+                             => "print({x})" as python
+@end
+x = 1 + 2;
+print x

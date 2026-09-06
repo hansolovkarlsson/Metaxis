@@ -1,0 +1,15 @@
+; 04-kinds.mx -- what a hole takes. `i:name` takes exactly one token of the
+; class `name` and stops, which is what lets the `=` after it be this
+; pattern's word rather than the start of an assignment.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax a "=" b   10 right   => "{a} := {b}"
+@syntax a "+" b   60         => "{a} + {b}"
+@syntax "for" i:name "=" a "to" b "do" s  => "for {i} in {a}..{b}: {s}"
+@syntax "print" x            => "print({x})"
+@end
+for i = 1 to 3 do print i + 1;
+total = 0

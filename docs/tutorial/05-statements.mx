@@ -1,0 +1,22 @@
+; 05-statements.mx -- a separator on the way in, a joiner on the way out,
+; and a rule that says its output already ends a statement.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax a "=" b   10 right               => "{a} = {b}"
+@syntax a "+" b   60                     => "{a} + {b}"
+@syntax "print" x                        => "printf(\"%d\\n\", {x})"
+@syntax "block" b:stmts "end"            => "{{\n{b};\n}}" terminated
+@syntax "while" c "do" b:stmts "end"     => "while ({c}) {{\n{b};\n}}" terminated
+@end
+x = 1;
+block
+  x = x + 1;
+  print x
+end
+while x do
+  x = 0
+end
+print x

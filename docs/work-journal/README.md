@@ -12,11 +12,11 @@ The other records answer narrower questions and are kept separately: what is
 left ([ROADMAP.md](../ROADMAP.md)), what was built
 ([COMPLETED.md](../COMPLETED.md)), what a mistake taught
 ([POSTMORTEM.md](../POSTMORTEM.md)), and when something shipped
-([CHANGELOG.md](../CHANGELOG.md)). Three more sit beside them and are not
-records of the work but of the thing: [REFERENCE.md](../REFERENCE.md) states
-what a `.mx` file means, [notation.md](../notation.md) argues for why it is
-shaped that way, and [direction.md](../direction.md) argues for where it could
-go. If a paragraph would fit in one of those, it belongs there and not here.
+([CHANGELOG.md](../CHANGELOG.md)). Four more sit beside them and are not
+records of the work but of the thing: [tutorial.md](../tutorial.md) teaches it,
+[REFERENCE.md](../REFERENCE.md) states what a `.mx` file means,
+[notation.md](../notation.md) argues for why it is shaped that way, and
+[direction.md](../direction.md) argues for where it could go. If a paragraph would fit in one of those, it belongs there and not here.
 
 **Entries written before 2026-09-05 call the tool `Prototype` and its files
 `.pt`.** That was its name at the time; it was renamed to **Metaxis** on

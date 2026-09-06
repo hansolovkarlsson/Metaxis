@@ -1,0 +1,18 @@
+; 06-groups.mx -- a part that repeats, and a part that need not be there.
+; `[ … ]` is Metaxis's bracket. It is outside the strings, so it can never be
+; confused with a bracket the body writes.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax a "+" b   60                                  => "({a} + {b})"
+@syntax f "(" [ x ]* sep "," join ", " ")"   95        => "{f}({x})"
+@syntax "let" [ n:name ]+ sep "," join ", "           => "let {n}"
+@syntax "get" k:name [ "or" d ]                      => "get({k}, [{d}])"
+@end
+f();
+f(1, 2 + 3, g(4));
+let a, b, c;
+get x or 5;
+get y

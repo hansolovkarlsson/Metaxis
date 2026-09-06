@@ -1,0 +1,17 @@
+; 08-fresh.mx -- a template that needs a temporary asks for a name nobody
+; else has. `{~t}` is one name within one expansion and a new one next time.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax "swap" a "," b
+    => "{{ int {~t} = {a}; {a} = {b}; {b} = {~t}; }}" terminated
+@syntax "loop" n "times" b:stmts "end"
+    => { emit "for (int " + fresh("i") + " = 0; " + fresh("i") + " < " + n + "; " + fresh("i") + "++) {\n" + indent(b, 4) + ";\n}" } terminated
+@end
+swap x, y;
+swap t, u;
+loop 3 times
+  swap p, q
+end

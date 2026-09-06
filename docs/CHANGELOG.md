@@ -10,6 +10,16 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**A tutorial**, `docs/tutorial.md`, with sixteen runnable files under
+`docs/tutorial/`: one concept per section, and every transcript checked by
+`make check`.
+
+**A statement that ends in a word like `end` needs no separator after it**,
+as the reference always said. It did: the check asked whether the last token
+was punctuation, which `}` is and `end` is not, so `end` on a line of its own
+followed by a statement was `no rule reads … here`. Every example wrote
+`end;`, and the tutorial's fifth file was the first not to.
+
 **Collections.** `contribute("vars", text)` is a statement in a code template
 that adds a line to a named collection, once per distinct text; `splice("vars")`
 is an expression that marks where the aggregate goes, filled in by a second

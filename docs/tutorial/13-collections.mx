@@ -1,0 +1,23 @@
+; 13-collections.mx -- a head that depends on the whole body. A rule
+; contributes a line to a named collection; one rule splices the aggregate;
+; a second pass fills it in once everything has been read.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax "program" n:name
+    => { emit "/* " + n + " */\n" + splice("head") + "\nint main(void) {\n    " + splice("vars") } terminated
+@syntax "let" v:name "=" e
+    => { contribute("vars", "int " + v + ";"); emit v + " = " + e }
+@syntax "print" x
+    => { contribute("head", "#include <stdio.h>"); emit "printf(\"%d\\n\", " + x + ")" }
+@syntax "end"
+    => { emit "return 0;\n}" } terminated
+@end
+program demo;
+let a = 1;
+let b = 2;
+let a = 3;
+print a;
+end

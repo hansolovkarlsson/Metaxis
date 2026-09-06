@@ -1,0 +1,29 @@
+; 03-levels.mx -- fixity is read off the pattern, precedence off the level.
+; The output is fully bracketed prefix form, so that the grouping the parser
+; chose is visible.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax "(" e ")"               => "{e}"
+@syntax a "=" b   10 right      => "(set {a} {b})"
+@syntax a "+" b   60            => "(+ {a} {b})"
+@syntax a "-" b   60            => "(- {a} {b})"
+@syntax a "*" b   70            => "(* {a} {b})"
+@syntax a "^" b   80 right      => "(^ {a} {b})"
+@syntax "-" a     90            => "(neg {a})"
+@syntax a "!"     95            => "(fact {a})"
+@syntax "|" a "|"               => "(abs {a})"
+@syntax "if" c "then" t         => "(when {c} {t})"
+@syntax "if" c "then" t "else" f => "(if {c} {t} {f})"
+@end
+1 + 2 * 3;
+(1 + 2) * 3;
+1 - 2 - 3;
+2 ^ 3 ^ 2;
+a = b = 5;
+-x ^ 2;
+3! + 1;
+|1 - 5| * 2;
+if a then if b then 1 else 2

@@ -1,0 +1,25 @@
+; 09-reuse.mx -- three ways to say something once.
+;   @use       takes another file's directives
+;   override   replaces one of them, and says so
+;   @fragment  names a piece of pattern
+;   @template  names a piece of output
+
+@use "09-arith.mx"
+@separator ";" => ";\n"
+
+@syntax a "/" b   70   => "div({a}, {b})" override
+
+@fragment args = "(" [ p:name ]* sep "," ")"
+
+@template head(kind, f, p) {
+    emit kind + " " + f + "("
+    for i, x in p sep ", " { emit "int " + x }
+    emit ")"
+}
+
+@syntax "proc" f:name @args   => { head("void", f, p) }
+@syntax "func" f:name @args   => { head("int", f, p) }
+@end
+8 / 2 + 1;
+proc show(a, b);
+func answer()

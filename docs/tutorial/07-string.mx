@@ -1,0 +1,18 @@
+; 07-string.mx -- a string template can only splice, so it must bracket every
+; operand, and must brace every branch. Compare 07-code.mx, same body.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax "(" e ")"                 => "({e})"
+@syntax a "=" b   10 right        => "{a} = {b}"
+@syntax a "+" b   60              => "({a} + {b})"
+@syntax a "*" b   70              => "({a} * {b})"
+@syntax a "<" b   40              => "({a} < {b})"
+@syntax "begin" b:stmts "end"     => "{{\n{b};\n}}" terminated
+@syntax "if" c "then" t "else" f  => "if {c} {{ {t}; }} else {{ {f}; }}"
+@end
+x = 1 + 2 * 3;
+y = (1 + 2) * 3;
+if x < y then y = 0 else begin x = 0; y = 1 end

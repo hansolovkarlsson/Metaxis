@@ -1,0 +1,16 @@
+; 02-words.mx -- nothing is reserved. A quoted string in a pattern is a word
+; the body must contain; a bare name is a hole the body fills.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@comment "#" eol
+@separator ";" => ";\n"
+
+@syntax a "div" b       70  => "({a} / {b})"
+@syntax "if" c "then" t     => "when({c}, {t})"
+@syntax a "=" b   10 right  => "{a} := {b}"
+@end
+10 div 2;             # `div` is a word here because a rule quoted it
+divisor = 5;          # and `divisor` is a name, because it is longer
+then = 3;             # `then` is a name here...
+if then then then;    # ...and a word here, and a name again, by position

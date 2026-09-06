@@ -1,0 +1,24 @@
+; 07-code.mx -- the same grammar with code templates. `group(h, n)` asks an
+; operand what level it was parsed at and brackets it only when it must;
+; `terminated(h)` asks whether a branch already ends a statement.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax "(" e ")"                 => { emit "(" + e + ")" }
+@syntax a "=" b   10 right        => { emit a + " = " + b }
+@syntax a "+" b   60              => { emit group(a, 60) + " + " + group(b, 61) }
+@syntax a "*" b   70              => { emit group(a, 70) + " * " + group(b, 71) }
+@syntax a "<" b   40              => { emit group(a, 40) + " < " + group(b, 41) }
+@syntax "begin" b:stmts "end"     => { emit "{\n" + indent(b, 4) + ";\n}" } terminated
+@syntax "if" c "then" t "else" f
+    => {
+        emit "if (" + c + ") " + t
+        if not terminated(t) { emit ";" }
+        emit " else " + f
+    }
+@end
+x = 1 + 2 * 3;
+y = (1 + 2) * 3;
+if x < y then y = 0 else begin x = 0; y = 1 end

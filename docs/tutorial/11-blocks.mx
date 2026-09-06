@@ -1,0 +1,32 @@
+; 11-blocks.mx -- a block that is an indentation. The separator is a newline
+; and `indent` gives the lexer a stack of columns; a `block` hole reads what
+; it emits, and is the one thing in a pattern that is not a string.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator "\n" => ";\n" indent
+
+@syntax n:name "=" v   5 right     => { emit n + " = " + v }
+@syntax a "+" b   60               => { emit a + " + " + b }
+@syntax a "<" b   40               => { emit a + " < " + b }
+@syntax "print" x                  => { emit "printf(\"%d\\n\", " + x + ")" }
+; The block's last statement needs its own `;` unless it already ends one --
+; the separator goes between statements, never after the last.
+@template braces(b) {
+    emit "{\n" + indent(b, 4)
+    if not terminated(b) { emit ";" }
+    emit "\n}"
+}
+@syntax "while" c ":" b:block
+    => { emit "while (" + c + ") "; braces(b) } terminated
+@syntax "if" c ":" b:block "else" ":" e:block
+    => { emit "if (" + c + ") "; braces(b); emit " else "; braces(e) } terminated
+@end
+x = 0
+while x < 3:
+    x = x + 1
+    if x < 2:
+        print x
+    else:
+        print 0
+print x

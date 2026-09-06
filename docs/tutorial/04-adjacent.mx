@@ -1,0 +1,4 @@
+@token number "[0-9]+"
+@syntax "pair" a b  => "({a}, {b})"
+@end
+pair 1 2

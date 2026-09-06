@@ -1,0 +1,18 @@
+; 12-island.mx -- text mode over real code. Two constructs are rewritten and
+; the rest of the C passes through, comments and all.
+
+@mode text
+@syntax "fprintf(stderr, \"mx: %s\\n\", " e ")"
+    => {
+        contribute("defs", "static void complain(const char *e) { fprintf(stderr, \"mx: %s\\n\", e); }")
+        emit "complain(" + e + ")"
+    }
+@syntax "static void usage(void)"
+    => { emit splice("defs") + "\n\nstatic void usage(void)" }
+@end
+/* a fragment of a C file */
+static void usage(void)
+{
+    if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }
+    fprintf(stderr, "mx: cannot write %s\n", outpath);
+}

@@ -1,0 +1,6 @@
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@syntax a "=" b   10 right   => "{a} := {b}"
+@syntax "for" i "=" a "to" b "do" s  => "for {i} in {a}..{b}: {s}"
+@end
+for i = 1 to 3 do i

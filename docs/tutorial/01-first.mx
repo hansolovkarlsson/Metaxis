@@ -1,0 +1,15 @@
+; 01-first.mx -- the smallest file that shows the shape.
+; Above @end is the header: it says what the body's syntax is.
+; Below @end is the body: text in that syntax, rewritten by the templates.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax "(" e ")"     => "{e}"
+@syntax a "+" b   60  => "add({a}, {b})"
+@syntax "double" e    => "({e} * 2)"
+@end
+x + 1;
+double x + 1;
+double (x + 1)

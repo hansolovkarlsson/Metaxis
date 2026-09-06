@@ -1,0 +1,12 @@
+; 12-text.mx -- text mode. The body is scanned; where a rule matches it
+; fires, and everything else is copied through unchanged.
+
+@mode text
+@syntax "**" t:text "**"              => "<b>{t}</b>"
+@syntax "[[" t:text "|" u:text "]]"   => "<a href=\"{u}\">{t}</a>"
+@syntax "[[" t:text "]]"              => "<a href=\"{t}\">{t}</a>"
+@syntax "TODO(" who:text "):" note:text "\n"  => "<!-- {who}:{note} -->\n"
+@end
+Some **bold** words and a [[link|http://x.y]] and a bare [[http://z]].
+TODO(hans): read the reference
+Nothing else here is touched: {braces}, "quotes", `backticks`.

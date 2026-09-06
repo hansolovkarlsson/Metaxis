@@ -1,0 +1,7 @@
+; 09-arith.mx -- a library: directives and nothing else, meant to be @used.
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@syntax "(" e ")"           => "({e})"
+@syntax a "+" b   60        => "({a} + {b})"
+@syntax a "*" b   70        => "({a} * {b})"
+@syntax a "/" b   70        => "({a} / {b})"

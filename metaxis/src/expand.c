@@ -63,6 +63,12 @@ typedef struct {
     Toks    *tk;
     int      i, far, depth;
     char    *err;
+    /* The index of the last token a rule consumed *as a word*, so that
+       p_stmts can tell a statement that ended in `end` from one that ended in
+       a name that happens to be spelled `end`. The class wins a tie, so `end`
+       is a name token whose text is a word, and the token's kind cannot say
+       which of the two a rule made of it. Restored wherever the cursor is. */
+    int      wordat;
 } P;
 
 #define MAXDEPTH 400
@@ -308,8 +314,9 @@ static int m_group(P *p, Rule *r, Elem *e, Bind *b, int nb)
         Bind *snap = bind_copy(b, nb);
         /* A group is read at binding power 0: it is delimited by its own words,
            not by precedence. */
+        int   savew = p->wordat;
         if (!m_elems(p, r, e->sub, e->nsub, 0, 0, NULL, b, nb)) {
-            p->i = save;
+            p->i = save; p->wordat = savew;
             memcpy(b, snap, sizeof *b * (size_t)nb);
         }
         return 1;
@@ -317,14 +324,15 @@ static int m_group(P *p, Rule *r, Elem *e, Bind *b, int nb)
 
     int turns = 0;
     for (;;) {
-        int   save = p->i;
+        int   save = p->i, savew = p->wordat;
         Bind *snap = bind_copy(b, nb);
         if (turns && e->sep) {
             if (!tok_is(p, e->sep)) break;
+            p->wordat = p->i;
             adv(p);
         }
         if (!m_elems(p, r, e->sub, e->nsub, 0, 1, join, b, nb) || p->i == save) {
-            p->i = save;
+            p->i = save; p->wordat = savew;
             memcpy(b, snap, sizeof *b * (size_t)nb);
             break;
         }
@@ -341,6 +349,7 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
 
         if (e->kind == EL_WORD) {
             if (!tok_is(p, e->word)) return 0;
+            p->wordat = p->i;
             adv(p);
             continue;
         }
@@ -458,11 +467,11 @@ static char *p_nud(P *p, Out *o)
         Rule **c = xmalloc(sizeof *c * (size_t)(p->g->nrule + 1));
         int    n = collect(p, c, 0, 0);
         for (int i = 0; i < n && !res && !p->err; i++) {
-            int save = p->i;
+            int save = p->i, savew = p->wordat;
             trace_before(p, c[i], i, n);
             res = p_rule(p, c[i], NULL, LEVEL_ATOM, 0);
             trace_after(p, c[i], save, res);
-            if (!res) p->i = save;
+            if (!res) { p->i = save; p->wordat = savew; }
             else {
                 if (c[i]->level >= 0) o->level = c[i]->level;
                 o->terminated = c[i]->terminated;
@@ -492,11 +501,11 @@ static char *p_expr(P *p, int minbp, Out *o)
         int    n = collect(p, c, 1, minbp);
         char  *res = NULL;
         for (int i = 0; i < n && !res && !p->err; i++) {
-            int save = p->i;
+            int save = p->i, savew = p->wordat;
             trace_before(p, c[i], i, n);
             res = p_rule(p, c[i], left, mine.level, mine.terminated);
             trace_after(p, c[i], save, res);
-            if (!res) p->i = save;
+            if (!res) { p->i = save; p->wordat = savew; }
             else { mine.level = c[i]->level; mine.terminated = c[i]->terminated; }
         }
         if (!res) break;
@@ -543,8 +552,12 @@ static char *p_stmts(P *p, const char *term, int dedent, int *terminated)
         if (tok_is(p, g->sep_in)) continue;
         /* A separator is wanted between two statements, and not after one that
            ended in a word. That is what lets `}` stand on its own, in C and in
-           Pascal alike, without a rule having to declare itself terminating. */
-        if (p->i > 0 && p->tk->t[p->i - 1].kind == T_PUNCT) continue;
+           Pascal alike, without a rule having to declare itself terminating.
+           Until 2026-09-06 this asked whether the last token was punctuation,
+           which `}` is and `end` is not -- the class wins a tie, so `end` is a
+           name token -- and every example wrote `end;`, so nothing noticed
+           until a tutorial file wrote `end` on a line of its own. */
+        if (p->i > 0 && p->wordat == p->i - 1) continue;
         /* A block that just closed is the same case as a `}` or an `end`: the
            statement before it ended in something that was not a statement, and
            what follows starts a new one without a separator saying so. */
@@ -558,7 +571,7 @@ static char *p_stmts(P *p, const char *term, int dedent, int *terminated)
 char *expand_expr(Grammar *g, Toks *tk, char **err)
 {
     fresh_src = tk->src; fresh_g = g; fresh_n = 0;
-    P p = { g, tk, 0, 0, 0, NULL };
+    P p = { g, tk, 0, 0, 0, NULL, -1 };
     char *out = p_stmts(&p, NULL, 0, NULL);
     if (out && cur(&p)->kind != T_EOF) out = NULL;
     if (!out) {
@@ -780,7 +793,7 @@ static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
 
     if (r->body) return code_eval(g, r, b, nb, err);
 
-    P p = { g, NULL, 0, 0, 0, NULL };
+    P p = { g, NULL, 0, 0, 0, NULL, -1 };
     char *out = subst(&p, r, b, nb);
     if (!out) *err = p.err;
     return out;
