@@ -218,7 +218,7 @@ typedef struct {
 
 typedef struct {
     Tok        *t;
-    int         n;
+    int         n, cap;   /* cap: the array doubles; see push() in lex.c */
     const char *src, *file;
 } Toks;
 
@@ -228,6 +228,11 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
 /* --------------------------------------------------------------- expansion */
 
 char *expand_expr(Grammar *g, Toks *tk, char **err);
+/* `-t`. Turns the parse trace on and resets its counters. The trace goes to
+   stderr so the expansion on stdout is unchanged; expand_summary() writes the
+   totals, which is what a backtracking budget would be picked from. */
+void  expand_trace(int on);
+void  expand_summary(void);
 char *pt_fresh(const char *label);
 
 /* code.c */

@@ -1,4 +1,4 @@
-/* mx.c -- mx [-o out] [-b backend] [-g] file.mx */
+/* mx.c -- mx [-o out] [-b backend] [-t] [-g] file.mx */
 #include "mx.h"
 
 #include <stdio.h>
@@ -9,6 +9,7 @@ static void usage(void)
 {
     fputs("usage: mx [-o output] [-b backend] file.mx\n"
           "       -b   which 'as <name>' template each rule emits from\n"
+          "       -t   trace the parse to stderr, and count what it tried\n"
           "       -g   print the grammar the header declared, and stop\n", stderr);
     exit(2);
 }
@@ -55,11 +56,12 @@ static void dump(Grammar *g)
 int main(int argc, char **argv)
 {
     const char *in = NULL, *outpath = NULL, *backend = NULL;
-    int grammar_only = 0;
+    int grammar_only = 0, trace = 0;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-o")) { if (++i >= argc) usage(); outpath = argv[i]; }
         else if (!strcmp(argv[i], "-b")) { if (++i >= argc) usage(); backend = argv[i]; }
+        else if (!strcmp(argv[i], "-t")) trace = 1;
         else if (!strcmp(argv[i], "-g")) grammar_only = 1;
         else if (argv[i][0] == '-' && argv[i][1]) usage();
         else if (!in) in = argv[i];
@@ -100,12 +102,14 @@ int main(int argc, char **argv)
     if (g->mode == MODE_TEXT) {
         out = expand_text(g, src, body, in, &err);
     } else {
+        expand_trace(trace);
         Toks tk;
         if (lex(g, src, body, in, &tk, &err) < 0) {
             fprintf(stderr, "mx: %s\n", err);
             return 1;
         }
         out = expand_expr(g, &tk, &err);
+        if (trace) expand_summary();
     }
     if (!out) { fprintf(stderr, "mx: %s\n", err); return 1; }
 

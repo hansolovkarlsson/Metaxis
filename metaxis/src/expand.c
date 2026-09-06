@@ -11,6 +11,8 @@
  */
 #include "mx.h"
 
+#include <stdio.h>
+
 #include <ctype.h>
 #include <string.h>
 
@@ -64,6 +66,72 @@ typedef struct {
 } P;
 
 #define MAXDEPTH 400
+
+/* ------------------------------------------------------- `-t`: the trace ---
+ *
+ * `mx -g` prints the grammar a header declared and nothing prints the parse it
+ * attempted, which is the half that is hard to reason about from outside:
+ * candidates under one leading word are tried longest-first with the token
+ * cursor restored on failure, so a rule that never fires looks exactly like a
+ * rule that was never reached.
+ *
+ * It goes to **stderr**, so `mx -t f.mx > out` still writes the expansion and
+ * nothing else. And it counts, because docs/ROADMAP.md 3 does not want a
+ * feature -- it wants a measurement before a backtracking budget is picked, on
+ * the ground that a budget chosen without one is a number somebody made up. */
+static int  trace_on;
+static long trace_tries, trace_restored;
+static int  trace_deepest;
+
+void expand_trace(int on) { trace_on = on; trace_tries = trace_restored = 0; trace_deepest = 0; }
+
+static void pat_show(FILE *f, Elem *el, int nel)
+{
+    for (int e = 0; e < nel; e++) {
+        switch (el[e].kind) {
+        case EL_WORD: fprintf(f, "\"%s\" ", el[e].word); break;
+        case EL_HOLE: fprintf(f, "%s ", el[e].hole);       break;
+        default:
+            fprintf(f, "[ ");
+            pat_show(f, el[e].sub, el[e].nsub);
+            fprintf(f, "]%s", el[e].rep == REP_STAR ? "* " :
+                              el[e].rep == REP_PLUS ? "+ " : " ");
+        }
+    }
+}
+
+/* One line per candidate, indented by how deep the parse is, and one more when
+   it fails saying which token it could not get past -- which is the thing a
+   grammar under construction is nearly always wrong about. */
+void expand_summary(void)
+{
+    fprintf(stderr, "trace: %ld candidate%s tried, %ld restored, deepest %d\n",
+            trace_tries, trace_tries == 1 ? "" : "s", trace_restored, trace_deepest);
+}
+
+static void trace_before(P *p, Rule *r, int i, int n)
+{
+    trace_tries++;
+    if (p->depth > trace_deepest) trace_deepest = p->depth;
+    if (!trace_on) return;
+    fprintf(stderr, "%*s try %d/%d  ", p->depth * 2, "", i + 1, n);
+    pat_show(stderr, r->el, r->nel);
+    fprintf(stderr, " [%s:%d]\n", r->file, r->line);
+}
+
+static void trace_after(P *p, Rule *r, int save, char *res)
+{
+    if (!res) trace_restored++;
+    if (!trace_on) return;
+    if (res) {
+        fprintf(stderr, "%*s  ok\n", p->depth * 2, "");
+        return;
+    }
+    Tok *t = &p->tk->t[p->i < p->tk->n ? p->i : p->tk->n - 1];
+    fprintf(stderr, "%*s  no, stopped at '%.*s' (line %d), %d token%s back\n",
+            p->depth * 2, "", (int)t->n, t->p, t->line,
+            p->i - save, p->i - save == 1 ? "" : "s");
+}
 
 /* What a parsed expression turns out to be, besides its text: the level of the
    rule that produced it, so a code template can ask whether an operand needs
@@ -391,7 +459,9 @@ static char *p_nud(P *p, Out *o)
         int    n = collect(p, c, 0, 0);
         for (int i = 0; i < n && !res && !p->err; i++) {
             int save = p->i;
+            trace_before(p, c[i], i, n);
             res = p_rule(p, c[i], NULL, LEVEL_ATOM, 0);
+            trace_after(p, c[i], save, res);
             if (!res) p->i = save;
             else {
                 if (c[i]->level >= 0) o->level = c[i]->level;
@@ -423,7 +493,9 @@ static char *p_expr(P *p, int minbp, Out *o)
         char  *res = NULL;
         for (int i = 0; i < n && !res && !p->err; i++) {
             int save = p->i;
+            trace_before(p, c[i], i, n);
             res = p_rule(p, c[i], left, mine.level, mine.terminated);
+            trace_after(p, c[i], save, res);
             if (!res) p->i = save;
             else { mine.level = c[i]->level; mine.terminated = c[i]->terminated; }
         }
