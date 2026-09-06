@@ -30,6 +30,7 @@ on introducing new mechanics and test them out properly.*
 | **1 · done** | Pascal | C | the mechanics that exist, finished and made testable |
 | **2 · done** | C | arm64 | output that is not an expression tree — labels, order, a machine |
 | **3 · done** | Python | C | a language whose blocks are indentation |
+| **4 · done** | BASIC | C | a source that declares nothing — the head of the output is determined by its body |
 
 Stage 2 landed on 2026-09-05 as `examples/asm.mx` and `tests/asm.sh`. **The
 output side generalises**, which was the question: a rule's value became *the
@@ -54,14 +55,28 @@ operator passes a diff and passes `tests/pascal.sh`, and fails that.
 [direction.md](direction.md) says what the stages are ultimately *for*, and why
 stage 2 is assembly rather than another expression language.
 
-**All three stages are done, and that is now an open question rather than a
-result.** The staging existed to say where the *pressure* comes from — one
-translator at a time, taken far enough to be compiled and run, so that no
-feature is built without a customer that asked for it first. There is no stage 4
-on this page, and one should not be invented to have one. What remains below is
-what the three stages left owing, and every item on it has a customer or says
-plainly that it does not. **When the next mechanic is wanted, the thing to pick
-first is the translator that would ask for it** — not the mechanic.
+Stage 4 landed on 2026-09-06 as `examples/basic.mx` and `tests/basic.sh`, and
+it was picked by the rule in the next paragraph: the survey's shortlist said
+collection attributes had a customer, and **BASIC is the source that cannot be
+translated without them**. It declares nothing — a variable exists because a
+line mentions it — and C wants every one declared before the first statement,
+which is the aggregate of every line below. The translator reached that wall
+exactly where it was expected to, and nowhere else: line numbers read as the
+left operand of an infix keyword, `FOR` and `NEXT` are two statements the way
+they are in BASIC, and the type of a variable is read off the sigil on its name
+with `replace`, which is the wall stage 1 hit at `writeln` dissolved by choice
+of source. **It cost the tool nothing** — no directive, no builtin, no line of
+C — and what it owes is 4 below. `tests/basic.sh` writes the four declarations
+by hand and is pinned to fail the day the translator starts writing them.
+
+**The staging exists to say where the *pressure* comes from** — one translator
+at a time, taken far enough to be compiled and run, so that no feature is built
+without a customer that asked for it first. A stage is not invented to have
+one. What remains below is what the four stages left owing, and every item on
+it has a customer or says plainly that it does not. **When the next mechanic is
+wanted, the thing to pick first is the translator that would ask for it** — not
+the mechanic. Stage 4 is the first time that rule was applied deliberately, and
+the wall it found is the one the survey had predicted.
 
 **This is a rule about where new mechanics come from, not a restriction on the
 tool.** A `.mx` file still declares any language in and writes any language out;
@@ -228,6 +243,53 @@ is obviously right:
 
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing — one instance is a fact and two are a pattern.
+
+## 4 · Collection attributes — the head of the output is its body's aggregate
+
+**The customer, three times over and once more.** `examples/basic.mx` emits
+every statement of a BASIC program and cannot emit the line C wants first:
+`int T, I, N;` is the set of every variable any `LET`, `FOR` or `PRINT` below
+mentions, and a rule sees its own holes and nothing else. `tests/basic.sh`
+writes that line by hand and is pinned to fail the day the translator starts
+writing it. Before it, `examples/code.mx` emits `#include <stdio.h>` whether or
+not a `writeln` fired, and `examples/asm.mx` has the same shape for a data
+section. And the smaller fourth: `basic.mx` labels every line because it cannot
+know which ones a `GOTO` names, and a C compiler forgives that where it would
+not forgive a missing declaration.
+
+**The shape** is [prior-art.md](prior-art.md) §3.4's, from JastAdd and Silver:
+a rule *contributes* a value to a named collection, and one rule *splices the
+aggregate*. Contributions are unordered and additive, so two `@use`d files
+contributing to one collection is the intended case and not a conflict, and
+rule locality — the thing `override` exists to protect — survives untouched.
+It is still a synthesised attribute, flowing up, which is the direction this
+tool already flows: the one context mechanism that does not want a store, and
+the reason [direction.md](direction.md)'s `remember`/`recall` sketch is not the
+shape to build.
+
+**What it costs, and it is the decision.** The aggregate is not known until the
+last contribution is made, and the rule that wants it runs *first* — the head of
+a program is expanded before its body. So the splice cannot be a splice; it has
+to be a placeholder resolved after expansion, which is a second pass over the
+output text and a new thing in a tool that has one. Three things to decide
+before writing it, and stage 4 found the second:
+
+- **How a rule contributes.** A statement in a code template —
+  `contribute("vars", v)` — is the obvious spelling, and it keeps the rule
+  saying only what *it* adds.
+- **Where the aggregate goes when the source has no head.** Pascal has
+  `program` and a rule can splice there. BASIC has nothing before its first
+  line, so the *file* has to be able to say *before the first statement*, and
+  nothing in the notation says that today. This is the part the test wraps by
+  hand, and it is the part that is not obvious.
+- **Whether a collection deduplicates and orders.** `T` is mentioned nine times
+  and wants declaring once, in some order a diff can rely on.
+
+**What would falsify it.** If the placeholder pass turns out to need to know
+anything about the output language — where in C it is safe to substitute, how
+to indent it — then the agnosticism is spent and the feature is not worth it.
+The stage 3 method applies: rehearse the pass by hand on `examples/basic.out`
+first, and write the plan after.
 
 ## 5 · Source maps
 

@@ -10,6 +10,13 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**Stage 4: BASIC→C.** `examples/basic.mx` reads line-numbered BASIC — `LET`,
+`PRINT`, `IF … THEN`, `GOTO`, `FOR`/`NEXT`, `END`, string variables with `$` —
+and writes C with a label per line. `tests/basic.sh` compiles it, runs it and
+checks the numbers, with the declarations C wants supplied by hand, because
+the translator cannot write them: that is the wall the stage was picked to
+reach, and it is [ROADMAP.md](ROADMAP.md) 4. Nothing in the tool changed.
+
 **`make check` runs the transcripts in `docs/`.** A seventh script,
 `tests/docs.sh`, finds every fenced `$ mx …` line in the documents, runs it, and
 compares the output against the block beneath it; `…` on a line of its own means

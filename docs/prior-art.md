@@ -622,15 +622,17 @@ by construction, and correctly so.
 ## 6 · The shortlist
 
 Ordered by *has a customer* first and cost second, which is this tree's own
-rule. **Nothing here is a roadmap item yet**; the four with customers are the
-ones that could become one without inventing a reason.
+rule. **Nothing here was a roadmap item when this was written**; the four with
+customers were the ones that could become one without inventing a reason, and
+on 2026-09-06 the fourth did — after a translator, stage 4's BASIC, asked for
+it. It is [ROADMAP.md](ROADMAP.md) 4.
 
 | | | customer | cost |
 | --- | --- | --- | --- |
 | 1 | **A second backend without a second grammar**, `mx -b` (§3.1) | `examples/code.mx`, 272 duplicated lines, stated in the file | small — a tag namespace and a flag |
 | 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and it was the measurement that settled the backtracking budget | small |
 | 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/` | small, and the spelling is the decision |
-| 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx` | medium — wants a second pass over the output, which the tool does not have |
+| 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx`; and since 2026-09-06 every declaration `examples/basic.mx` cannot write — **[ROADMAP.md](ROADMAP.md) 4** | medium — wants a second pass over the output, which the tool does not have |
 | 5 | **An island rule** (§3.3) | none yet, and it would change what the tool can be pointed at | medium, and it can make grammar bugs silent |
 | 6 | **A guard on a rule** (§3.2) | thin — two candidates, neither strong | very small; the backtracking is already there |
 | 7 | Editor mode from the header (§3.8) | none | small |

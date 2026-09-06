@@ -10,6 +10,75 @@ argued away.*
 
 Newest first.
 
+## Stage 4 — BASIC→C, and the wall it was picked to reach
+
+```
+$ mx examples/basic.mx
+L10: T = 0;
+L20: for (I = 1; I <= 20; I++) {
+L30: if (I % 3 == 0 && I != 9) goto L60;
+…
+L160: if (!(T > 30)) goto L190;
+…
+L190: return 0;
+```
+
+**Picked for a mechanic, by the roadmap's rule.** The three stages were done
+and the page said the next thing to choose was a translator, not a mechanic.
+The survey's shortlist said collection attributes had a customer — the include
+`examples/code.mx` emits whether or not it is needed — and the source that
+cannot be translated *at all* without them is BASIC: it declares nothing, a
+variable exists because some line mentions it, and C wants every one declared
+before the first statement. That line is the aggregate of the whole program,
+and a rule sees its own holes and nothing else. So `examples/basic.mx` was
+written to reach that wall and record where it is, and `tests/basic.sh` writes
+the four declarations by hand, compiles the rest, runs it, and checks the
+numbers — and is pinned in both directions, so the program must not build
+without the hand-written line and the translator must not have started writing
+it. When it does, the test fails in the commit that did it.
+
+**It cost the tool nothing.** No directive, no builtin, no line of C. Four
+things the notation had to reach, and reached:
+
+- **A line number is the left operand of its statement.** `10 LET T = 0` is
+  the number 10 followed by an infix `LET`: a led rule whose left hole is the
+  line and whose word is the keyword, which is what a Pratt parser makes of it
+  without being told. Every line becomes a C label, so `GOTO 80` is `goto L80`.
+- **Each statement is written once and read twice.** A `@template` holds the
+  body — `let(v, e)`, `print(x)` — and a led rule with the line number and a
+  nud rule without it both call it, so `THEN LET T = T + I` costs one line.
+- **The type of a variable is the sigil on its name.** Stage 1 stopped at
+  `writeln` because printing a value means knowing its type. `print` reads it
+  off the spelling — `replace(x, "$", "") != x` is *a string variable*, a `"`
+  is a literal, anything else is a number — and the wall is not met, by choice
+  of source and not by a new mechanic.
+- **`FOR` and `NEXT` are two statements**, because they are in BASIC:
+  `GOTO 70` jumps to a `NEXT` from inside its own loop and BASIC allows it. So
+  `FOR` opens a brace and `NEXT` closes one, the way `examples/asm.mx` emits a
+  sequence, and the C nests because the BASIC did. `L70: ; }` is what a label
+  before a closing brace has to look like.
+
+**What it found, in the order the runs found it.** The first expansion wrote
+`!T > 30` for `NOT T > 30`: BASIC's `NOT` binds looser than a comparison and
+C's `!` binds tighter than anything, so the operand of `!` is bracketed unless
+it is an atom — `group(a, 80)`, one above the top of the ladder, where the
+first draft asked at `NOT`'s own level. The first compile said `expected ';'
+after return statement`: `END` is the last line, no separator follows it, and
+its semicolon has to be its own. And the wall itself arrived with a second face
+the roadmap had not named: **BASIC has no head.** Pascal has `program` and a
+rule could splice an aggregate there; BASIC's first line is a statement, so the
+*file* would have to be able to say *before the first statement*, and nothing
+in the notation says that. That is now the second of the three decisions on
+[ROADMAP.md](ROADMAP.md) 4, and it is the one the survey did not foresee.
+
+**Two things the file says it does not read.** `REM`, because a comment wins
+over a word and would leave the line number standing alone as a statement, so
+the body comments with `'`. And `GOSUB`, which wants a return stack C does not
+have.
+
+Verified at 15 examples, 78 error cases and **eight** check scripts — 109 `ok`
+lines, six of them transcripts, the one above included.
+
 ## `tests/docs.sh` — the transcripts in `docs/`, run
 
 ```

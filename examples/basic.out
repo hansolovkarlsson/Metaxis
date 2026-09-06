@@ -1,0 +1,19 @@
+L10: T = 0;
+L20: for (I = 1; I <= 20; I++) {
+L30: if (I % 3 == 0 && I != 9) goto L60;
+L40: T = T - 1;
+L50: goto L70;
+L60: T = T + I;
+L70: ; }
+L80: printf("%d\n", T);
+L90: N = 0;
+L100: N = N + 1;
+L110: if (N < 4) goto L100;
+L120: printf("%d\n", N);
+L130: A_s = "it's middling";
+L140: if (T > 100) A_s = "big";
+L150: puts(A_s);
+L160: if (!(T > 30)) goto L190;
+L170: T = T + 1;
+L180: printf("%d\n", T);
+L190: return 0;

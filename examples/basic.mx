@@ -1,0 +1,144 @@
+; basic.mx -- BASIC in, C out. Stage 4, and the first source here that
+; declares nothing.
+;
+; Pascal says `var total: integer` before it uses `total`, and stage 1 turned
+; that line into C's. BASIC has no such line: a variable exists because a
+; statement somewhere mentions it, and its type is the sigil on its name --
+; `T` is a number and `A$` is a string. C wants every one of them declared at
+; the top, before the first statement, and *which* ones is the aggregate of
+; every LET, FOR and PRINT below. That is the customer this stage was picked
+; to be: **the head of the output is determined by its body**, and no rule
+; here can see past itself. tests/basic.sh writes the declarations by hand,
+; says so, and fails if this file ever starts writing them -- the same pin
+; tests/pascal.sh keeps on the literal. docs/ROADMAP.md has what it would
+; take.
+;
+; **What the sigil buys.** Stage 1 stopped at `writeln` because printing a
+; value means knowing its type, and nothing here has types. BASIC's answer is
+; older than the question: the type is spelled on the name. `print` below
+; reads it off -- a `$` means a string, a `"` means a literal, and anything
+; else is a number -- so the wall stage 1 hit is not here, by choice of
+; source and not by any new mechanic.
+;
+; **Line numbers** are the left operand of every statement. `10 LET T = 0`
+; reads as the number 10 followed by an infix `LET` -- a led rule whose left
+; hole is the line and whose word is the keyword -- which is what a Pratt
+; parser makes of it without being told anything. Every line becomes a C
+; label, so `GOTO 80` is `goto L80`. Which lines are jumped *to* is the same
+; aggregate question as the declarations, met from the other side, and this
+; file answers it by labelling every line; a C compiler does not mind.
+;
+; **FOR and NEXT are two statements**, not one with a body, because that is
+; what they are in BASIC -- `GOTO 70` below jumps to a NEXT from inside its
+; loop and BASIC allows it. So FOR opens a brace and NEXT closes one, the way
+; examples/asm.mx emits a sequence rather than a tree, and the C nests because
+; the BASIC did.
+;
+; **What is not here, and says so.** REM is not read: the comment would win
+; over the word and leave the line number standing alone as a statement, so
+; the body comments with `'`, which several BASICs accept. GOSUB wants a
+; return stack C does not have. Strings are assigned and printed, never
+; joined. And the declarations, above.
+
+@comment "'" eol
+
+@token number "[0-9]+"
+@token name   "[A-Z][A-Z0-9]*[$]?"
+@token string "\"[^\"]*\""
+
+@separator "\n" => ";\n"
+
+; Expressions. `=` is comparison here and assignment only after LET, where
+; it is a word in the pattern and never reaches these rules. NOT binds looser
+; than a comparison, which is BASIC's rule and not C's: `NOT T > 30` means
+; `NOT (T > 30)`, and C's `!` binds tighter than anything on this ladder, so
+; its operand is bracketed unless it is an atom -- `group(a, 80)`, one above
+; the top. `group(a, 35)` was the first draft, and it wrote `!T > 30`.
+@syntax "(" e ")"           => { emit "(" + e + ")" }
+@syntax a "OR" b        25  => { emit group(a, 25) + " || " + group(b, 26) }
+@syntax a "AND" b       30  => { emit group(a, 30) + " && " + group(b, 31) }
+@syntax "NOT" a         35  => { emit "!" + group(a, 80) }
+@syntax a "=" b         40  => { emit group(a, 40) + " == " + group(b, 41) }
+@syntax a "<>" b        40  => { emit group(a, 40) + " != " + group(b, 41) }
+@syntax a "<" b         40  => { emit group(a, 40) + " < "  + group(b, 41) }
+@syntax a ">" b         40  => { emit group(a, 40) + " > "  + group(b, 41) }
+@syntax a "+" b         60  => { emit group(a, 60) + " + "  + group(b, 61) }
+@syntax a "-" b         60  => { emit group(a, 60) + " - "  + group(b, 61) }
+@syntax a "*" b         70  => { emit group(a, 70) + " * "  + group(b, 71) }
+@syntax a "/" b         70  => { emit group(a, 70) + " / "  + group(b, 71) }
+@syntax a "MOD" b       70  => { emit group(a, 70) + " % "  + group(b, 71) }
+
+; A name in C: `A$` is not one, so the sigil becomes a suffix.
+@template var(v) { emit replace(v, "$", "_s") }
+
+; The type is on the name. A `$` is a string variable, a `"` is a string
+; literal, and everything else is a number -- which is a rule about the
+; *spelling* of the operand, the only thing a template can see, and it is
+; exactly what BASIC's own designers made it.
+@template print(x) {
+    if replace(x, "$", "") != x or replace(x, "\"", "") != x {
+        emit "puts("; var(x); emit ")"
+    } else {
+        emit "printf(\"%d\\n\", " + x + ")"
+    }
+}
+
+; Each statement is written once, as a template, and read twice: with a line
+; number in front of it, as a line, and bare, after THEN. The line form is a
+; led rule -- the number is its left operand -- and the bare form is a nud.
+@template let(v, e) { var(v); emit " = " + e }
+@template line(l)   { emit "L" + l + ": " }
+
+@syntax l "LET" v:name "=" e   5  => { line(l); let(v, e) }
+@syntax   "LET" v:name "=" e      => { let(v, e) }
+@syntax l "PRINT" x            5  => { line(l); print(x) }
+@syntax   "PRINT" x               => { print(x) }
+@syntax l "GOTO" t:number      5  => { line(l); emit "goto L" + t }
+@syntax   "GOTO" t:number         => { emit "goto L" + t }
+
+; `THEN 60` is a jump and `THEN LET …` is a statement. The two patterns are
+; the same length, so they are tried in this order, and a `number` hole
+; refuses a keyword.
+@syntax l "IF" c "THEN" t:number  5  => { line(l); emit "if (" + c + ") goto L" + t }
+@syntax l "IF" c "THEN" s         5  => { line(l); emit "if (" + c + ") " + s }
+
+; A label needs a statement after it and `}` is not one, hence the `;`.
+@syntax l "FOR" i:name "=" a "TO" b  5
+    => { line(l); emit "for (" + i + " = " + a + "; " + i + " <= " + b + "; " + i + "++) {" } terminated
+@syntax l "NEXT" i:name  5  => { line(l); emit "; }" } terminated
+
+; END is the last line, so no separator follows it and the `;` is its own.
+; The first draft left it off and the compiler said so on the first run.
+@syntax l "END"          5  => { line(l); emit "return 0;" } terminated
+
+@end
+
+' Everything below is BASIC. Nothing below is Metaxis's.
+' It computes what examples/pascal.mx computes, as far as the two overlap:
+' the loop, then a count, then a string, then a branch.
+
+10 LET T = 0
+20 FOR I = 1 TO 20
+30 IF I MOD 3 = 0 AND I <> 9 THEN 60
+40 LET T = T - 1
+50 GOTO 70
+60 LET T = T + I
+70 NEXT I
+80 PRINT T
+
+' A loop written with a jump, which is what BASIC has instead of `repeat`.
+90 LET N = 0
+100 LET N = N + 1
+110 IF N < 4 THEN 100
+120 PRINT N
+
+' The type of A$ is its name.
+130 LET A$ = "it's middling"
+140 IF T > 100 THEN LET A$ = "big"
+150 PRINT A$
+
+' NOT binds looser than >, so this reads NOT (T > 30).
+160 IF NOT T > 30 THEN 190
+170 LET T = T + 1
+180 PRINT T
+190 END
