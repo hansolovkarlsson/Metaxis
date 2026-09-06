@@ -170,7 +170,7 @@ if __name__ == "__main__":
 #                the honest form of the wall stage 1 met from three directions.
 #
 #   `elif`.      Not read. Python spells it as its own word, so each arm count
-#                is a rule of its own, and that is the shape docs/ROADMAP.md 7
+#                is a rule of its own, and that is the shape docs/ROADMAP.md 6
 #                describes and declines to build for.
 #
 #   A wrapped call.  `f(a,` newline `b)` is not read either: Python's lexer

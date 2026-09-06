@@ -82,8 +82,9 @@ typedef struct {
  * rule that was never reached.
  *
  * It goes to **stderr**, so `mx -t f.mx > out` still writes the expansion and
- * nothing else. And it counts, because docs/ROADMAP.md 3 does not want a
- * feature -- it wants a measurement before a backtracking budget is picked, on
+ * nothing else. And it counts, because the roadmap item it closed -- now
+ * docs/COMPLETED.md's "mx -t, and the quadratic it found" -- did not want a
+ * feature. It wanted a measurement before a backtracking budget is picked, on
  * the ground that a budget chosen without one is a number somebody made up. */
 static int  trace_on;
 static long trace_tries, trace_restored;

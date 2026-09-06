@@ -714,12 +714,13 @@ static int eval(Ev *ev, Expr *e, Val *out);
 
 /* ------------------------------------------------------------ collections
  *
- * The rehearsal that preceded this -- docs/ROADMAP.md 4 on 2026-09-06 --
- * faked it with markers in the output text and an awk pass, and everything
- * here is the shape that rehearsal settled: a contribution is a complete line
- * of output, a collection is its distinct contributions in first-seen order,
- * the file names the splice point, and the start of the output is the default
- * for a source that has no head. The pass never looks between the marks. */
+ * The rehearsal that preceded this -- roadmap item 4 on 2026-09-06, landed
+ * the same day as docs/COMPLETED.md's Collections entry -- faked it with
+ * markers in the output text and an awk pass, and everything here is the
+ * shape that rehearsal settled: a contribution is a complete line of output,
+ * a collection is its distinct contributions in first-seen order, the file
+ * names the splice point, and the start of the output is the default for a
+ * source that has no head. The pass never looks between the marks. */
 
 static Coll *coll_get(Grammar *g, const char *name)
 {

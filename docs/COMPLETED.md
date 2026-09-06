@@ -10,6 +10,58 @@ argued away.*
 
 Newest first.
 
+## The roadmap's numbers: a citation resolves, and an item does not vanish
+
+`tests/hygiene.sh` runs a third check, and like the limit guard it states a
+property rather than counting anything: **every `ROADMAP.md N` in the tree
+names an item that is on the roadmap, and every item that was on the roadmap
+at HEAD is still on it.** [POSTMORTEM.md](POSTMORTEM.md) 20 asked for both,
+after an item vanished for one commit and after two source comments were found
+naming a number that had been given to something else.
+
+**The first half is a grep.** A citation is one of the four spellings the tree
+uses — `ROADMAP N`, `ROADMAP.md N`, `docs/ROADMAP.md N`, and the link — and
+nothing looser, so that "item 4 of the roadmap as it then stood" is prose about
+the past and does not match. The dated accounts are not scanned, for
+`tests/docs.sh`'s reason: they say what was true on a day. Everything else is a
+claim about now, and a number that has been retired is a claim that is false.
+
+**The second half reads HEAD.** The `## N ·` headings the committed page has
+must all be in the working tree's, unless the commit being prepared is the one
+that moves an item here — `SETTLED='N' make check` says so, and the variable
+reaches the script through `make` without a line in the Makefile. In CI the
+tree is HEAD and the half is vacuous; it is a check for the desk, run before
+the commit that would otherwise have lost the item, which is where the
+postmortem said it belonged.
+
+**What it can and cannot see.** A retired number resolves to nothing and is
+caught. A number that was *reused* — which the roadmap did until 2026-09-06,
+when numbers became permanent — resolves to the wrong item, and no check by
+number can tell. Writing this found five of the first kind, all naming the
+collections item that landed the day before, and three of the second: two
+source comments citing a measurement item under a number that now belongs to
+`as`, and the Python example citing the island under the number alternation
+has. All eight are fixed to name the [COMPLETED.md](COMPLETED.md) entry or the
+right item, and the three the check could not see are why the roadmap's
+numbers are now for life.
+
+**It lives in `hygiene.sh`** for the reason the limit guard does: that file is
+the one that checks a property of the tree, and a tenth script for two greps is
+one too many. It runs after the limit guard and before the hygiene example, and
+prints one `ok` line per half.
+
+Proved by planting — a citation of the retired number 4 appended to the
+glossary, then item 8's heading deleted from the page — and watching each come
+back with the file and line, then `SETTLED=8` letting the second through, then
+restoring both. The first plant also showed the two halves in the right order:
+deleting an item that is still *cited* fails the citation half before the
+heading half is reached, so an item cannot be settled out from under a document
+that names it. And the first thing the check caught unplanted was **the draft
+of this entry**, which described the plant by quoting it, in citation form.
+
+Verified at 16 examples, 82 error cases and nine scripts, **149 `ok` lines**
+where there were 147.
+
 ## Collections — the head of the output is its body's aggregate
 
 ```
@@ -29,7 +81,7 @@ whether or not a `writeln` fired; and `lib/island.mx` wrote the definition of
 it say so. Each is a rule that knows one thing and a head that needs all of
 them, and a rule sees its own holes and nothing else. On 2026-09-06 the whole
 mechanism was faked first with markers in the output and a twelve-line awk pass
-— [ROADMAP.md](ROADMAP.md) 4 as it then stood — and all three compiled and
+— item 4 of the roadmap as it then stood — and all three compiled and
 ran. What was built is the shape the markers rehearsed and nothing more.
 
 **`contribute("vars", text)`** is a statement in a code template, beside
@@ -196,8 +248,9 @@ its semicolon has to be its own. And the wall itself arrived with a second face
 the roadmap had not named: **BASIC has no head.** Pascal has `program` and a
 rule could splice an aggregate there; BASIC's first line is a statement, so the
 *file* would have to be able to say *before the first statement*, and nothing
-in the notation says that. That is now the second of the three decisions on
-[ROADMAP.md](ROADMAP.md) 4, and it is the one the survey did not foresee.
+in the notation says that. That became the second of the three decisions the
+roadmap's collections item listed, and it is the one the survey did not foresee;
+the item landed the same day, as *Collections* above.
 
 **Two things the file says it does not read.** `REM`, because a comment wins
 over a word and would leave the line number standing alone as a statement, so
@@ -497,7 +550,7 @@ Verified at 13 examples, **72 error cases** and five check scripts — three new
 cases, one per silence — and **91 `ok` lines**. Closes the roadmap's
 **`@mode` declared twice**, which is why the items below it moved up.
 
-*(Named, not numbered. An entry here that said "closes ROADMAP 4" was wrong
+*(Named, not numbered. An entry here that said "closes" and a roadmap number was wrong
 within the hour, because closing an item renumbers the ones under it and the
 number is handed to something else. A completion record cites what it closed.)*
 

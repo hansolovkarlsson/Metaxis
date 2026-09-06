@@ -1,10 +1,12 @@
 #!/bin/sh
-# hygiene.sh -- the two checks that read the tree instead of running it.
+# hygiene.sh -- the three checks that read the tree instead of running it.
 #
-# The second one is the file's original job and most of what is below. The
+# The last one is the file's original job and most of what is below. The
 # first is the limit guard, added because it is the same kind of check -- a
 # property nothing else here can express -- and a sixth script for one grep
-# would have been one too many. See docs/ROADMAP.md 5, which this closes.
+# would have been one too many; it closed a roadmap item and is
+# docs/COMPLETED.md's "The limit guard" now. The second is the roadmap's
+# numbers, added on the same reasoning, for docs/POSTMORTEM.md 20.
 #
 # ---------------------------------------------------------------------------
 # 1 - the limit guard
@@ -34,7 +36,36 @@
 # the alternative is a shell parser. If that shape ever appears, tighten it.
 #
 # ---------------------------------------------------------------------------
-# 2 - hygiene: one half fixed, one half charged, run rather than argued.
+# 2 - the roadmap's numbers: a citation resolves, and an item does not vanish.
+#
+# A roadmap item keeps its number for life -- one that lands is moved to
+# docs/COMPLETED.md and its number is retired, never reused -- so a document
+# may cite one as `ROADMAP.md N` and be right for as long as the item is open.
+# Two things go wrong with that, and both have happened (docs/POSTMORTEM.md 20):
+#
+#   stale   an item lands and a citation goes on naming its number. A retired
+#           number resolves to nothing, and that is caught here. A number that
+#           was *reused*, before the rule above was the rule, resolves to the
+#           wrong item, and no check by number can see that; three of those
+#           were found by hand the day this was written. Once an item has
+#           landed, cite docs/COMPLETED.md by its heading.
+#
+#   lost    an edit addressed by *the next heading I remember* cuts an item
+#           out, in a file whose items are not in numeric order. Every
+#           `## N ·` heading at HEAD must still be in the tree, unless the
+#           commit being prepared is the one that moves it -- say so with
+#           SETTLED='N' (numbers, space-separated) on the make line.
+#
+# A citation is one of the four spellings the tree uses -- ROADMAP N,
+# ROADMAP.md N, docs/ROADMAP.md N, and the link [ROADMAP.md](ROADMAP.md) N --
+# and nothing looser: "item 4 of the roadmap as it then stood" is prose about
+# the past and is meant not to match. The dated accounts (POSTMORTEM.md,
+# CHANGELOG.md, the journal) are not scanned, for docs.sh's reason: they say
+# what was true on a day. Everything else in the tree is a claim about now.
+
+
+# ---------------------------------------------------------------------------
+# 3 - hygiene: one half fixed, one half charged, run rather than argued.
 #
 # It expands examples/hygiene.mx, compiles the C that comes out and runs it.
 # Three outcomes are named below and each says something different, because
@@ -104,6 +135,52 @@ if [ -n "$unguarded" ]; then
     exit 1
 fi
 echo "ok      hygiene.sh: every run of the tool goes through tests/limit.sh"
+
+# --- 2: the roadmap's numbers. What it checks is described at the head of the file.
+present=$(sed -n -E 's/^## ([0-9]+) ·.*/\1/p' docs/ROADMAP.md)
+if [ -z "$present" ]; then
+    echo "FAILED  hygiene.sh: docs/ROADMAP.md has no '## N ·' headings, or has moved."
+    echo "        The roadmap check has nothing to resolve against."
+    exit 1
+fi
+ok=" $(printf '%s ' $present)"
+
+# The tree is what git tracks. If git cannot say, this must not read as a pass.
+tracked=$(git ls-files 2>/dev/null) || {
+    echo "FAILED  hygiene.sh: git ls-files did not answer, so the roadmap check"
+    echo "        cannot say which files are the tree's."
+    exit 1
+}
+scanned=$(echo "$tracked" | grep -v -E '^docs/(POSTMORTEM|CHANGELOG)\.md$|^docs/work-journal/')
+
+stale=$(echo "$scanned" | xargs grep -n -I -o -E \
+        'ROADMAP(\.md)?(\]\([^)]*\))?[[:space:]]+[0-9]+' 2>/dev/null |
+    awk -v ok="$ok" '
+        { match($0, /[0-9]+$/); n = substr($0, RSTART)
+          if (index(ok, " " n " ") == 0) print }')
+
+if [ -n "$stale" ]; then
+    echo "FAILED  hygiene.sh: a document cites a roadmap item that is not on the roadmap."
+    echo "        A retired number points at nothing. If the item landed, cite"
+    echo "        docs/COMPLETED.md by its heading. Items on the roadmap now:$ok"
+    echo "$stale" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: every roadmap citation in the tree resolves to an item"
+
+lost=$(git show HEAD:docs/ROADMAP.md 2>/dev/null |
+    awk -v ok="$ok" -v settled=" $SETTLED " '
+        /^## [0-9]+ ·/ { n = $2
+          if (index(ok, " " n " ") == 0 && index(settled, " " n " ") == 0) print }')
+
+if [ -n "$lost" ]; then
+    echo "FAILED  hygiene.sh: a roadmap item that was on the page at HEAD is not in the tree."
+    echo "        Restore it -- or, if this is the commit that moves it to"
+    echo "        docs/COMPLETED.md, say so: SETTLED='N' make check"
+    echo "$lost" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: every roadmap item at HEAD is still on the page"
 
 TMP="${TMPDIR:-/tmp}/mx-hygiene.$$"
 mkdir -p "$TMP" || exit 1

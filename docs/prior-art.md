@@ -638,7 +638,8 @@ Ordered by *has a customer* first and cost second, which is this tree's own
 rule. **Nothing here was a roadmap item when this was written**; the four with
 customers were the ones that could become one without inventing a reason, and
 on 2026-09-06 the fourth did — after a translator, stage 4's BASIC, asked for
-it. It is [ROADMAP.md](ROADMAP.md) 4.
+it. It was the roadmap's item 4 for one day and landed the same evening; it is
+[COMPLETED.md](COMPLETED.md)'s *Collections* entry.
 
 | | | customer | cost |
 | --- | --- | --- | --- |

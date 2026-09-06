@@ -20,8 +20,9 @@
    copies of that were this function. Everything else in the file was a
    rounding error, including the line counting that looked guilty first.
 
-   docs/ROADMAP.md 3 asked for a measurement before picking a backtracking
-   budget. The measurement found the parser was never the problem -- the
+   The roadmap had asked for a measurement before picking a backtracking
+   budget; that item is docs/COMPLETED.md's "mx -t, and the quadratic it
+   found" now. The measurement found the parser was never the problem -- the
    heaviest example restores 24 candidates -- and that the lexer's token array
    was. See docs/POSTMORTEM.md. */
 static void push(Toks *tk, Tok t)
