@@ -754,9 +754,18 @@ and a single word covering both would mean two things.
 
 ## 10 · One grammar, more than one target
 
-A rule may carry more than one template, each tagged with `as name`, and
-`mx -b name` picks. A rule whose output is the same for every target writes
-one template and says nothing.
+Everything so far has written one output. Suppose the same source is wanted
+in two: the same little language, printed once as C and once as Python. The
+grammar is the expensive half of a file, and it does not change between those
+two — what changes is what a handful of rules *print*. So the tool lets a rule
+carry more than one template, and lets the command line say which.
+
+Under a rule, each `=>` is one target's output. A template followed by
+`as name` is **tagged**; a template with nothing after it is the **default**.
+`mx -b name` picks: for every rule, the template tagged `name` if the rule has
+one, and the default if it does not. Plain `mx` picks the default everywhere.
+The grammar is read once either way, and the parse is the same; only the
+output side listens to `-b`.
 
 `docs/tutorial/10-backends.mx`:
 
@@ -782,9 +791,57 @@ x = 1 + 2;
 print(x)
 ```
 
-The untagged template is the default and the fallback, so a second target
-costs only the rules that actually differ. `mx -g` lists what a header
-declared, tags first:
+Read the two outputs against the header. The `=` and `+` rules have one
+template each and printed the same line both times: `-b python` asked them
+for a `python` template, they had none, and the default was used. Only
+`print` has a second template, and only `print` changed. **That fallback is
+the whole point**: a file that adds a target rewrites the rules that differ
+and none of the ones that do not.
+
+Three things around the flag are worth knowing before you lean on it.
+
+**Naming a target nothing emits is an error**, not a quiet run of the
+defaults, and the message says what the file does emit:
+
+```
+$ mx -b ruby docs/tutorial/10-backends.mx
+mx: no rule emits 'ruby' -- this file declares python
+```
+
+**A file whose every template is tagged has no default.** Run it without `-b`
+and the tool refuses, naming the rule, rather than letting the first tag win
+by being written first — position decides nothing in a header, and this is
+not the place to start. `docs/tutorial/10-tagged.mx` tags both of its
+templates:
+
+```
+@syntax "print" x   => "printf(\"%d\\n\", {x})" as c
+                    => "print({x})" as python
+@end
+print 7
+```
+
+```
+$ mx docs/tutorial/10-tagged.mx
+mx: docs/tutorial/10-tagged.mx:8: every template here is tagged, so there is no default -- name one with '-b <name>'. This file emits: c, python
+```
+
+```
+$ mx -b c docs/tutorial/10-tagged.mx
+printf("%d\n", 7)
+```
+
+**`terminated` belongs to the template, not the rule** (§5), and two targets
+are why. `examples/backends.mx` has an `if` whose default template braces
+its branch, so what it prints already ends a statement, and whose `tight`
+template prints a bare statement that still needs the separator's semicolon.
+One rule, two templates, and only one of them is `terminated`. That example
+is the fuller version of this section: one C grammar, one target that
+brackets every operand and one that brackets only where precedence needs it,
+with the rules the two agree on written once and untagged.
+
+`mx -g` lists what a header declared, tags first, so you can see a file's
+targets without reading its rules:
 
 ```
 $ mx -g docs/tutorial/10-backends.mx

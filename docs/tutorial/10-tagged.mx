@@ -1,0 +1,11 @@
+; 10-tagged.mx -- every template is tagged, so no target is the default. Run
+; it without -b and the tool refuses rather than letting the first tag win.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+
+@syntax "print" x   => "printf(\"%d\\n\", {x})" as c
+                    => "print({x})" as python
+@end
+print 7
