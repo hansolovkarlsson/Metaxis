@@ -82,9 +82,10 @@
 #                        it, and it says why the dash is there to whoever
 #                        reads the source.
 #
-# What is scanned is every tracked Markdown file except the dated accounts
-# (POSTMORTEM.md, CHANGELOG.md, the journal), which are left as written until
-# the decision to sweep them is taken; widen the pattern below when it is.
+# What is scanned is every tracked Markdown file except the journal, which is
+# a diary of closed days by its own charter and is left as written. The other
+# two dated accounts, POSTMORTEM.md and CHANGELOG.md, were swept on 2026-09-06
+# and are scanned like the rest; what they quote keeps its dash by the marker.
 # Source comments, .mx files and .out files had none the day this was written
 # and are not scanned: a dash in a .mx body or a .out is the tool's data, and
 # the rule is about prose.
@@ -208,8 +209,7 @@ fi
 echo "ok      hygiene.sh: every roadmap item at HEAD is still on the page"
 
 # --- 3: the prose rule. Described at the head of the file.
-pages=$(echo "$tracked" | grep -E '\.md$' |
-    grep -v -E '^docs/(POSTMORTEM|CHANGELOG)\.md$|^docs/work-journal/')
+pages=$(echo "$tracked" | grep -E '\.md$' | grep -v -E '^docs/work-journal/')
 if [ -z "$pages" ]; then
     echo "FAILED  hygiene.sh: the prose scan found no Markdown to read, which"
     echo "        cannot be right; an empty scan must not read as a pass."

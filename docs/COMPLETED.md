@@ -51,10 +51,13 @@ became a colon with the list after it. What remains is four dashes, each kept
 by name: a quotation from StringTemplate's documentation, a table row where a
 lone dash means none, and the rule's own example in backticks.
 
-**What it left.** The dated accounts, `POSTMORTEM.md`, `CHANGELOG.md` and the
-journal, hold 354 more and are as written; the roadmap item for the sweep is
-that decision. The documents read differently now, with shorter sentences and
-more colons, which is what the rule asks for.
+**What it left, and the decision that followed.** The dated accounts held 354
+more, and the decision was taken the same day: the two ledgers, `POSTMORTEM.md`
+and `CHANGELOG.md`, are swept and scanned like the rest, with what they quote
+kept by the marker, and the journal, a diary of closed days by its own charter,
+is left as written with its 227 and skipped by name. That was roadmap item 9
+for an afternoon. The documents read differently now, with shorter sentences
+and more colons, which is what the rule asks for.
 
 Verified at 16 examples, 82 error cases and nine scripts, **150 `ok` lines**
 where there were 149, and the site built with no marker on any page.

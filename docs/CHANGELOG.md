@@ -14,22 +14,22 @@ are grouped by the day the work happened, newest first.
 `docs/tutorial/`: one concept per section, every statement and builtin a code
 template has in two tables, and every transcript checked by `make check`.
 REFERENCE.md gained a contents table at the top and an index of terms at the
-end. **A logo.** Hans drew up three candidates and chose the third: a solid block
-and a wireframe cube interlocked, in isometric — the thing and its
+end. **A logo.** Hans drew up three candidates and chose the third: a solid
+block and a wireframe cube interlocked, in isometric, the thing and its
 declaration. `site/logo.png` is that drawing with its background made
 transparent, and it is the site's mark and favicon and the README's;
 `docs/logo3.png` is the drawing as chosen.
 
 **A website**, at hansolovkarlsson.github.io/Metaxis: an introduction, the
 tutorial, the glossary, the reference, every example with its recorded
-output, the three essays, this page and the roadmap — generated from the
+output, the three essays, this page and the roadmap. It is generated from the
 documents in the tree by `site/build.py` and published by GitHub Pages on
 every push to `main` that passes the suite.
 
-**A glossary**, `docs/glossary.md`: the concepts in the order they depend
-on each other — grammar, lexing, parsing and its families, expansion,
-attribute grammars, context, hygiene, islands — and then every term of art
-the documents use, defined.
+**A glossary**, `docs/glossary.md`. First the concepts in the order they
+depend on each other: grammar, lexing, parsing and its families, expansion,
+attribute grammars, context, hygiene, islands. Then every term of art the
+documents use, defined.
 
 **A statement that ends in a word like `end` needs no separator after it**,
 as the reference always said. It did: the check asked whether the last token
@@ -52,22 +52,23 @@ inserted; `tests/island.sh` runs it over `metaxis/cmd/mx.c`, compiles the
 result against the tree's objects, and runs it. Text mode was an island grammar
 already and nothing was built; what it lacks is [ROADMAP.md](ROADMAP.md) 7.
 
-**A led rule in text mode is refused** — `a rule that begins with a hole is
-infix, and text mode has nothing for it to continue — it could never fire`. It
-used to be accepted and never fire.
+**A led rule in text mode is refused**: `a rule that begins with a hole is
+infix, and text mode has nothing for it to continue -- it could never fire`.
+It used to be accepted and never fire.
 
-**Stage 4: BASIC→C.** `examples/basic.mx` reads line-numbered BASIC — `LET`,
-`PRINT`, `IF … THEN`, `GOTO`, `FOR`/`NEXT`, `END`, string variables with `$` —
-and writes C with a label per line. `tests/basic.sh` compiles it, runs it and
-checks the numbers, with the declarations C wants supplied by hand, because
-the translator cannot write them: that is the wall the stage was picked to
-reach, and it is [ROADMAP.md](ROADMAP.md) 4. Nothing in the tool changed.
+**Stage 4: BASIC→C.** `examples/basic.mx` reads line-numbered BASIC and writes
+C with a label per line. The BASIC it reads: `LET`, `PRINT`, `IF … THEN`,
+`GOTO`, `FOR`/`NEXT`, `END`, string variables with `$`. `tests/basic.sh`
+compiles it, runs it and checks the numbers, with the declarations C wants
+supplied by hand, because the translator cannot write them: that is the wall the
+stage was picked to reach, and it is [ROADMAP.md](ROADMAP.md) 4. Nothing in the
+tool changed.
 
 **`make check` runs the transcripts in `docs/`.** A seventh script,
 `tests/docs.sh`, finds every fenced `$ mx …` line in the documents, runs it, and
 compares the output against the block beneath it; `…` on a line of its own means
 skip ahead. Five transcripts today. The check exists because one of them was
-once invented — [POSTMORTEM.md](POSTMORTEM.md) 19 — and it caught two smaller
+once invented, [POSTMORTEM.md](POSTMORTEM.md) 19, and it caught two smaller
 things on its first run, below.
 
 **`mx -g` prints no trailing space** after a rule that has no level, and one
@@ -81,12 +82,12 @@ name before 2026-09-05. It says `mx`.
 **`indent(s, n)` in a code template**, and `examples/code.mx` now emits indented
 C. Every line moves right, the first included, and an empty line stays empty;
 nesting composes, because an inner block is already indented when the outer one
-indents it. The C that `examples/code.out` records was previously flat — braces
-opened and nothing moved — and `tests/pascal.sh` still compiles it and gets the
-same `4 44 80 7 42`, so what changed is the reading and not the meaning. The
-string template has no equivalent and is not getting one until something asks.
+indents it. The C that `examples/code.out` records was previously flat: braces
+opened and nothing moved. `tests/pascal.sh` still compiles it and gets the same
+`4 44 80 7 42`, so what changed is the reading and not the meaning. The string
+template has no equivalent and is not getting one until something asks.
 
-**`mx -t`** — the parse, traced to standard error: one line per candidate tried,
+**`mx -t`** traces the parse to standard error: one line per candidate tried,
 indented by depth, saying which token it could not get past, and totals at the
 end. Expression mode only.
 
@@ -96,11 +97,11 @@ statements expand in 524ms. `regexec` measures the whole remaining file on every
 call, so each token cost O(rest of file) across every declared class; class
 patterns are compiled anchored, so matching now happens against a bounded window
 that grows only when a match reaches its edge. Two smaller quadratics went with
-it — the per-token line count and the token array's growth. Nothing about what
+it: the per-token line count and the token array's growth. Nothing about what
 is emitted changed. One consequence worth knowing: a `@token` pattern that
 anchors its end with `$` now sees the window rather than the whole file.
 
-**`as <name>` on a template, and `mx -b <name>`** — a rule may now carry more
+**`as <name>` on a template, and `mx -b <name>`**: a rule may now carry more
 than one template, so one grammar can be read out to more than one target. The
 untagged template is the default and the fallback, so a second target costs only
 the rules that actually differ and a one-target file is unchanged. `terminated`
@@ -122,7 +123,7 @@ mode was ignored. New messages: `the mode is already declared at f:n -- write
 'override' to mean it`, `'override', but no mode was declared before it`, and
 `trailing text after @mode`.
 
-**`@separator "…" indent`, and the `block` kind** — a language whose blocks are
+**`@separator "…" indent`, and the `block` kind**: a language whose blocks are
 an indentation can now be read. `indent` makes the lexer keep a stack of columns
 and emit two tokens no file spells, an *indent* where a line is deeper than the
 one before it and one *dedent* per level closed where it is shallower; a hole
@@ -143,13 +144,13 @@ New messages: `'indent' needs a separator with a newline in it`,
 `block` hole is refused in text mode. `@token block` joins `expr`, `stmts` and
 `text` as a class name that could never be used.
 
-**`@fragment name = pattern`** — a piece of *pattern* with a name, spliced into
+**`@fragment name = pattern`**: a piece of *pattern* with a name, spliced into
 a rule with `@name`. It brings its own holes, so a rule that splices it can
 write `{p}` without declaring `p`; it takes no arguments and has no scope,
 because it is spliced at declaration rather than called at expansion. It must be
 declared before it is spliced, which makes a cycle inexpressible and the order a
 file is written in unable to change the answer. `override` sits before the `=`,
-which is the opposite of every other directive and is forced — a fragment's
+which is the opposite of every other directive and is forced: a fragment's
 pattern runs to the end of the directive, so a trailing `override` would be read
 as a hole of that name. `examples/pascal.pt` and `examples/code.pt` each wrote
 one parameter list twice and now write it once; both expand byte-identically to
@@ -159,12 +160,12 @@ in one file.
 
 **`make check` now reports a hang instead of waiting on one.** Every place the
 suite runs `pt` goes through `tests/limit.sh`, which kills a command that
-outlives a wall-clock limit and reports it as its own kind of failure —
-previously a `.pt` file that never terminated stopped the suite rather than
+outlives a wall-clock limit and reports it as its own kind of failure.
+Previously a `.pt` file that never terminated stopped the suite rather than
 failing it, which no recorded output could express. `make check LIMIT=30` raises
 the limit, which defaults to 10 seconds; the full run takes 2.3.
 
-**`@token expr`, `@token stmts` and `@token text` are now refused** —
+**`@token expr`, `@token stmts` and `@token text` are now refused**:
 `'expr' is a kind, so a class called that could never be used`. A hole written
 `x:expr` resolves as the *kind*, so a class of that name was never consulted:
 `expr` said nothing at all, and `text` reached `a 'text' hole belongs to @mode
@@ -172,16 +173,16 @@ text`, an error about the wrong thing.
 
 **A `for` inside a `@template` body no longer crashes.** It read through a null
 rule at seal and segfaulted, so no template that looped had ever run; the check
-it crashed in — a loop variable shadowing a hole — does not apply to a template,
+it crashed in, a loop variable shadowing a hole, does not apply to a template,
 which has no holes to shadow. [POSTMORTEM.md](POSTMORTEM.md) 12.
 
-**A pattern that declares one hole name twice is now refused** —
+**A pattern that declares one hole name twice is now refused**:
 `two holes called 'p': a template splices a hole by name, so only one of them
 could ever be reached`. It was always a mistake and nothing had ever written
 one; splicing a fragment twice into a rule makes it easy to make by accident,
 which is what asked for the check.
 
-**`@template name(x) { … }`** — a piece of template with a name, called as a
+**`@template name(x) { … }`**: a piece of template with a name, called as a
 statement from a code template and emitting into whatever called it. Its body
 sees its parameters and its own loop variables and nothing else, so it can be
 read on its own; calls resolve once the header has finished, so a rule may call
@@ -198,12 +199,12 @@ what this page and the reference had both said it did. It returned a new name on
 every call, so a template could not put a label at a branch and at the place the
 branch jumps to. Exhausting the name space is now an error rather than a crash.
 
-**`examples/asm.pt`** — C in, arm64 assembly out, assembled and run by
+**`examples/asm.pt`**: C in, arm64 assembly out, assembled and run by
 `tests/asm.sh`.
 
 **Arithmetic in a code template, and `num(h)`.** `-`, `*`, `/` and `%` are new;
 `*` `/` `%` bind tighter than `+` `-`. They want two numbers and are an error
-otherwise, and `num(h)` reads a hole's text as one — the whole text or none of
+otherwise, and `num(h)` reads a hole's text as one: the whole text or none of
 it. **`+` changes**: it adds when both sides are already numbers and joins when
 they are not, which is the rule comparison has always used. `count(a) + count(b)`
 therefore writes `3` where it used to write `12`; nothing in `examples/` did
@@ -213,7 +214,7 @@ that. Division or remainder by zero is an error.
 but **runs** it.
 
 **`for i, x in h`, and `at(h, n)`.** A `for` in a code template may name the
-position as well as the turn — first name is the index, counting from 0 — and
+position as well as the turn: first name is the index, counting from 0.
 `at(h, n)` takes the turn at a position. Together they walk **two holes of one
 repeated group in step**, which is the only way to write `[ v ":" s ]*` and emit
 the pairs; a position past the end of a list is an error rather than an empty
@@ -240,11 +241,11 @@ hole needs a semicolon, and `examples/code.pt` uses it to emit
 
 **`override`, and two files declaring one thing.** A rule's pattern, a `@token`
 class name and `@separator` may each be declared only once; a second is an error
-naming both lines. `override` — after the template for a rule, after the
-declaration for the other two — says the second means to displace the first, and
-then it wins silently. `override` with nothing to displace is also an error.
-Two rules that only share a leading word are unaffected. A hole may still be
-called `override`.
+naming both lines. `override` says the second means to displace the first, and
+then it wins silently. It sits after the template for a rule, after the
+declaration for the other two. `override` with nothing to displace is also an
+error. Two rules that only share a leading word are unaffected. A hole may still
+be called `override`.
 
 **`@token` and `@separator` refuse trailing text**, as `@syntax` always has.
 `@token name "…" garbage` used to be accepted and the extra word ignored; it is
@@ -256,11 +257,12 @@ costs nothing and a cycle ends rather than hitting the depth guard.
 
 **A class-kind hole is refused in text mode.** `@syntax "[" x:name "]"` under
 `@mode text` used to take everything up to the `]` and ignore the kind. It now
-fails: `'x:name' asks for one token of a class, and text mode has no tokens —
-every hole there is text`. `expr`, `stmts`, `text` and a bare hole are
-unaffected, and expression mode is unaffected. The check runs once the whole
-header has been read, so the order a file writes `@mode` and `@syntax` in — and
-whether the rule came in through `@use` — does not change the answer.
+fails: `'x:name' asks for one token of a class, and text mode has no tokens --
+every hole there is text`.
+`expr`, `stmts`, `text` and a bare hole are unaffected, and expression mode is
+unaffected. The check runs once the whole header has been read, so the order a
+file writes `@mode` and `@syntax` in, and whether the rule came in through
+`@use`, does not change the answer.
 
 ## 2026-09-04
 
@@ -282,7 +284,7 @@ language: `emit`, `if`/`else`, `for … in … sep …`, text with `+`, comparis
 is. A directive no longer ends at a newline while a brace is open.
 
 **The notation.** A `.pt` file declares its own grammar in a header and is then
-read with it. Every mention of foreign text inside a directive is a string —
+read with it. Every mention of foreign text inside a directive is a string:
 quoted words on the pattern side, a quoted template with `{hole}` splices on the
 output side.
 
@@ -294,7 +296,7 @@ rather than by four directives. Hole kinds `expr`, `stmts`, `text` and any
 `@token` class. Levels with `left` and `right`.
 
 **Groups.** `[ … ]`, `[ … ]*` and `[ … ]+`, with `sep` and `join` on a repeated
-one — a part that may repeat and a part that need not be there.
+one: a part that may repeat and a part that need not be there.
 
 **Templates.** `{hole}` splices, `{{` and `}}` for a literal brace, and `{~t}`
 for a name nobody else has.

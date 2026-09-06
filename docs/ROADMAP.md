@@ -376,21 +376,6 @@ Nobody has asked; this item says so, and stays until someone does.
 
 ---
 
-## 9 · The dated accounts, under the prose rule
-
-`CLAUDE.md`'s style guide reached every live document on 2026-09-06, and
-`tests/hygiene.sh` holds the line there. It does not scan `POSTMORTEM.md`,
-`CHANGELOG.md` or the journal, which hold 354 em dashes between them, 227 of
-those in the journal and 178 in one day's file. Punctuation is not a fact, so
-rewriting them falsifies nothing; but each is a record of a day by its own
-charter, and the journal in particular is a diary of closed days. The choice
-is between sweeping the two ledgers and leaving the journal, which keeps the
-site's pages uniform and the diary as written, and sweeping all six, after
-which there is nothing to explain. Either way the check widens by one line.
-Nobody has decided; this item says so.
-
----
-
 ## 6 · Alternation inside a pattern: explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
