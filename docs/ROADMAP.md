@@ -307,6 +307,65 @@ expression grammar report its own bugs. Each piece has its own decision:
 - a comment that is skipped rather than removed is a third thing `@comment`
   would mean, and may want its own word.
 
+**Scoped, 2026-09-06, against the code.** The three pieces are two changes,
+and the first needs no new syntax.
+
+*Pieces 1 and 3 are one mechanic.* The identifier problem and the string and
+comment problem are the same defect: the scan in `text_expand` visits every
+character, so a word fires inside a token and a hole's closer is found inside
+a string. The fix is that a declared `@token` class makes the scan token-wise
+where it matches. At each position the longest class match is taken, the way
+the lexer takes it; a rule's leading word may fire only if it covers that
+token; if no rule fires, the whole token is copied through and the cursor
+moves past it; and a hole's candidate stops advance by tokens too, so the
+search for the closing word cannot land inside a string. That answers the
+three questions above at once:
+
+- *where the token ends* is the class regex, which is what the lexer already
+  decides. `match_here` in `metaxis/src/lex.c` is static and is exposed rather
+  than rewritten: it exists because of a measured slowdown, and `tests/scale.sh`
+  is the check that matters here;
+- *strings* are declared as five expression-mode examples already declare
+  them, `@token string "…"`;
+- *a kept comment is a token.* `@token comment "/\\*([^*]|\\*[^/])*\\*/"` is
+  skipped whole and copied through, and `@comment` keeps its one text-mode
+  meaning, removal. The third thing `@comment` would mean needs no word at all.
+
+With that in, the class-kind refusal in `seal_check` is lifted: a class hole in
+text mode means one regex match at the cursor, taken exactly, no search. No
+shipping text-mode file declares a class today, so every recorded output is
+unchanged by construction.
+
+*Piece 2, brackets, is the second change*, and its declaration is
+[ROADMAP.md](ROADMAP.md) 2's question. A hole's candidate stop is valid only at
+bracket depth zero from where the hole began, and a close bracket that takes
+the depth negative ends the hole, which is Comby's rule. It is a small change
+to `tm_match` once the scan is token-wise, since the walk already skips
+strings. Of item 2's three shapes, `@bracket "(" ")"` as a directive of its
+own is the one to take: one declaration serves both modes and both items, and
+it keeps the foreign text inside a string. Reading pairs off the shape of the
+rules is declined there already, and stays declined.
+
+*The customer that makes it honest* is `tests/island.sh`, which gains the rules
+the rehearsal proved wrong: a rename of `err` that must leave `stderr` and the
+usage string alone, and a template that reuses the nested hole. The rewritten
+front end still has to compile and run, so a wrong answer is caught and not
+merely a changed one, and the run is kept, which [POSTMORTEM.md](POSTMORTEM.md)
+25 asks of every verdict.
+
+*What it touches besides code.* [REFERENCE.md](REFERENCE.md) §7 loses three
+bullets and §3 gains `@bracket` and its errors; [languages.md](languages.md)
+property 6 is reworded and the rows it stops move, the formatter that must
+give the file back, C as an island, any language in text mode, and TeX's
+second gap; item 2 here cites the directive; the glossary, the survey's §3.3,
+`docs/tutorial/12-island.mx` and `examples/island.mx` each carry a sentence
+that becomes history and should say so. Roughly 150 to 200 lines of C across
+`expand.c`, `header.c` and `mx.h`; the documents are the larger half.
+
+*Order.* The token-wise scan first, since it is the rename customer and needs
+no decision; brackets second, once `@bracket` is settled with item 2. About a
+day for the first with its documents, half for the second.
+
 **And one thing the stage could not do**, which is not this item's: the
 definition of `complain` goes in front of `usage` because that line happens to
 exist. Collections let the rule that needs it contribute it, but the honest
@@ -314,8 +373,9 @@ place is *before the first function*, and saying that means reading C.
 
 **Why it is not built today.** Each piece has a customer in the rehearsal and
 none in a file that ships; the rewrite that ships was written to need none of
-them. Build the first piece when a rewrite is wanted that a bare-word rule gets
-wrong, which will be the first rename.
+them. Build the first change when a rewrite is wanted that a bare-word rule
+gets wrong, which will be the first rename. The scope above is so that the
+day it is wanted starts at the code and not at the question.
 
 ## 5 · Source maps
 
