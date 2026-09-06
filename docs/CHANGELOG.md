@@ -8,6 +8,21 @@ the reasoning behind any of it, belongs in [the journal](work-journal/) instead.
 Metaxis has not been released, so there are no version numbers yet. Entries
 are grouped by the day the work happened, newest first.
 
+## 2026-09-06
+
+**`make check` runs the transcripts in `docs/`.** A seventh script,
+`tests/docs.sh`, finds every fenced `$ mx …` line in the documents, runs it, and
+compares the output against the block beneath it; `…` on a line of its own means
+skip ahead. Five transcripts today. The check exists because one of them was
+once invented — [POSTMORTEM.md](POSTMORTEM.md) 19 — and it caught two smaller
+things on its first run, below.
+
+**`mx -g` prints no trailing space** after a rule that has no level, and one
+space rather than two before `terminated`. The trace `-t` writes is unchanged.
+
+**The first transcript in [REFERENCE.md](REFERENCE.md) said `pt`**, the tool's
+name before 2026-09-05. It says `mx`.
+
 ## 2026-09-05
 
 **`indent(s, n)` in a code template**, and `examples/code.mx` now emits indented

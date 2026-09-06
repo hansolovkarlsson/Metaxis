@@ -10,6 +10,66 @@ argued away.*
 
 Newest first.
 
+## `tests/docs.sh` — the transcripts in `docs/`, run
+
+```
+$ mx examples/first.mx
+x = 1;
+(add(x, 2) * 2)
+```
+
+**A transcript is a claim with a `$` in front of it, and the `$` makes it look
+checked.** On 2026-09-05 one of the two in [REFERENCE.md](REFERENCE.md) had been
+written instead of run — `mx -g examples/pascal.mx` shown printing a backend
+that file does not declare — and [POSTMORTEM.md](POSTMORTEM.md) 19 said the
+check was cheap enough to build. It is built. `tests/docs.sh` finds every fenced
+`$ mx …` line in `docs/*.md` and `README.md`, runs it from the tree root with
+`mx` replaced by the binary under `tests/limit.sh`, and compares what the
+terminal would have shown: stdout and stderr together, the rest of the line
+handed to the shell as written, so `2>&1 >/dev/null` in a transcript means what
+it means at a prompt. The exit status is not looked at, because a transcript
+cannot show one either. The block above is one of the five it runs, and was
+run before it was pasted.
+
+**The two decisions the roadmap said were not obvious.** *Elision*: a line that
+is exactly `…` means *skip ahead* — the next line of the transcript is looked
+for further down the output, and what lies between is not compared; a trailing
+`…` matches whatever remains. So REFERENCE.md keeps eliding, because forty lines
+of grammar would make it worse for a reader, and the check bends instead. *Where
+it runs*: from the tree root, so a document writes `examples/use.mx` and never a
+path relative to itself. A third the roadmap did not foresee: trailing
+whitespace is stripped on both sides before comparing, because an editor strips
+it from a document, and a document cannot hold what the tool turned out to be
+printing.
+
+**Which documents.** Everything but the two dated accounts, and those are
+excluded by name rather than by a pattern: POSTMORTEM.md quotes the invented
+transcript *as* the record of the mistake and must go on quoting it, and
+CHANGELOG.md says what somebody saw on a given day, which a later day may
+rightly change. The journal is the same kind of page and is not under
+`docs/*.md` to begin with.
+
+**What it found on its first run.** Two things, and neither was a wrong answer.
+`mx -g` printed a trailing space after any rule without a level, and two spaces
+before `terminated` — `show` in `metaxis/cmd/mx.c` put a space after every
+element instead of between them — invisible on a terminal and impossible for a
+document to hold, so the two `-g` transcripts could never have matched exactly.
+Spaces now go between; the trace `-t` prints is unchanged. And the first
+transcript in REFERENCE.md still said `$ pt examples/first.mx`, the tool's old
+name, which the rename had missed: its output was right and its command was not
+a command. Reading produced neither; running produced both.
+
+**Proved by breaking it.** Against a scratch document: the invented backend
+fails, an elision to a line that is not there fails, output that goes on past
+the transcript fails, and a transcript that claims no output fails; a trailing
+`…`, an error transcript read from stderr, and a block with a second `$ make`
+after the checked command all pass. A document set with no transcripts in it is
+a failure and not a pass, for the reason `hygiene.sh` gives — a check whose own
+machinery breaks must not read as `ok`.
+
+Verified at 14 examples, 78 error cases and **seven** check scripts — 106 `ok`
+lines, five of them transcripts.
+
 ## `indent(s, n)`, and C that reads like something somebody wrote
 
 ```c

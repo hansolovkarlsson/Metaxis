@@ -57,9 +57,10 @@ not.
 
 ```
 make            # bin/mx
-make check      # every example against the .out beside it, then the six
+make check      # every example against the .out beside it, then the seven
                 # scripts in tests/ -- four of which run what they produced,
-                # and one of which is large enough to show a quadratic
+                # one of which is large enough to show a quadratic, and one
+                # of which runs the transcripts in docs/
 ```
 
 `make check` runs on every push, on Linux and macOS, through

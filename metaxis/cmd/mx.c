@@ -14,19 +14,25 @@ static void usage(void)
     exit(2);
 }
 
+/* A space goes *between* elements and never after the last one. This used to
+   print one after every element, which left a trailing space on any rule
+   without a level -- invisible on a terminal, and impossible for a document to
+   hold, so the transcript in REFERENCE.md could never have matched exactly.
+   tests/docs.sh is what noticed. */
 static void show(Elem *el, int nel)
 {
     for (int e = 0; e < nel; e++) {
+        if (e) putchar(' ');
         switch (el[e].kind) {
-        case EL_WORD: printf("\"%s\" ", el[e].word); break;
-        case EL_HOLE: printf("%s ", el[e].hole);       break;
+        case EL_WORD: printf("\"%s\"", el[e].word); break;
+        case EL_HOLE: printf("%s", el[e].hole);       break;
         default:
             printf("[ ");
             show(el[e].sub, el[e].nsub);
-            printf("]%s", el[e].rep == REP_STAR ? "* " :
-                          el[e].rep == REP_PLUS ? "+ " : " ");
-            if (el[e].sep)  printf("sep \"%s\" ", el[e].sep);
-            if (el[e].join) printf("join \"%s\" ", el[e].join);
+            printf(" ]%s", el[e].rep == REP_STAR ? "*" :
+                           el[e].rep == REP_PLUS ? "+" : "");
+            if (el[e].sep)  printf(" sep \"%s\"", el[e].sep);
+            if (el[e].join) printf(" join \"%s\"", el[e].join);
         }
     }
 }
@@ -47,7 +53,7 @@ static void dump(Grammar *g)
         Rule *r = &g->rule[i];
         printf("%-6s    ", r->led ? "infix" : "prefix");
         show(r->el, r->nel);
-        if (r->level >= 0) printf("[%d%s]", r->level, r->right ? " right" : "");
+        if (r->level >= 0) printf(" [%d%s]", r->level, r->right ? " right" : "");
         if (r->terminated) printf(" terminated");
         printf("\n");
     }

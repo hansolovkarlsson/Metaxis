@@ -38,7 +38,7 @@ twice x + 2;
 ```
 
 ```
-$ pt examples/first.mx
+$ mx examples/first.mx
 x = 1;
 (add(x, 2) * 2)
 ```
@@ -1006,7 +1006,7 @@ mode       expression
 ```
 
 A trailing newline is added if the expansion does not end in one. Errors go to
-standard error as `pt: file:line: …` and exit 1; a bad command line exits 2.
+standard error as `mx: file:line: …` and exit 1; a bad command line exits 2.
 
 `-g` is the way to see what a header actually built:
 

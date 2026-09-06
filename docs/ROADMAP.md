@@ -229,31 +229,6 @@ is obviously right:
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing — one instance is a fact and two are a pattern.
 
-## 4 · Run the transcripts in `docs/`
-
-Every `$ mx …` line in the documents is a claim that looks checked because it
-has a prompt in front of it, and on 2026-09-05 one of the two was **invented** —
-`mx -g examples/pascal.mx` was shown printing a backend that file does not
-declare. [POSTMORTEM.md](POSTMORTEM.md) 19 is the entry, and it is the customer:
-this is not hypothetical and it is not old.
-
-The check is small and the shape is `tests/hygiene.sh`'s: find each `$ mx …`
-line in `docs/*.md`, run it, and compare against the block beneath it. Two
-things have to be decided before it is written, and neither is obvious:
-
-- **Elision.** The accurate transcript in REFERENCE § 9 uses `…` to leave out
-  the middle, which is right for a reader and awkward for a comparison. Either
-  the check understands `…` as *skip to the next matching line*, or transcripts
-  give up eliding, and the second would make the reference worse to read.
-- **Where it runs from.** The commands name paths like `examples/use.mx`, so the
-  check has to run from the tree root and the documents have to keep writing
-  paths that way.
-
-**Two transcripts is not a crisis**, and that is the argument against doing it
-today rather than an argument against doing it. What makes it worth keeping on
-the page is that the number only goes up, and that the tool can check its own
-documentation and does not.
-
 ## 5 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
