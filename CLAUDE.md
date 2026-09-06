@@ -70,3 +70,14 @@ disagrees with the code, the code is right.
 Each of those opens with a note stating its own job. That note is the
 specification for what belongs in it — follow it over any general instruction.
 The journal's note lives once, in `docs/work-journal/README.md`.
+
+## Style Guide & Constraints
+
+- **Punctuation Restriction:** CLAUDE NEVER USES EM DASHES (—).
+- When a pause or structural break is required, ALWAYS substitute the em dash
+  with clean alternatives:
+  - Use **commas** for minor asynchronous pauses or parenthetical pieces of
+    information.
+  - Use **periods** to break up fragmented or long thoughts into complete
+    sentences.
+  - Use **colons** to introduce lists or secondary explanations.
