@@ -81,3 +81,7 @@ The journal's note lives once, in `docs/work-journal/README.md`.
   - Use **periods** to break up fragmented or long thoughts into complete
     sentences.
   - Use **colons** to introduce lists or secondary explanations.
+- **Exceptions:** the rule is about general prose. An em dash stays where it
+  is part of a fact rather than a sentence: in dates and ranges, in a quotation
+  reproduced as written, in a name or title that contains one, and in anything
+  that is code, an example, a transcript or recorded output.
