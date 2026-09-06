@@ -119,7 +119,7 @@ directive   = "@use"       string
             | "@token"     name string [ "override" ]
             | "@comment"   string ( string | "eol" )
             | "@separator" string [ "=>" string ] [ "indent" ] [ "override" ]
-            | "@syntax"    pattern [ level ] "=>" template { "terminated" | "override" }
+            | "@syntax"    pattern [ level ] { "=>" template { "terminated" | "as" name } } [ "override" ]
             | "@template"  name "(" [ name { "," name } ] ")" code [ "override" ]
             | "@fragment"  name [ "override" ] "=" pattern
             | "@end" .
@@ -202,7 +202,27 @@ Nothing may follow but `indent` and `override`, in that order; anything else is
 Without `@separator` the body is a single expression and a `stmts` hole takes
 one expression.
 
-### 3.4 `@syntax pattern [level] => template [terminated] [override]`
+### 3.4 `@syntax pattern [level] { => template [terminated] [as name] } [override]`
+
+**A rule may carry more than one template.** Each `=>` is one target's output;
+`as name` tags it, and `mx -b name` (§9) picks. The untagged one is the default
+and the fallback — a rule that does not differ between targets writes one
+template and says nothing, so a second target costs only the rules that are
+actually different. `terminated` belongs to a **template** and not to the rule,
+because it is a statement about the output: one target may brace a branch where
+another does not. `override` belongs to the rule and comes last.
+
+```
+@syntax a "*" b 70 => "({a} * {b})"
+                   => { emit group(a, 70) + " * " + group(b, 71) } as tight
+```
+
+- **Two templates with the same tag**, or two untagged, are refused —
+  `this rule already emits 'x'`, `this rule already has an untagged template`.
+- **Every template is checked** at the `@syntax` that wrote it, including one
+  for a target nobody asks for on this run.
+- **A hole may still be called `as`**: it is a keyword only after a template,
+  where a bare word cannot be a hole.
 
 The only rule-making directive. §4, §5 and §6 are about the pattern; §8 about
 the template, of which there are two kinds.
@@ -950,14 +970,31 @@ and no `@syntax` can reach it, because a rule cannot match a bare token.
 ## 9 · The command line
 
 ```
-mx [-o output] [-g] file.mx
+mx [-o output] [-b backend] [-g] file.mx
 ```
 
 | | |
 | --- | --- |
 | *(no flag)* | the expansion, to standard output |
 | `-o path` | the expansion, to `path` |
+| `-b name` | each rule emits from its `as name` template, falling back to its untagged one (§3.4) |
 | `-g` | the grammar the header declared, then stop |
+
+`-b` naming something no rule emits is refused rather than ignored, and the
+message lists what the file does emit. **A file whose every template is tagged
+has no default**, and running it without `-b` is an error naming the rule: the
+first declaration winning would let position decide the output, which is the
+question this tool declines to answer by position everywhere else (§3.10).
+
+`-g` comes before the choice and needs no `-b`, so a file can be inspected
+whatever it emits. It lists the tags first:
+
+```
+$ mx -g examples/pascal.mx
+backend    tight
+mode       expression
+…
+```
 
 A trailing newline is added if the expansion does not end in one. Errors go to
 standard error as `pt: file:line: …` and exit 1; a bad command line exits 2.
@@ -1064,6 +1101,11 @@ Every message the tool can produce, and what it means.
 | `'override', but no separator was declared before it` | §3.10 |
 | `the mode is already declared at f:n — write 'override' to mean it` | §3.10 |
 | `'override', but no mode was declared before it` | §3.10 |
+| `this rule already emits 'x'` · `this rule already has an untagged template — write 'as <name>' on all but one` | §3.4 |
+| `expected a name after 'as'` | §3.4 |
+| `no rule emits 'x' — this file declares …` | §9 — `-b` naming a target nothing declares |
+| `every template here is tagged, so there is no default — name one with '-b <name>'` | §9 |
+| `this rule emits nothing for 'x', and has no untagged template to fall back to` | §9 |
 | `no fragment called '@p'` | §3.9 — spliced before it was declared, or never declared |
 | `expected a fragment's name after '@'` | a bare `@` in a pattern — §3.9 |
 | `a fragment needs something in it` | `@fragment p =` with no pattern — §3.9 |

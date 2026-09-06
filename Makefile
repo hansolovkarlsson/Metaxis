@@ -36,6 +36,10 @@ build/mx.o: metaxis/cmd/mx.c metaxis/include/mx.h
 # Re-record every example's output. Read the diff before committing it.
 record: $(BIN)
 	@for f in $(EXAMPLES); do \
+	    for b in $$(sh tests/limit.sh $(LIMIT) ./$(BIN) -g $$f | awk '/^backend/{print $$2}'); do \
+	        sh tests/limit.sh $(LIMIT) ./$(BIN) -b $$b -o $${f%.mx}-$$b.out $$f || exit 1; \
+	        echo "recorded $${f%.mx}-$$b.out"; \
+	    done; \
 	    sh tests/limit.sh $(LIMIT) ./$(BIN) -o $${f%.mx}.out $$f; \
 	    rc=$$?; \
 	    if [ $$rc -eq 124 ]; then \
@@ -68,6 +72,20 @@ check: $(BIN)
 	    else \
 	        echo "FAILED  $$f"; cat build/err.txt build/diff.txt; fail=1; \
 	    fi; \
+	    for b in $$(sh tests/limit.sh $(LIMIT) ./$(BIN) -g $$f | awk '/^backend/{print $$2}'); do \
+	        want=$${f%.mx}-$$b.out; \
+	        if [ ! -f $$want ]; then echo "MISSING $$want"; fail=1; continue; fi; \
+	        sh tests/limit.sh $(LIMIT) ./$(BIN) -b $$b $$f >build/got.txt 2>build/err.txt; \
+	        rc=$$?; \
+	        if [ $$rc -ne 0 ]; then \
+	            echo "FAILED  $$f -b $$b"; cat build/err.txt; fail=1; continue; \
+	        fi; \
+	        if diff -u $$want build/got.txt > build/diff.txt; then \
+	            echo "ok      $$f -b $$b"; \
+	        else \
+	            echo "FAILED  $$f -b $$b"; cat build/err.txt build/diff.txt; fail=1; \
+	        fi; \
+	    done; \
 	done; \
 	LIMIT=$(LIMIT) sh tests/errors.sh ./$(BIN) || fail=1; \
 	LIMIT=$(LIMIT) sh tests/hygiene.sh ./$(BIN) || fail=1; \

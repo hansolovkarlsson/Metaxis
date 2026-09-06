@@ -116,9 +116,28 @@ typedef struct {
     int   line;
 } Frag;
 
+/* What a rule emits. A rule may declare more than one, each tagged with `as`,
+   so that a grammar written once can be read out to more than one target and
+   `mx -b <tag>` picks between them. The untagged one is the default, and is
+   what a file with a single target writes -- nothing about a one-target file
+   changes, because one emit with a NULL tag is what it has always had.
+
+   Everything downstream of grammar_select() sees a rule with exactly one
+   template, which is why nothing but the header and the command line knows
+   this is here. */
+typedef struct {
+    char *tag;              /* NULL: the untagged default              */
+    char *tmpl;             /* a string template, or NULL              */
+    Stmt *body; int nbody;  /* a code template, or NULL                */
+    int   terminated;       /* its output ends a statement on its own  */
+    int   line;             /* where this '=>' was written             */
+} Emit;
+
 typedef struct {
     Elem *el;
     int   nel;
+    Emit *emit;      /* every template this rule declared        */
+    int   nemit;
     int   level;     /* -1 when the declaration gave none        */
     int   right;     /* right associative                        */
     int   led;       /* el[0] is a hole: an infix or postfix rule */
@@ -158,6 +177,7 @@ typedef struct {
     int   sep_nl;                 /* the separator is a newline     */
     int   sep_indent;             /* and indentation opens a block  */
     char *sep_file; int sep_line; /* where it was declared          */
+    char **backend; int nbackend; /* every tag any rule declared    */
     int   mode;
     char *mode_file; int mode_line; /* where @mode was declared, if it was */
     int   nfiles;                 /* @use depth guard               */
@@ -168,6 +188,10 @@ Grammar *grammar_new(void);
 /* Builds the punctuation set, then checks what only a finished header can
    check. Returns 0, or -1 with *err set. */
 int      grammar_seal(Grammar *g, char **err);
+/* Picks which template each rule uses. `want` is a tag from `mx -b`, or NULL
+   for the untagged default. Runs once, after the header and before anything
+   reads a rule. Returns 0, or -1 with *err set. */
+int      grammar_select(Grammar *g, const char *want, char **err);
 int      class_index(Grammar *g, const char *name);
 int      frag_index(Grammar *g, const char *name);
 

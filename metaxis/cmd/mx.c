@@ -1,4 +1,4 @@
-/* mx.c -- mx [-o out] file.mx */
+/* mx.c -- mx [-o out] [-b backend] [-g] file.mx */
 #include "mx.h"
 
 #include <stdio.h>
@@ -7,7 +7,8 @@
 
 static void usage(void)
 {
-    fputs("usage: mx [-o output] file.mx\n"
+    fputs("usage: mx [-o output] [-b backend] file.mx\n"
+          "       -b   which 'as <name>' template each rule emits from\n"
           "       -g   print the grammar the header declared, and stop\n", stderr);
     exit(2);
 }
@@ -53,11 +54,12 @@ static void dump(Grammar *g)
 
 int main(int argc, char **argv)
 {
-    const char *in = NULL, *outpath = NULL;
+    const char *in = NULL, *outpath = NULL, *backend = NULL;
     int grammar_only = 0;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-o")) { if (++i >= argc) usage(); outpath = argv[i]; }
+        else if (!strcmp(argv[i], "-b")) { if (++i >= argc) usage(); backend = argv[i]; }
         else if (!strcmp(argv[i], "-g")) grammar_only = 1;
         else if (argv[i][0] == '-' && argv[i][1]) usage();
         else if (!in) in = argv[i];
@@ -79,8 +81,20 @@ int main(int argc, char **argv)
         fprintf(stderr, "mx: %s\n", err);
         return 1;
     }
+    /* `-g` is about what the header declared, and a backend is about what a
+       rule emits, so the dump comes first and needs no `-b`. A file whose every
+       template is tagged can still be inspected. */
+    if (grammar_only) {
+        for (int i = 0; i < g->nbackend; i++)
+            printf("backend    %s\n", g->backend[i]);
+        dump(g);
+        return 0;
+    }
 
-    if (grammar_only) { dump(g); return 0; }
+    if (grammar_select(g, backend, &err) < 0) {
+        fprintf(stderr, "mx: %s\n", err);
+        return 1;
+    }
 
     char *out = NULL;
     if (g->mode == MODE_TEXT) {

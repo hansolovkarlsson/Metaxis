@@ -410,37 +410,64 @@ static int rule_syntax(Grammar *g, D *d, int line)
     if (!el) return -1;
 
     if (!nel) { derr(d, "a rule needs a pattern"); return -1; }
-    if (!dtake(d, "=>")) { derr(d, "expected '=>'"); return -1; }
-
-    /* A template has always been a string, and a string never starts with a
-       brace, so one character says which of the two forms this is. Nothing had
-       to be reserved and no file written before today changes meaning. */
-    char *tmpl = NULL;
-    dskip(d);
     r.el = el; r.nel = nel;
     r.led = el[0].kind == EL_HOLE;
 
-    if (d->i < d->end && d->s[d->i] == '{') {
-        char *cerr = NULL;
-        r.body = code_parse(d->s, &d->i, d->end, d->file, &r.nbody, &cerr);
-        if (!r.body) { if (!d->err) d->err = cerr; return -1; }
-    } else {
-        tmpl = dstring(d);
-        if (!tmpl) return -1;
-        r.tmpl = tmpl;
-    }
-    /* `terminated` and `override` sit after the template, which is the one
-       place in a rule where a bare word cannot be anything else -- a hole can
-       only appear in the pattern. So they need no quoting and reserve nothing,
-       and `override` in particular could not have gone anywhere else: before
-       the `=>` it would be sitting where the notation says a bare word is a
-       hole, and a rule whose first hole is called `override` is legal. Either
-       order; neither twice. */
-    for (int again = 1; again;) {
-        again = 0;
-        if (!r.terminated && dtake(d, "terminated")) { r.terminated = 1; again = 1; }
-        if (!r.override   && dtake(d, "override"))   { r.override   = 1; again = 1; }
-    }
+    /* One `=>` per target. A file with one target writes one, untagged, and
+       nothing about such a file has changed -- one emit with no tag is what a
+       rule has always had. `as <tag>` is what lets a grammar be written once
+       and read out more than one way, and its customer was measured before it
+       existed: examples/code.mx duplicated 272 lines of pattern from
+       examples/pascal.mx to change nothing but what came after the arrow.
+
+       `terminated` belongs to the emit and not to the rule, because it is a
+       statement about the *output* -- one target may brace a branch where
+       another does not, which is exactly the difference those two files were
+       written to show. */
+    Emit *em = NULL; int nem = 0;
+    if (!dtake(d, "=>")) { derr(d, "expected '=>'"); return -1; }
+    do {
+        Emit e; memset(&e, 0, sizeof e);
+        e.line = line;
+        dskip(d);
+        /* A template has always been a string, and a string never starts with
+           a brace, so one character says which of the two forms this is. */
+        if (d->i < d->end && d->s[d->i] == '{') {
+            char *cerr = NULL;
+            e.body = code_parse(d->s, &d->i, d->end, d->file, &e.nbody, &cerr);
+            if (!e.body) { if (!d->err) d->err = cerr; return -1; }
+        } else {
+            e.tmpl = dstring(d);
+            if (!e.tmpl) return -1;
+        }
+        /* Either order, neither twice -- as `terminated` and `override` have
+           always been. `as` is a keyword only here, where a bare word cannot
+           be a hole, so a hole may still be called `as`. */
+        for (int again = 1; again;) {
+            again = 0;
+            if (!e.terminated && dtake(d, "terminated")) { e.terminated = 1; again = 1; }
+            if (!e.tag && dtake(d, "as")) {
+                e.tag = dident(d);
+                if (!e.tag) { derr(d, "expected a name after 'as'"); return -1; }
+                again = 1;
+            }
+        }
+        for (int i = 0; i < nem; i++) {
+            int same = (!em[i].tag && !e.tag) ||
+                       (em[i].tag && e.tag && !strcmp(em[i].tag, e.tag));
+            if (!same) continue;
+            if (e.tag) derr(d, xfmt("this rule already emits '%s'", e.tag));
+            else       derr(d, "this rule already has an untagged template"
+                               " -- write 'as <name>' on all but one");
+            return -1;
+        }
+        em = grow(em, nem, sizeof *em);
+        em[nem++] = e;
+    } while (dtake(d, "=>"));
+
+    /* `override` is the rule's and not any one template's: it displaces an
+       earlier declaration of this pattern, whatever either declares. */
+    if (dtake(d, "override")) r.override = 1;
     dskip(d);
     if (d->i < d->end) { derr(d, "trailing text after the template"); return -1; }
 
@@ -467,42 +494,61 @@ static int rule_syntax(Grammar *g, D *d, int line)
         return -1;
     }
 
-    /* The template is checked here rather than at the first use of the rule,
+    /* Every template is checked here rather than at the first use of the rule,
        so that a splice nobody wrote a hole for is an error at the line that
-       wrote it. Both forms are checked; only the spelling differs. */
-    if (r.body) {
-        char *cerr = NULL;
-        if (code_check(&r, &cerr) < 0) { if (!d->err) d->err = cerr; return -1; }
-        g->rule = grow(g->rule, g->nrule, sizeof *g->rule);
-        g->rule[g->nrule++] = r;
-        return 0;
-    }
-    for (size_t i = 0; tmpl[i];) {
-        if (tmpl[i] == '{' && tmpl[i + 1] == '{') { i += 2; continue; }
-        if (tmpl[i] == '}' && tmpl[i + 1] == '}') { i += 2; continue; }
-        if (tmpl[i] != '{') { i++; continue; }
+       wrote it -- and every one of them, not only the one a later `-b` happens
+       to select. A backend that is never asked for is still checked. */
+    for (int k = 0; k < nem; k++) {
+        r.tmpl = em[k].tmpl; r.body = em[k].body; r.nbody = em[k].nbody;
+        if (r.body) {
+            char *cerr = NULL;
+            if (code_check(&r, &cerr) < 0) { if (!d->err) d->err = cerr; return -1; }
+            continue;
+        }
+        char *tmpl = r.tmpl;
+        for (size_t i = 0; tmpl[i];) {
+            if (tmpl[i] == '{' && tmpl[i + 1] == '{') { i += 2; continue; }
+            if (tmpl[i] == '}' && tmpl[i + 1] == '}') { i += 2; continue; }
+            if (tmpl[i] != '{') { i++; continue; }
 
-        int fresh = tmpl[i + 1] == '~';
-        size_t a = i + 1 + (size_t)fresh, j = a;
-        while (tmpl[j] && tmpl[j] != '}') j++;
-        if (!tmpl[j]) { derr(d, "unclosed '{' in a template"); return -1; }
-        char *n = xstrndup(tmpl + a, j - a);
-        i = j + 1;
+            int fresh = tmpl[i + 1] == '~';
+            size_t a = i + 1 + (size_t)fresh, j = a;
+            while (tmpl[j] && tmpl[j] != '}') j++;
+            if (!tmpl[j]) { derr(d, "unclosed '{' in a template"); return -1; }
+            char *n = xstrndup(tmpl + a, j - a);
+            i = j + 1;
 
-        int hole = hole_named(el, nel, n);
+            int hole = hole_named(el, nel, n);
 
-        if (fresh) {
-            if (!*n) { derr(d, "a fresh name needs a label: '{~name}'"); return -1; }
-            if (hole) {
-                derr(d, xfmt("'{~%s}' and '{%s}' would read as one thing: a fresh"
-                             " name and a hole cannot share a label", n, n));
+            if (fresh) {
+                if (!*n) { derr(d, "a fresh name needs a label: '{~name}'"); return -1; }
+                if (hole) {
+                    derr(d, xfmt("'{~%s}' and '{%s}' would read as one thing: a fresh"
+                                 " name and a hole cannot share a label", n, n));
+                    return -1;
+                }
+            } else if (!hole) {
+                derr(d, xfmt("the template splices '{%s}' and the pattern has no such hole", n));
                 return -1;
             }
-        } else if (!hole) {
-            derr(d, xfmt("the template splices '{%s}' and the pattern has no such hole", n));
-            return -1;
         }
     }
+
+    /* Every tag this file has seen, so that `mx -b` can refuse one nothing
+       declares rather than silently expanding the defaults. */
+    for (int k = 0; k < nem; k++) {
+        if (!em[k].tag) continue;
+        int have = 0;
+        for (int i = 0; i < g->nbackend; i++)
+            if (!strcmp(g->backend[i], em[k].tag)) { have = 1; break; }
+        if (have) continue;
+        g->backend = grow(g->backend, g->nbackend, sizeof *g->backend);
+        g->backend[g->nbackend++] = xstrdup(em[k].tag);
+    }
+
+    r.emit = em; r.nemit = nem;
+    r.tmpl = em[0].tmpl; r.body = em[0].body; r.nbody = em[0].nbody;
+    r.terminated = em[0].terminated;
 
     g->rule = grow(g->rule, g->nrule, sizeof *g->rule);
     g->rule[g->nrule++] = r;
@@ -1087,6 +1133,61 @@ static int rule_clash(Grammar *g, char **err)
     for (int i = 0; i < g->nrule; i++)
         if (!dead[i]) g->rule[n++] = g->rule[i];
     g->nrule = n;
+    return 0;
+}
+
+/* Which template each rule uses. Runs once, between the header and anything
+   that reads a rule, so that everything downstream sees a rule with exactly
+   one template and never learns that `as` exists.
+
+   A rule with no emit for the wanted tag falls back to its untagged one. That
+   is what makes a second backend cheap to add: only the rules that differ need
+   an `as` clause, and a grammar where nine rules in ten are the same for both
+   targets says so by staying silent. A rule with neither is an error naming the
+   rule, because the alternative is expanding it to nothing. */
+int grammar_select(Grammar *g, const char *want, char **err)
+{
+    char *list = xstrdup("");
+    for (int i = 0; i < g->nbackend; i++)
+        list = xfmt("%s%s%s", list, i ? ", " : "", g->backend[i]);
+
+    if (want) {
+        int have = 0;
+        for (int i = 0; i < g->nbackend; i++)
+            if (!strcmp(g->backend[i], want)) { have = 1; break; }
+        if (!have) {
+            *err = g->nbackend
+                 ? xfmt("no rule emits '%s' -- this file declares %s", want, list)
+                 : xfmt("no rule emits '%s' -- this file declares no 'as' at all", want);
+            return -1;
+        }
+    }
+    for (int i = 0; i < g->nrule; i++) {
+        Rule *r = &g->rule[i];
+        Emit *pick = NULL, *dflt = NULL;
+        for (int k = 0; k < r->nemit; k++) {
+            if (!r->emit[k].tag) dflt = &r->emit[k];
+            else if (want && !strcmp(r->emit[k].tag, want)) pick = &r->emit[k];
+        }
+        if (!pick) pick = dflt;
+        if (!pick) {
+            /* Falling back to the first declared template would let position
+               decide the output, which is the one question this tool has
+               always declined to answer by position -- see `override`. So it
+               says which templates there are and asks. */
+            *err = want
+                 ? xfmt("%s:%d: this rule emits nothing for '%s', and has no"
+                        " untagged template to fall back to", r->file, r->line, want)
+                 : xfmt("%s:%d: every template here is tagged, so there is no"
+                        " default -- name one with '-b <name>'. This file"
+                        " emits: %s", r->file, r->line, list);
+            return -1;
+        }
+        r->tmpl = pick->tmpl;
+        r->body = pick->body;
+        r->nbody = pick->nbody;
+        r->terminated = pick->terminated;
+    }
     return 0;
 }
 

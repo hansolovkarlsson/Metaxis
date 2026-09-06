@@ -14,13 +14,19 @@ trap 'rm -rf "$TMP"' EXIT
 fail=0
 n=0
 
+# Set before a case to pass a flag to that one case, and cleared by `expect`
+# afterwards. Two of the messages below are about `-b` and are unreachable
+# without it, and a message this file cannot reach is a message nothing pins.
+FLAGS=''
+
 expect() {
     want="$1"; shift
     n=$((n + 1))
     f="$TMP/case$n.mx"
     cat > "$f"
-    got=$(sh tests/limit.sh "$LIMIT" "$MX" "$f" 2>&1)
+    got=$(sh tests/limit.sh "$LIMIT" "$MX" $FLAGS "$f" 2>&1)
     rc=$?
+    FLAGS=''
     if [ $rc -eq 124 ]; then
         echo "FAILED  errors.sh case $n: did not finish in ${LIMIT}s -- killed."
         echo "        Refusing a bad file should be immediate; a hang here is a"
@@ -459,6 +465,54 @@ expect "'override', but no mode was declared before it" <<'EOF'
 @syntax "hi" => "yo"
 @end
 hi
+EOF
+
+# `as`, and the four ways a rule can be wrong about which target it emits for.
+
+expect "this rule already emits 'tight'" <<'EOF'
+@token number "[0-9]+"
+@syntax "n" => "a" as tight => "b" as tight
+@end
+n
+EOF
+
+expect "this rule already has an untagged template" <<'EOF'
+@token number "[0-9]+"
+@syntax "n" => "a" => "b"
+@end
+n
+EOF
+
+expect "expected a name after 'as'" <<'EOF'
+@token number "[0-9]+"
+@syntax "n" => "a" as
+@end
+n
+EOF
+
+expect "every template here is tagged, so there is no default" <<'EOF'
+@token number "[0-9]+"
+@syntax "n" => "a" as tight
+@end
+n
+EOF
+
+FLAGS="-b nope"
+expect "no rule emits 'nope' -- this file declares tight" <<'EOF'
+@token number "[0-9]+"
+@syntax "n" => "a" => "b" as tight
+@end
+n
+EOF
+
+FLAGS="-b tight"
+expect "this rule emits nothing for 'tight', and has no untagged template" <<'EOF'
+@token number "[0-9]+"
+@separator ";" => ";\n"
+@syntax "n" => "a" => "b" as tight
+@syntax "m" => "c" as plain
+@end
+n; m
 EOF
 
 if [ $fail -eq 0 ]; then
