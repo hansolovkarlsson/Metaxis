@@ -14,7 +14,12 @@ are grouped by the day the work happened, newest first.
 `docs/tutorial/`: one concept per section, every statement and builtin a code
 template has in two tables, and every transcript checked by `make check`.
 REFERENCE.md gained a contents table at the top and an index of terms at the
-end. **A website**, at hansolovkarlsson.github.io/Metaxis: an introduction, the
+end. **A logo.** Hans drew up three candidates and chose the third: a solid block
+and a wireframe cube interlocked, in isometric — the thing and its
+declaration. It is `site/logo.svg`, traced as a vector from the sheet, and it
+is the site's mark and favicon and the README's.
+
+**A website**, at hansolovkarlsson.github.io/Metaxis: an introduction, the
 tutorial, the glossary, the reference, every example with its recorded
 output, the three essays, this page and the roadmap — generated from the
 documents in the tree by `site/build.py` and published by GitHub Pages on

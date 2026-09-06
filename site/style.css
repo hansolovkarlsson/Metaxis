@@ -5,7 +5,11 @@
 html{scroll-padding-top:4rem}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Serif",Georgia,"Times New Roman",serif;font-size:17px;line-height:1.6}
 .top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:1.5rem;padding:.6rem 1.25rem;background:var(--top);border-bottom:1px solid var(--rule);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.85rem;overflow-x:auto;white-space:nowrap}
-.brand{font-weight:600;font-size:1rem;color:var(--ink);text-decoration:none;letter-spacing:.01em}
+.brand{font-weight:600;font-size:1rem;color:var(--ink);text-decoration:none;letter-spacing:.01em;display:inline-flex;align-items:center;gap:.5rem}
+.mark{height:1.35rem;width:auto}
+.masthead.hero{display:flex;gap:1.75rem;align-items:center}
+.hero-mark{height:6rem;width:auto;flex:none}
+@media(max-width:600px){.hero-mark{height:4rem}}
 .site{display:flex;gap:1.1rem}
 .site a{color:var(--mute);text-decoration:none;padding:.2rem 0;border-bottom:2px solid transparent}
 .site a:hover,.site a.here{color:var(--ink);border-bottom-color:var(--kw)}

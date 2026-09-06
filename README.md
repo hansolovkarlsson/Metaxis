@@ -1,3 +1,5 @@
+<p align="center"><img src="site/logo.svg" width="150" alt="The Metaxis mark"></p>
+
 # Metaxis
 
 [![check](https://github.com/hansolovkarlsson/Metaxis/actions/workflows/check.yml/badge.svg)](https://github.com/hansolovkarlsson/Metaxis/actions/workflows/check.yml)
