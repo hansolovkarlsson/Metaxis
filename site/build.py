@@ -116,9 +116,19 @@ def render_code(body, label=None, lang=''):
 
 def render_md(src):
     out = []; toc = []; lines = src.split('\n'); i = 0; para = []; pending_label = None; title = ''
+    in_terms = False   # a section whose bold-led paragraphs are entries: the glossary's Part two
     def flush():
         nonlocal para
-        if para: out.append('<p>' + inline(' '.join(para)) + '</p>'); para = []
+        if not para: return
+        text = ' '.join(para)
+        m = re.match(r'\*\*(.+?)\.?\*\*', text) if in_terms else None
+        if m:
+            term = m.group(1); anchor = 'term-' + slug(term)
+            toc.append(('', inline(term), anchor, 3))
+            out.append(f'<p class="term" id="{anchor}">' + inline(text) + '</p>')
+        else:
+            out.append('<p>' + inline(text) + '</p>')
+        para = []
     while i < len(lines):
         l = lines[i]
         if l.startswith('```'):
@@ -135,6 +145,7 @@ def render_md(src):
             num, name = (mm.group(1), mm.group(2)) if mm else ('', text)
             anchor = slug(text)
             if depth in (2, 3): toc.append((num, inline(name), anchor, depth))
+            if depth == 2: in_terms = name.startswith('Part two')
             numspan = f'<span class="num">{num}</span>' if num else ''
             out.append(f'<h{depth} id="{anchor}">{numspan}<span class="t">{inline(name)}</span></h{depth}>')
             i += 1; continue
