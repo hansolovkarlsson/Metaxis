@@ -1,0 +1,10 @@
+; tail.mx -- property 2: a class that can match the rest of a line is the
+; longest match and swallows the keyword in front of it. The rule never
+; fires, and the token stands for itself.
+
+@token shell "[^\n]+"
+@separator "\n"
+@syntax "RUN" s:shell  => "sh -c '{s}'"
+@end
+RUN apt-get update
+RUN make check

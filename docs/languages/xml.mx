@@ -1,0 +1,15 @@
+; xml.mx -- an element-only document reads: a tag, attributes, children, a
+; close. Compare xml-text.mx.
+
+@token name   "[A-Za-z_][A-Za-z0-9_-]*"
+@token string "\"[^\"]*\""
+@separator "\n"
+@syntax "<" n:name [ a:name "=" v:string ]* join " " ">" c:stmts "</" m:name ">"
+    => "{n}[{a}={v}]({c})"
+@syntax "<" n:name [ a:name "=" v:string ]* join " " "/>"
+    => "{n}[{a}={v}]"
+@end
+<doc id="1">
+  <item kind="a"/>
+  <item kind="b"/>
+</doc>

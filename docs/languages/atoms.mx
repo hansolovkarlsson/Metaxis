@@ -1,0 +1,9 @@
+; atoms.mx -- property 3, the other side: a list of class tokens needs no
+; `sep`, since each turn is exactly one token. Atoms read; a nested list
+; would not, see lisp.mx.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@syntax "(" f:name [ x:name ]* join ", " ")"  => "{f}({x})"
+@end
+(list a b c)

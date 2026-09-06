@@ -1,0 +1,21 @@
+; lua.mx -- no separator is declared in the language, and property 4
+; forgives it: a statement that ends in `)` or `end` ends in a word, and one
+; that ends in a name has a newline after it, which is the separator here.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator "\n" => ";\n"
+@syntax "local" v:name "=" e                    => "int {v} = {e}"
+@syntax v:name "=" e   10                       => "{v} = {e}"
+@syntax a "+" b   60                            => "{a} + {b}"
+@syntax a "<" b   40                            => "{a} < {b}"
+@syntax "if" c "then" b:stmts "end"             => "if ({c}) {{ {b}; }}"
+@syntax "while" c "do" b:stmts "end"            => "while ({c}) {{ {b}; }}"
+@syntax "print" "(" x ")"                       => "printf(\"%d\\n\", {x})"
+@end
+local x = 1
+while x < 3 do
+  x = x + 1
+  if x < 3 then print(x) end
+end
+print(x)

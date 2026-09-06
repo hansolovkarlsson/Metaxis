@@ -1,0 +1,16 @@
+; json.mx -- two rules read it, and the body is one expression, so no
+; separator is declared and a newline is whitespace. The object's keys and
+; values are two lists, paired by the code template.
+
+@token number "-?[0-9]+(\\.[0-9]+)?"
+@token string "\"[^\"]*\""
+@syntax "{" [ k:string ":" v ]* sep "," "}"
+    => { emit "map("; for i, x in k sep ", " { emit x + " = " + at(v, i) }; emit ")" }
+@syntax "[" [ v ]* sep "," join ", " "]"   => "seq({v})"
+@syntax "true"   => "T"
+@syntax "false"  => "F"
+@syntax "null"   => "nil"
+@end
+{"name": "mx",
+ "tags": ["c", "make"],
+ "ok": true, "size": 1.5, "next": null}

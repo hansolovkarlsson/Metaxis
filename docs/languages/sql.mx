@@ -1,0 +1,13 @@
+; sql.mx -- keyword-led mixfix with a comma list and optional clauses, which
+; is the pattern language's native shape.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+@syntax "select" [ c ]+ sep "," join ", " "from" t:name [ "where" w ] [ "order" "by" o ]
+    => "scan({t}) | filter({w}) | sort({o}) | project({c})"
+@syntax a "=" b   40   => "{a} == {b}"
+@syntax a ">" b   40   => "{a} > {b}"
+@end
+select id, total from orders where total > 100 order by id;
+select name from users

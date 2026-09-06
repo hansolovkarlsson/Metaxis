@@ -1,0 +1,12 @@
+; css.mx -- a rule, its declarations and a selector read. `url(a.png)` is
+; the wall: that token exists only after `url(`, and no class here can say
+; so. Two holes in one group are two lists, paired by the code template.
+
+@token number "[0-9]+(px|em|%)?"
+@token name   "[A-Za-z_-][A-Za-z0-9_-]*"
+@token hex    "#[0-9a-fA-F]+"
+@syntax s:name "{" [ p:name ":" v ]* sep ";" "}"   50
+    => { emit "rule(" + s; for i, x in p { emit "; " + x + " = " + at(v, i) }; emit ")" }
+@syntax "." c:name   => "class({c})"
+@end
+h1 { color: #333; margin: 0 }

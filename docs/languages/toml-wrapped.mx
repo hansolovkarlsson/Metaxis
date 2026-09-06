@@ -1,0 +1,15 @@
+; toml-wrapped.mx -- property 4: the same header as toml.mx, and the array
+; wrapped onto a second line. The newline is a separator and no bracket
+; suspends it, so the file is refused rather than misread. ROADMAP 2.
+
+@token number "[0-9]+"
+@token string "\"[^\"]*\""
+@token name   "[A-Za-z_][A-Za-z0-9_-]*"
+@separator "\n"
+@syntax "[" t:name "]"                        => "section {t}"
+@syntax k:name "=" v   10                     => "  {k}: {v}"
+@syntax "[" [ x ]* sep "," join ", " "]"      => "list({x})"
+@end
+[server]
+hosts = ["a",
+         "b"]

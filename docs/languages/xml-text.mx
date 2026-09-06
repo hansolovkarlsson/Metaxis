@@ -1,0 +1,12 @@
+; xml-text.mx -- property 2: character data is a token only by where it
+; stands. A class declared for it matches after `<` as well: in a bare tag
+; it ties with the tag name and the earlier declaration wins, so `<p>` alone
+; reads by luck, and the first attribute makes it the longer match.
+
+@token name   "[A-Za-z_][A-Za-z0-9_-]*"
+@token string "\"[^\"]*\""
+@token chars  "[^<>]+"
+@syntax "<" n:name [ a:name "=" v:string ]* ">" c:chars "</" m:name ">"
+    => "{n}({c})"
+@end
+<p class="lead">some words</p>

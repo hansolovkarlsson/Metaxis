@@ -1,0 +1,11 @@
+; case.mx -- property 2: matching is case-sensitive. The header spells
+; `begin`, and the body's `BEGIN` is not that word.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@separator ";" => ";\n"
+@syntax "begin" b:stmts "end"  => "{{ {b}; }}"
+@syntax "print" x              => "print({x})"
+@end
+begin print 1 end;
+BEGIN print 2 END

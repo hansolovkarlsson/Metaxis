@@ -195,5 +195,6 @@ docs/notation.md         the one rule, what falls out of it, and what it costs
 docs/direction.md        what this could become, and which futures are declined
 docs/prior-art.md        what else does this, and what they have that we do not
 docs/languages.md        which languages this reads, which it does not, and why
+docs/languages/          the files that decided that page's verdicts, run by tests/docs.sh
 docs/ROADMAP.md          what is not built, and what would settle it
 ```

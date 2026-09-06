@@ -1,0 +1,8 @@
+; lisp.mx -- property 3: a repeated group whose turns are expressions needs
+; a `sep` word, and whitespace is never one. Refused at the header.
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+@syntax "(" f:name [ x ]* ")"  => "{f}({x})"
+@end
+(f 1 (g 2) 3)

@@ -728,6 +728,12 @@ text, so it matches. `divisor` is a longer class match than the word, so it neve
 splits. Meanwhile `<=` is not a class match at all and is taken as the word,
 longest first, so declaring `<=` does not stop `<` existing.
 
+**Two classes that match the same length are settled by declaration order**,
+and the earlier one wins. Nobody plans that tie, and `docs/languages/xml-text.mx`
+is where it showed: a class for a tag name and a class for the text between
+tags both match the `p` in `<p>`, and the document reads or does not by which
+was declared first.
+
 Nothing else is a token. A character that matches no class and begins no word is
 `nothing here is anything this file declared: '…'`.
 

@@ -1,0 +1,8 @@
+; nest.mx -- property 2: a block comment does not nest. The first `*/`
+; closes it, and what follows is read as the body.
+
+@token number "[0-9]+"
+@comment "/*" "*/"
+@syntax "print" x  => "print({x})"
+@end
+print /* a /* b */ c */ 1
