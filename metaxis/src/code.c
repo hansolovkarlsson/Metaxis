@@ -443,6 +443,7 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { "group",   2, "a hole, bracketed when its level is lower" },
     { "replace", 3, "one text with another inside a third"    },
     { "drop",    3, "a text with characters off each end"      },
+    { "indent",  2, "a text with every line moved right"       },
     { "fresh",   1, "a name nobody else has"                  },
     { NULL, 0, NULL }
 };
@@ -788,6 +789,32 @@ static int call(Ev *ev, Expr *e, Val *out)
         if (b < 0) b = 0;
         if ((size_t)(f + b) >= n) *out = v_text(xstrdup(""));
         else *out = v_text(xstrndup(t + f, n - (size_t)(f + b)));
+        return 0;
+    }
+    /* Every line moved right, including the first, and an empty line left
+       empty -- trailing whitespace on a blank line is noise in every language
+       this has emitted so far. It is *block* indentation rather than the
+       align-to-the-splice-column kind, because what asked for it was a brace:
+       examples/code.mx emitted C with no indentation at all, which compiles and
+       reads like nothing anybody wrote.
+
+       The string template has no equivalent and is not getting one until it has
+       a customer. `examples/pascal.mx` is the file that would use it, and its
+       output is recorded as deliberately wrong for other reasons. */
+    if (!strcmp(e->s, "indent")) {
+        char *t = as_text(a[0]);
+        long  n = a[1].kind == V_INT ? a[1].num : 0;
+        if (n < 0) n = 0;
+        Buf b = {0};
+        int at_line_start = 1;
+        for (size_t i = 0; t[i]; i++) {
+            if (at_line_start && t[i] != '\n')
+                for (long k = 0; k < n; k++) buf_ch(&b, ' ');
+            buf_ch(&b, t[i]);
+            at_line_start = t[i] == '\n';
+        }
+        if (!b.p) buf_str(&b, "");
+        *out = v_text(b.p);
         return 0;
     }
     if (!strcmp(e->s, "group")) {

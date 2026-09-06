@@ -81,7 +81,7 @@
 ; of a run of statements, where it means *the last one*.
 @syntax "begin" body:stmts "end"
     => {
-        emit "{\n" + body
+        emit "{\n" + indent(body, 4)
         if not terminated(body) { emit ";" }
         emit "\n}"
     } terminated
@@ -91,7 +91,7 @@
 ; unconditionally, and `while (!(1))` is what that costs.
 @syntax "repeat" b:stmts "until" c
     => {
-        emit "do {\n" + b
+        emit "do {\n" + indent(b, 4)
         if not terminated(b) { emit ";" }
         emit "\n} while (!" + group(c, 80) + ")"
     }
@@ -110,17 +110,17 @@
 @syntax "case" e "of" [ v ":" s ]* sep ";" "end"
     => {
         emit "switch (" + e + ") {\n"
-        for i, x in v sep "\n" { emit "case " + x + ": " + at(s, i) + "; break;" }
+        for i, x in v sep "\n" { emit indent("case " + x + ": " + at(s, i) + "; break;", 4) }
         emit "\n}"
     } terminated
 @syntax "case" e "of" [ v ":" s ]* sep ";" "else" d "end"
     => {
         emit "switch (" + e + ") {\n"
-        for i, x in v sep "\n" { emit "case " + x + ": " + at(s, i) + "; break;" }
-        emit "\ndefault: " + d + "; break;\n}"
+        for i, x in v sep "\n" { emit indent("case " + x + ": " + at(s, i) + "; break;", 4) }
+        emit "\n" + indent("default: " + d + "; break;", 4) + "\n}"
     } terminated
 @syntax "begin" body:stmts "end" "."
-    => { emit "int main(void) {\n" + body + ";\nreturn 0;\n}" } terminated
+    => { emit "int main(void) {\n" + indent(body + ";\nreturn 0;", 4) + "\n}" } terminated
 
 ; `terminated(h)` is `level(h)`'s other half. C's `if (c) x = 1; else` wants a
 ; semicolon that C's `if (c) { … } else` must not have, and which of the two a

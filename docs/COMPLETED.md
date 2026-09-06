@@ -10,6 +10,46 @@ argued away.*
 
 Newest first.
 
+## `indent(s, n)`, and C that reads like something somebody wrote
+
+```c
+int main(void) {
+    total = 0;
+    if (total > 30) {
+        total = total + 1;
+        printf("%d\n", total);
+    } else printf("%d\n", total);
+```
+
+**`examples/code.out` was flat.** Braces opened and nothing moved — every
+statement at column zero, including the bodies of four procedures and a
+`switch`. It compiled, it ran, it produced the right numbers, and it read like
+nothing anybody wrote. That is the whole customer: the tool's flagship output
+was correct and unreadable, and no `.out` diff would ever have complained.
+
+`indent(s, n)` moves every line right by `n` spaces, **the first included**, and
+leaves an empty line empty. It is *block* indentation rather than the
+align-to-the-splice-column kind, because what asked for it was a brace. **Nesting
+composes for free**: an inner block is already indented by the time the outer one
+indents it, so a `switch` inside an `if` inside `main` comes out three deep
+without any rule knowing how deep it is.
+
+Five rules in `examples/code.mx` use it — `begin…end`, `repeat…until`, both
+`case` forms and the outer `begin…end.` that becomes `main`.
+
+**And the check that mattered is that nothing changed.** `tests/pascal.sh`
+compiles the emitted C, runs it, and still gets `4 44 80 7 42`. The reading
+changed and the meaning did not, which is the only claim worth making about a
+formatting feature.
+
+`examples/asm.out` was checked and left alone: it already indents its
+instructions by hand and by assembly's own convention, so it has no customer.
+**The string template has no equivalent**, and is not getting one until
+something asks — `examples/pascal.mx` is the file that would use it, and its
+output is recorded as deliberately wrong for other reasons.
+
+Verified at 14 examples, 78 error cases and six check scripts — 100 `ok` lines.
+
 ## `tests/scale.sh`: one input large enough to hide nothing
 
 ```

@@ -3,38 +3,38 @@
 int total, mod;
 int i, n;
 void Show(int n) {
-printf("%d\n", n);
+    printf("%d\n", n);
 }
 void Scale(int n, double k) {
-printf("%d\n", n);
+    printf("%d\n", n);
 }
 void Pair(int a, int b) {
-printf("%d\n", a + b);
+    printf("%d\n", a + b);
 }
 int Double(int n) {
-return n * 2;
+    return n * 2;
 }
 int main(void) {
-total = 0;
-mod = 3;
-for (int i = 1; i <= 20; i++) if ((i % mod == 0) && (i != 9)) total = total + i; else total = total - 1;
-if (!(total > 100)) puts("it's middling"); else puts("big");
-if (total > 30) {
-total = total + 1;
-printf("%d\n", total);
-} else printf("%d\n", total);
-n = 0;
-do {
-n = n + 1;
-} while (!(n > 3));
-printf("%d\n", n);
-switch (n) {
-case 1: printf("%d\n", 11); break;
-case 4: printf("%d\n", 44); break;
-default: printf("%d\n", 0); break;
-}
-Show(Double(total));
-Scale(7, 2);
-Pair(total, 2);
-return 0;
+    total = 0;
+    mod = 3;
+    for (int i = 1; i <= 20; i++) if ((i % mod == 0) && (i != 9)) total = total + i; else total = total - 1;
+    if (!(total > 100)) puts("it's middling"); else puts("big");
+    if (total > 30) {
+        total = total + 1;
+        printf("%d\n", total);
+    } else printf("%d\n", total);
+    n = 0;
+    do {
+        n = n + 1;
+    } while (!(n > 3));
+    printf("%d\n", n);
+    switch (n) {
+        case 1: printf("%d\n", 11); break;
+        case 4: printf("%d\n", 44); break;
+        default: printf("%d\n", 0); break;
+    }
+    Show(Double(total));
+    Scale(7, 2);
+    Pair(total, 2);
+    return 0;
 }

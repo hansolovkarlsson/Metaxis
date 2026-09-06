@@ -435,7 +435,7 @@ indent it — then the agnosticism is spent and the feature is not worth it.
 
 ---
 
-### 3.5 Layout-aware splicing — cheap, and stage 3's mirror image
+### 3.5 Layout-aware splicing — **half built 2026-09-05**
 
 **Who has it.** StringTemplate indents a spliced multi-line value to the column
 of its splice point, as a documented property rather than a convenience.
@@ -454,6 +454,14 @@ listing both pay this.
 indentation — `@separator "\n" indent`, a stack of columns, the `block` kind.
 The templates still cannot write it. The tool understands indentation in
 exactly one direction.
+
+**Built, for the code template only.** `indent(s, n)` moves every line right,
+the first included; `examples/code.mx` now emits indented C where it emitted a
+flat wall, and nesting composes because an inner block is already indented when
+the outer one indents it. **The string template still cannot**, and that half is
+not built because nothing has asked: the file that would use it is
+`examples/pascal.mx`, whose output is recorded as deliberately wrong for other
+reasons. The observation below stands for that half.
 
 **Cost: small, and the spelling is the whole decision.** The mechanic is *"a
 splice of a multi-line value indents every line after the first to the column

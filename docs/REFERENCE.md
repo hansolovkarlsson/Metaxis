@@ -929,6 +929,7 @@ cannot leave one uncomputed. See its header for what that rules out.
 | `group(h, n)` | `h`, bracketed in `(` `)` when `level(h) < n` |
 | `replace(s, from, to)` | `s` with every `from` replaced |
 | `drop(s, front, back)` | `s` with that many characters off each end |
+| `indent(s, n)` | `s` with every line moved right by `n` spaces, **including the first**, and an empty line left empty. Block indentation, which is what a brace wants; nesting composes, because an inner block is already indented when the outer one indents it |
 | `fresh(label)` | a name nobody else has — §8.2 |
 
 Everything in a code template is checked at the `@syntax` that wrote it: a name

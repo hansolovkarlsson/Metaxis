@@ -10,6 +10,14 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`indent(s, n)` in a code template**, and `examples/code.mx` now emits indented
+C. Every line moves right, the first included, and an empty line stays empty;
+nesting composes, because an inner block is already indented when the outer one
+indents it. The C that `examples/code.out` records was previously flat — braces
+opened and nothing moved — and `tests/pascal.sh` still compiles it and gets the
+same `4 44 80 7 42`, so what changed is the reading and not the meaning. The
+string template has no equivalent and is not getting one until something asks.
+
 **`mx -t`** — the parse, traced to standard error: one line per candidate tried,
 indented by depth, saying which token it could not get past, and totals at the
 end. Expression mode only.
