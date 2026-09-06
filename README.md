@@ -85,6 +85,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [reserved.mx](examples/reserved.mx) | every character Metaxis writes a directive with — `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` — declared as an operator by a directive |
 | [use.mx](examples/use.mx) | `@use`, taking its arithmetic from [lib/arith.mx](lib/arith.mx) and keeping its own comment and separator — a diamond through [lib/vector.mx](lib/vector.mx), and an `override` of one of arith's rules |
 | [code.mx](examples/code.mx) | `=> { … }` — `examples/pascal.mx` rule for rule, with the parenthesis noise gone and the literal translated. `diff examples/pascal.out examples/code.out` is the point, and `tests/pascal.sh` compiles this one and runs it |
+| [backends.mx](examples/backends.mx) | **one grammar, two targets.** Every rule is written once; where the two agree there is one template and no tag, and where they differ a second `=> … as tight` sits under the first. `mx` and `mx -b tight` emit different C from the same file, both compile, and both print `7 2` — the difference is what it reads like, not what it means |
 | [groups.mx](examples/groups.mx) | `[ … ]`, `[ … ]*` and `[ … ]+` — an argument list of any arity in one rule, and an optional part |
 | [hygiene.mx](examples/hygiene.mx) | `{~t}`, and the half of hygiene it cannot close. `tests/hygiene.sh` compiles the C it emits and runs it, so the remaining wrong answer is a number |
 

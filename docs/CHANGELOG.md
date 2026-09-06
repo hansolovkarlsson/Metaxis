@@ -10,6 +10,19 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-05
 
+**`as <name>` on a template, and `mx -b <name>`** — a rule may now carry more
+than one template, so one grammar can be read out to more than one target. The
+untagged template is the default and the fallback, so a second target costs only
+the rules that actually differ and a one-target file is unchanged. `terminated`
+moved from the rule to the template, because one target may brace a branch where
+another does not. `mx -g` lists the tags and no longer needs `-b`;
+`make check` and `make record` run every declared backend against
+`<name>-<backend>.out`. New: `examples/backends.mx`. New messages:
+`this rule already emits 'x'`, `this rule already has an untagged template`,
+`expected a name after 'as'`, `no rule emits 'x'`,
+`every template here is tagged, so there is no default`, and
+`this rule emits nothing for 'x'`.
+
 **`@mode` declared twice is refused**, unless the second says `override`, as
 every other repeatable declaration already was. `@mode` also **refuses trailing
 text** now, which `@token` and `@separator` began doing earlier the same day and

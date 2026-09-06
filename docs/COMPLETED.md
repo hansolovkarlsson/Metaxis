@@ -10,6 +10,71 @@ argued away.*
 
 Newest first.
 
+## `as`: a rule may emit more than once — and the reason it was built is half wrong
+
+```
+@syntax a "*" b 70 => "({a} * {b})"
+                   => { emit group(a, 70) + " * " + group(b, 71) } as tight
+```
+
+One `=>` per target, `as <name>` tags one, `mx -b <name>` picks. **The untagged
+template is the default and the fallback**, so a second target costs only the
+rules that actually differ, and a file with one target is unchanged in every
+respect — one emit with no tag is what a rule has always had.
+
+**The shape is what kept it small.** A rule carries an `Emit` array;
+`grammar_select()` runs once between the header and expansion and copies the
+chosen one into the fields the rest of the tool already read. `expand.c` and
+`code.c` were not touched. **`terminated` moved from the rule to the template**,
+because it is a statement about the *output* and one target may brace a branch
+where another does not.
+
+**A file whose every template is tagged has no default**, and running it without
+`-b` is an error naming the rule rather than a fall back to the first
+declaration. Letting position decide the output is the question this tool
+declines to answer by position everywhere else (§3.10).
+
+`examples/backends.mx` is the customer: one grammar, two targets, both C. `mx`
+brackets every operand and braces every branch; `mx -b tight` asks each operand
+its level and writes a single statement unbraced. **Both compile and both print
+`7 2`** — the difference is what it reads like and not what it means.
+
+### And the falsification, which the item wrote down for itself
+
+[ROADMAP.md](ROADMAP.md) said this would be falsified *"if the two template sets
+turn out to want different **patterns** often enough that the sharing is a
+lie"*, and offered `examples/pascal.mx` and `examples/code.mx` as the evidence
+against that. **The evidence does not say what the item claimed.** Compared
+pattern by pattern:
+
+- **36 of 39 rules share a pattern exactly.** That much was right, and it is
+  most of the value.
+- **The two `case` rules do not.** `pascal.mx` writes `[ arm ]*` and folds the
+  pair with an infix `a ":" s` rule; `code.mx` writes `[ v ":" s ]*` and walks
+  two parallel lists, because a string template cannot interleave two lists at
+  all.
+- So `pascal.mx` also carries **one rule the other does not need** — the arm
+  rule itself.
+
+`as` chooses a **template**, never a pattern, so those three cannot be shared,
+and forcing them would mean giving one target a grammar written for the other.
+**The two Pascal files therefore do not merge**, and the 272 duplicated lines
+this was built to remove are still there.
+
+What is built is still worth having — it is the general mechanic, it has a
+working customer, and it serves 36 of the 39 rules that motivated it. What is
+left is narrower and better understood than when the item was written, and it is
+back on [ROADMAP.md](ROADMAP.md) as that narrower thing.
+
+**The lesson is the item's own method working.** A falsification condition
+written down before the work is what turned "collapse the two files" into a
+measurement rather than an argument, and the measurement disagreed. The
+condition was met partially and precisely, which is the most useful way for one
+to be met.
+
+Verified at 14 examples, 78 error cases and five check scripts — **99 `ok`
+lines**, and two of them are one file read out twice.
+
 ## `@mode` stops replacing itself in silence
 
 ```

@@ -214,42 +214,44 @@ aid for a grammar under construction at the same time.
 [prior-art.md](prior-art.md) § 3.7 has it, and the tools that treat *watching
 the parse* as part of the job rather than a luxury.
 
-## 4 · One grammar, two backends
+## 4 · The three rules `as` cannot share
 
-`examples/pascal.mx` and `examples/code.mx` are 280 and 272 lines, and the
-second opens by saying what the duplication is: *"The body below is character
-for character the body of pascal.mx. Every rule is the same rule. The only
-difference is that a template here is `=> { … }` rather than `=> "…"`."* Every
-pattern, every level, every `@token` and every group is written twice, and a
-change to the Pascal grammar has to be made in both or the diff those two files
-exist for stops meaning what it says.
+**The mechanic is built and this is what it did not reach.** `as` and `mx -b`
+are in ([COMPLETED.md](COMPLETED.md)), `examples/backends.mx` is one grammar
+read out to two targets, and the item they came from expected them to collapse
+`examples/pascal.mx` and `examples/code.mx` into one file. **They do not**, and
+the measurement is worth more than the expectation was:
 
-**`@use` cannot help and that is not an oversight.** A used file holds
-directives and nothing else (§3.5), so a file with a body cannot be used; and
-`override` re-declares the *whole rule*, pattern included (§3.10), so overriding
-a template means writing the pattern again — which is the thing being avoided.
-Both restrictions are right for what they were built for.
+| | |
+| --- | --- |
+| **36 of 39 rules** | share a pattern exactly — `as` merges these today |
+| **the two `case` rules** | do not. `pascal.mx` writes `[ arm ]*`; `code.mx` writes `[ v ":" s ]*` and walks two parallel lists, because a string template cannot interleave two lists at all |
+| **one rule more** | `a ":" s`, the infix arm rule, which only the folding version needs |
 
-**Why it is here rather than in [prior-art.md](prior-art.md) with the rest.**
-Ohm separates a grammar from its semantics so that one grammar carries many, and
-ANTLR with StringTemplate makes retargeting by swapping the template set its
-selling point; that is where this item was found. It is on this page and the
-other eight are not because **its customer is two files in this repository**,
-and the cost is paid on every future edit to the Pascal grammar rather than
-hypothetically. [prior-art.md](prior-art.md) § 3.1 has the argument in full.
+**`as` chooses a template and never a pattern**, so those three cannot be
+shared and the 272 duplicated lines are still there. That is the falsification
+this item wrote down for itself before the work, met partially and precisely.
 
-The shape that fits is a rule carrying more than one template, tagged, with one
-chosen at the command line — `mx -b tight examples/pascal.mx`. The tag namespace
-is new and nothing else is. **And it makes the demonstration better rather than
-worse**: today the argument for the code template is a diff between two files a
-reader has to be told are identical, and then it is a diff between two runs of
-one file, where the identity is a fact instead of a claim.
+**What would settle it is a decision, not a mechanic.** Three shapes, and none
+is obviously right:
 
-**What would falsify it.** If the two template sets turn out to want different
-*patterns* often enough that the sharing is a lie. This tree is the evidence
-against that today, and it is the evidence that would change its mind.
+- **A rule that belongs to one target** — `@syntax … as tight` on the *rule*
+  rather than the template, so a target may have a rule the other has not. It
+  is the smallest change and the largest consequence: the **grammar** would
+  then vary per target, not just the output, and two targets could read the
+  same file differently. That is a different tool from the one whose rules are
+  a single agreed reading.
+- **Let a string template interleave two lists**, which removes the reason the
+  two `case` rules differ at all. This is the narrowest fix and it attacks the
+  actual cause — but it is a new power for the weaker template, and the whole
+  argument for the code template is that some things need it.
+- **Accept it.** Merge nothing, and let the two files stand as they are with
+  this entry saying why. **The duplication is real and so is the reason for
+  it**, and a file that shares 36 rules and lies about 3 would be worse than
+  two honest files.
 
----
+Nothing has picked one, and nothing should until a second grammar wants the
+same thing — one instance is a fact and two are a pattern.
 
 ## 5 · Source maps
 

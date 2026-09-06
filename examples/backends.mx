@@ -1,0 +1,62 @@
+; backends.mx -- one grammar, two targets.
+;
+; Every rule below is written once. Where the two targets agree, there is one
+; template and no tag, and that is most of the file. Where they differ, a
+; second `=> … as tight` sits under the first:
+;
+;     mx examples/backends.mx            the default, every operand bracketed
+;     mx -b tight examples/backends.mx   brackets only where precedence needs
+;
+; Both emit C. The difference is not what the program means but what it reads
+; like, which is the whole reason a second target is worth having: the grammar
+; is the expensive half and it is not written twice.
+;
+; `terminated` is declared per template rather than per rule, and the `if`
+; below is why -- the default braces its branch and so ends a statement on its
+; own; the tight one does not brace a single statement and so does not.
+
+@comment "#" eol
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+
+@separator ";" => ";\n"
+
+; Agreed. A group is an atom whatever is in it, so neither target ever needs to
+; bracket one again -- one template, no tag, and nothing to choose between.
+@syntax "(" e ")"                  => "({e})"
+
+; Agreed. An assignment is an assignment.
+@syntax a "=" b        10 right    => "{a} = {b}"
+
+; Differ, and only in the brackets. A string template can put them on or leave
+; them off and cannot ask; a code template asks the operand what level it was
+; parsed at and brackets it only when it must.
+@syntax a "+" b        60          => "({a} + {b})"
+                                   => { emit group(a, 60) + " + " + group(b, 61) } as tight
+@syntax a "-" b        60          => "({a} - {b})"
+                                   => { emit group(a, 60) + " - " + group(b, 61) } as tight
+@syntax a "*" b        70          => "({a} * {b})"
+                                   => { emit group(a, 70) + " * " + group(b, 71) } as tight
+@syntax a "<" b        40          => "({a} < {b})"
+                                   => { emit group(a, 40) + " < " + group(b, 41) } as tight
+
+; Differ in `terminated`, which is the reason it belongs to the template. The
+; default braces the branch, so what it emits already ends a statement. The
+; tight one writes a single statement and its semicolon, so it does not.
+@syntax "if" c "then" "{" t:stmts "}"
+    => "if ({c}) {{\n    {t};\n}}" terminated
+    => { emit "if (" + c + ") " + t + ";" } as tight
+
+; Agreed again, and this is the economy the feature is for: a file that adds a
+; target does not rewrite the rules that did not change.
+@syntax "print" x                  => "printf(\"%d\\n\", {x})"
+@syntax "let" n:name "=" v         => "int {n} = {v}"
+
+@end
+
+let a = 2;
+let b = 3;
+let c = a * b + 1;
+print c;
+if a < b then { print a }
