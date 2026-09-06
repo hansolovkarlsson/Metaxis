@@ -57,8 +57,16 @@ dog=$!
 wait "$cmd" 2>/dev/null
 rc=$?
 
+# Killing the watchdog makes bash announce it -- `Terminated: 15` and the
+# subshell's text -- on the *shell's* stderr, at the next wait, and not on the
+# watchdog's, which is already closed. Under `x=$(limit.sh …) 2>&1` that line
+# lands in the captured output, which is how tests/docs.sh failed on macOS
+# once in a few hundred runs on 2026-09-06 with the tool's output correct. So
+# the shell's own stderr is parked while the watchdog is reaped.
+exec 3>&2 2>/dev/null
 kill "$dog" 2>/dev/null
 wait "$dog" 2>/dev/null
+exec 2>&3 3>&-
 
 if [ -f "$mark" ]; then
     rm -f "$mark"
