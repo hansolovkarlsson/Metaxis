@@ -7,7 +7,7 @@
 
 static void usage(void)
 {
-    fputs("usage: mx [-o output] [-b backend] file.mx\n"
+    fputs("usage: mx [-o output] [-b backend] [-t] [-g] file.mx\n"
           "       -b   which 'as <name>' template each rule emits from\n"
           "       -t   trace the parse to stderr, and count what it tried\n"
           "       -g   print the grammar the header declared, and stop\n", stderr);

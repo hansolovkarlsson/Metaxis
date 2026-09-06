@@ -999,7 +999,7 @@ search with a budget of its own.
 whatever it emits. It lists the tags first:
 
 ```
-$ mx -g examples/pascal.mx
+$ mx -g examples/backends.mx
 backend    tight
 mode       expression
 …

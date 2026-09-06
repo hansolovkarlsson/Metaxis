@@ -11,6 +11,49 @@ Newest first.
 
 ---
 
+## 19 · An example that was written instead of run
+
+**Issue.** [REFERENCE.md](REFERENCE.md) § 9 showed what `-g` prints:
+
+```
+$ mx -g examples/pascal.mx
+backend    tight
+```
+
+`examples/pascal.mx` declares no backends. It cannot print that line and never
+could. The file that does is `examples/backends.mx`, and the transcript was
+written the same hour `-b` was built, from what the output *would* look like.
+
+**What found it.** The close-out audit, by running the command in the page. The
+other transcript in that file — `mx -g examples/use.mx` — was checked at the same
+time and is **accurate**, elisions and all, so this was one invented example
+among two rather than a habit.
+
+**Root cause.** It was **born false**, and that is what makes it a different
+defect from [16](#16). Sixteen was a count that was true when written and rotted
+when the tree changed under it; the fix there is to re-check. This one was never
+true for a moment. Nothing rotted, nothing drifted — a plausible transcript was
+composed to illustrate a feature that had just been built, in the same commit
+that built it, while the tool that would have printed the real one sat two
+keystrokes away.
+
+**Solution.** Corrected to `examples/backends.mx`, which is the file that has a
+backend, and the output pasted from the actual run.
+
+**Learnings.** **A transcript is a claim with a `$` in front of it, and the `$`
+makes it look checked.** That is exactly its danger: prose invites doubt and a
+command prompt performs having-been-run. The rule that follows is narrow enough
+to keep: **never write a console example you did not just execute** — not
+"verify examples periodically", which is 16's fix for 16's problem and would not
+have helped here, because there was no interval during which this was right.
+
+**And the check is cheap enough to be worth building.** Every `$ mx …` line in
+`docs/` could be run and its output compared. There are two today; the point is
+not the two, it is that the tool can check its own documentation and does not.
+It is on [ROADMAP.md](ROADMAP.md) with this entry as its customer.
+
+---
+
 ## 18 · An item that named its suspect, and two fixes for the wrong thing
 
 **Issue.** Expansion was quadratic in the size of the input. 125 statements of

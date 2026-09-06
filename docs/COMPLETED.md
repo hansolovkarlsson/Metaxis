@@ -469,7 +469,7 @@ operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
 print `40 80 50`.
 
 **What the example does not do, in its own closing note.** `elif` is one rule
-per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 5 declines to build
+per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 6 declines to build
 for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
 thing rather than reading it. C's types come off Python's annotations or nowhere,
 which is the stage-1 wall in its honest form. And the example says `twice`

@@ -156,15 +156,18 @@ metaxis/src/header.c   the fixed half: directives, and nothing a file can reach
 metaxis/src/lex.c      the lexer the header wrote
 metaxis/src/expand.c   Pratt with backtracking, templates, and text mode
 metaxis/src/code.c     the second kind of template, parsed and run
-metaxis/cmd/mx.c       mx [-o out] [-g] file.mx
+metaxis/cmd/mx.c       mx [-o out] [-b backend] [-t] [-g] file.mx
 lib/                     files meant to be @use'd
 examples/                .mx beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong
-tests/hygiene.sh         what a template that is a string cannot do, run
+tests/hygiene.sh         two properties: every run goes through limit.sh, and
+                         what a template that is a string cannot do, run
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
 tests/asm.sh             C in, arm64 out, assembled and run on a CPU
 tests/python.sh          Python in, C out -- and the same text run as Python too
+tests/scale.sh           one input large enough for a quadratic to show
 tests/limit.sh           a wall-clock limit, so a hang is reported and not waited on
+.github/workflows/       make check, on Linux and macOS, on every push
 docs/REFERENCE.md        every part of a .mx file, exhaustively
 docs/notation.md         the one rule, what falls out of it, and what it costs
 docs/direction.md        what this could become, and which futures are declined
