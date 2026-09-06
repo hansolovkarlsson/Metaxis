@@ -14,7 +14,13 @@ are grouped by the day the work happened, newest first.
 `docs/tutorial/`: one concept per section, every statement and builtin a code
 template has in two tables, and every transcript checked by `make check`.
 REFERENCE.md gained a contents table at the top and an index of terms at the
-end. **A glossary**, `docs/glossary.md`: the concepts in the order they depend
+end. **A website**, at hansolovkarlsson.github.io/Metaxis: an introduction, the
+tutorial, the glossary, the reference, every example with its recorded
+output, the three essays, this page and the roadmap — generated from the
+documents in the tree by `site/build.py` and published by GitHub Pages on
+every push to `main` that passes the suite.
+
+**A glossary**, `docs/glossary.md`: the concepts in the order they depend
 on each other — grammar, lexing, parsing and its families, expansion,
 attribute grammars, context, hygiene, islands — and then every term of art
 the documents use, defined.

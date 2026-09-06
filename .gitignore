@@ -13,3 +13,6 @@ bin/
 *.a
 *.dSYM/
 compile_commands.json
+
+# The website, built by site/build.py
+site/out/

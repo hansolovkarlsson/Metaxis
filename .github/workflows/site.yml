@@ -1,0 +1,45 @@
+# site.yml -- the website, built from the documents and published by Pages.
+#
+# site/build.py renders docs/*.md, site/index.md and examples/ into
+# site/out/. Nothing is written for the site alone, and every transcript on
+# it is one tests/docs.sh runs, so the site is checked by the same suite as
+# the tool. It deploys only from main, and only after `make check` has passed
+# on this machine, so a red suite never publishes.
+
+name: site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: build and check the tool first
+        run: make && make check LIMIT=30
+      - name: build the site
+        run: python3 site/build.py
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/out
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

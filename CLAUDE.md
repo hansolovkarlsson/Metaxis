@@ -38,6 +38,13 @@ re-records those `.out` files; read the diff before committing it.
 
 C11 and `make`, plus POSIX `<regex.h>`.
 
+## The website
+
+`site/build.py` renders `docs/*.md`, `site/index.md` and `examples/` into
+`site/out/` (gitignored); `.github/workflows/site.yml` publishes that to GitHub
+Pages on every push to `main` that passes `make check`. Nothing is written for
+the site alone: a page is a document in the tree, rendered.
+
 ## Proto is read-only
 
 `../Proto` is another process's working tree. **Read it, do not write to it** —
