@@ -1,7 +1,7 @@
 # The notation
 
 `.mx` in, `.out` out. What this changes, against Proto, is the *mention* of
-foreign text inside a directive — which is where Proto's grammar and the
+foreign text inside a directive, which is where Proto's grammar and the
 grammars it declares keep meeting.
 
 Everything on this page is implemented and is exercised by `examples/`.
@@ -16,9 +16,9 @@ shaped the way it is, and what it cost.
 
 ## The one rule
 
-> **Everything a directive says about text — the text it recognises and the
-> text it emits — is inside a string. Everything outside a string is
-> Metaxis's own fixed vocabulary.**
+> **Everything a directive says about text is inside a string: the text it
+> recognises and the text it emits. Everything outside a string is Metaxis's
+> own fixed vocabulary.**
 
 A directive mentions foreign text; the body is foreign text. Quoting is what
 tells the two apart, and it is the only thing that has to. Strings already have
@@ -60,7 +60,7 @@ operands. Once words are quoted, position says it:
 
 The Pratt distinction is already in the shape: a pattern that **begins with a
 hole** is a led rule and needs a level; one that **begins with a word** is a nud
-rule and does not. Nobody declares which — it is read off, in
+rule and does not. Nobody declares which: it is read off, in
 `header.c:rule_syntax`, in one line.
 
 **`<` and `>` stop being needed.** A hole is a bare name because a word is a
@@ -68,20 +68,20 @@ quoted string, so a pattern's own punctuation no longer comes out of the pool of
 characters the file is busy declaring.
 
 **The lexer stops being a fixed budget.** Proto's operator characters are a
-closed set — `. , : | ;` are spoken for and `;` opens a comment — because its
-lexer runs before it knows what the file declared. Here the header is read
+closed set, because its lexer runs before it knows what the file declared:
+`. , : | ;` are spoken for and `;` opens a comment. Here the header is read
 first and `lex.c` runs second, so `;` as a statement separator, `|` as bitwise
 or and `.` as field access are all writable: none of them is anything until a
 string says so.
 
 **Literals become declarable too.** `@token number "[0-9]+"` is what lets `42`
-be an integer without a sigil — the one thing on Proto's impossible list that is
+be an integer without a sigil: the one thing on Proto's impossible list that is
 the lexer's rule about literals rather than a collision. Pascal's `'it''s'` and
 C's `0x1f` are the same directive with a different string in it.
 
 **Alphabetic words still are not reserved.** See *Ties*, below. `then` is a
 form's word where a form wants one and a name everywhere else, including in the
-same file — `examples/tour.mx` uses `then` both ways four lines apart.
+same file: `examples/tour.mx` uses `then` both ways four lines apart.
 
 **Directives stop needing a terminator.** Proto ends one with `.`, which is also
 the statement separator inside the template. Here a directive ends at a newline,
@@ -130,9 +130,9 @@ it. Below the body, only the declared ones are left.
 
 **`@separator`** gives the input separator and, after `=>`, what to join the
 output with. Without the second half the input text is reused. A separator of
-`"\n"` makes newline a token instead of whitespace — `examples/reserved.mx`
+`"\n"` makes newline a token instead of whitespace: `examples/reserved.mx`
 uses it. With `indent` after that, indentation nests as well: the lexer keeps a
-stack of columns and a `block` hole reads what it emits — `examples/python.mx`
+stack of columns and a `block` hole reads what it emits. `examples/python.mx`
 uses it, and the section above argues for why that hole is a bare word rather
 than a pair of strings.
 
@@ -143,7 +143,7 @@ its arithmetic from `lib/arith.mx` and keeps its own comment and separator,
 which is the division that file is for.
 
 **`@template`** and **`@fragment`** are the only things besides a rule that can
-be named — a piece of template and a piece of pattern. They are two directives
+be named: a piece of template and a piece of pattern. They are two directives
 because they are two mechanics: a template is *called* at expansion, takes
 arguments and has a scope; a fragment is *spliced* at declaration, brings its
 own holes and takes nothing. One word for both would have been one word meaning
@@ -154,12 +154,12 @@ written where a hole's kind goes, which was the first spelling proposed for it.
 A kind says what *one hole* holds. A fragment says what *sequence of elements*
 goes here, and arrives carrying holes of its own. Putting both after a `:` would
 have made one position mean two unrelated things, and it would have capped a
-fragment at a single hole — which the next customer for one, a parameter list
+fragment at a single hole, which the next customer for one, a parameter list
 whose type varies, already breaks.
 
 **`@end`** ends the header. Without it the header ends at the first line that
 does not begin a directive. Either way it is one-way: below it nothing is a
-directive, so a body may begin a line with `@` and mean it — which
+directive, so a body may begin a line with `@` and mean it, which
 `examples/reserved.mx` does, having declared `@` as an operator.
 
 ## Fresh names
@@ -171,8 +171,8 @@ different one. `examples/hygiene.mx` calls one `swap` twice and the output has
 
 A name is taken if it occurs anywhere in the source being expanded or in any
 template any rule declared, `@use` included. That is a substring test, so it is
-conservative in the safe direction — `t__1` is refused while `t__12` is in the
-file — and it costs one scan per name.
+conservative in the safe direction: `t__1` is refused while `t__12` is in the
+file. It costs one scan per name.
 
 A label is not a hole and cannot share a name with one: `{~a}` beside `{a}`
 would read as one thing and is refused where it is written, not where it is
@@ -197,13 +197,13 @@ assignment. This is the one thing quoting does not do by itself.
 **Which bracket a group uses is a readability question and not a structural
 one, and that it can be is the rule working.** `[`, `(`, `{` and `<` were all
 equally free, because foreign text is quoted and a pattern's punctuation can
-never collide with it — the same question in Proto would have been painful,
+never collide with it. The same question in Proto would have been painful,
 since `<` and `>` are operator characters a file might want, which is what
 `<x>` holes cost there. `[ … ]` was taken because ISO EBNF already spells an
 optional part that way and a reader arrives knowing it, and because braces were
 spoken for by templates and reading a pattern beside its template is the common
 act. The suffixes `*` and `+` are regex's rather than EBNF's, which buys one
-bracket and three forms in a series instead of two brackets — `[ … ]`,
+bracket and three forms in a series instead of two brackets: `[ … ]`,
 `[ … ]*`, `[ … ]+`, one thing to learn.
 
 Swapping the pair for `( … )` was offered and declined, and the brackets are
@@ -213,24 +213,24 @@ bracket nothing has claimed is cheap to keep and expensive to get back.
 **A group needs no new syntax to be safe from the body.** `[ … ]`, `*`, `+`,
 `sep` and `join` are Metaxis's vocabulary and live *outside* the strings, so a
 file that wants `[` and `]` in its own language quotes them and the two never
-meet — `examples/clike.mx` declares `a "[" i "]"` for an index in the same tool
+meet: `examples/clike.mx` declares `a "[" i "]"` for an index in the same tool
 that reads `[ x ]* sep ","`. Proto declined repetition and optional parts three
 times, in `conventions.md`, on the grounds that no program had asked; a
 language-agnostic tool has argument lists everywhere and asks on the first file.
 
 What a group does **not** buy is an output that differs on whether a part
-matched. Every hole is bound — to its turns, or to nothing — and a splice is the
+matched. Every hole is bound, to its turns or to nothing, and a splice is the
 only thing a string template can vary, so `examples/groups.mx` still writes
 `if (!0) { ; }` where its optional part was absent. That is
 the plainest customer for the code template (§ *What it costs*), and the reason
-`join` covers only the easy half of per-element output — `examples/code.mx`
+`join` covers only the easy half of per-element output: `examples/code.mx`
 writes the other half with a `for … sep` loop.
 
 **The sharp edge of that is `join` writes one text and cannot vary it.** A
 parameter list is the case, and it stopped being hypothetical on 2026-09-05:
 `Scale(n: integer; k: real)` needs `int` in front of one turn and `double` in
 front of the next, and `join ", int "` can only write the same word before every
-one. So `examples/pascal.mx` emits `void Scale(int n, int k)` — output that
+one. So `examples/pascal.mx` emits `void Scale(int n, int k)`: output that
 compiles, links, runs, and is wrong. It is recorded in `examples/pascal.out` and
 pinned by `tests/pascal.sh` for exactly that reason: a failure a compiler will
 not mention is the kind that has to be written down. `examples/code.mx` holds
@@ -245,7 +245,7 @@ back apart in the output.
 **Two holes may not sit next to each other.** Proto's rule, kept, and for
 Proto's reason: given `a b` and `f x + y` the first hole takes the sum and the
 second finds nothing. Proto allows the pair when the second is a `block`; here a
-rule takes its own braces instead — `"if" "(" c ")" "{" t:stmts "}"` — so the
+rule takes its own braces instead, `"if" "(" c ")" "{" t:stmts "}"`, so the
 exception is not needed and does not exist. The refusal is narrowed to a
 **greedy** first hole, since a class-kind hole takes one token and stops, which
 is what lets `[ p:name ]*` be a parameter list.
@@ -269,9 +269,9 @@ and needs no backtracking; this backtracks, which is shorter and slower, and the
 inputs are files.
 
 **A separator is wanted between two statements, and not after one that ended in
-a word.** That is what lets `}` stand on its own — C's `for (…) { … }` takes no
-`;` after it, and Pascal's `end` takes none either — without a rule having to
-declare itself terminating.
+a word.** That is what lets `}` stand on its own without a rule having to
+declare itself terminating: C's `for (…) { … }` takes no `;` after it, and
+Pascal's `end` takes none either.
 
 ## Two modes
 
@@ -294,7 +294,7 @@ bin/mx -o out.sol examples/clike.mx
 bin/mx -g examples/pascal.mx      # the grammar the header declared, and stop
 ```
 
-C11 and `make`, plus POSIX `<regex.h>` for `@token` — which is in libc and is
+C11 and `make`, plus POSIX `<regex.h>` for `@token`, which is in libc and is
 the only thing here Proto does not also need.
 
 ## The one exception, and what buying it cost
@@ -304,13 +304,13 @@ exactly one thing it does not match: an **indentation**, which Python ends its
 blocks with, and which is not text somebody wrote.
 
 There was a spelling that kept the rule's letter. Have the lexer synthesise two
-tokens and give them a text — `"⇥"` and `"⇤"`, say — and a pattern writes
+tokens and give them a text, say `"⇥"` and `"⇤"`, and a pattern writes
 `"⇥" b:stmts "⇤"` with no new vocabulary at all. It needs nothing in the tool;
 it is how the whole feature was rehearsed before any of it was built.
 
 **It was declined, and the reason is the rule itself.** The premise is not
 *a delimiter is quoted*. It is that **a quoted thing is foreign text you can
-find in the file** — which is what makes quoting able to tell a mention from a
+find in the file**, which is what makes quoting able to tell a mention from a
 declaration, and the reason a directive can never be read as the thing it
 declares. A synthetic marker is a string quoting text the source does not
 contain. The file has to pick a spelling its own language never uses, and
@@ -334,7 +334,7 @@ other way cannot say so, and the next such wish will arrive as a request for a
 second kind. Against that: the rule that made the notation worth having is
 intact, and it is intact *because* the exception was spelled as one. A bare word
 outside the quotes is how this notation has always said *this one is
-Metaxis's* — the same way `stmts` and `expr` and `[ … ]` say it. Reading it,
+Metaxis's*, the same way `stmts` and `expr` and `[ … ]` say it. Reading it,
 you cannot mistake what it is.
 
 And it is a smaller exception than it looks. The rule that reads a block still
@@ -348,8 +348,8 @@ entries in its table are not like this one.
 **The tool has a second pass, and it is blind on purpose.** Everything else
 here is one pass: the body is read once and each rule's output goes up to the
 rule above it. A collection (REFERENCE §8.4) cannot be, because the rule that
-splices the aggregate usually runs before the rules that contribute to it — a
-program's head is expanded before its body — so `splice` leaves a placeholder
+splices the aggregate usually runs before the rules that contribute to it: a
+program's head is expanded before its body. So `splice` leaves a placeholder
 and a pass over the finished output replaces it. What that pass may know was
 settled before it was written: nothing. It replaces marks and reads nothing
 between them, and every line of the aggregate after the first is padded with
@@ -379,7 +379,7 @@ shorter.
 **A template can name its own temporary and nothing else.** `{~t}`, and
 `fresh("t")` in a code template, closed the half of hygiene where a template
 *introduces* a name. The half where it
-*reaches out* for one stays open, and is not an unimplemented feature — it is
+*reaches out* for one stays open, and is not an unimplemented feature: it is
 the price. `examples/hygiene.mx` declares a `bump` whose template means the
 file-scope `total` that was in scope where the rule was written; a caller that
 shadows `total` gets the shadow updated and the real one left alone, and both
@@ -393,7 +393,7 @@ bump: 105 0    would be  bump: 100 5
 
 There is nothing for a fresh name to invent here. What is wanted is a way to say
 *the outer one*, and **neither kind of template can see a scope**, let alone
-reach past a caller's — the code template was built and this did not move, which
+reach past a caller's. The code template was built and this did not move, which
 was predicted in the roadmap before it was written and is the one prediction
 there that held. Proto can, because its expander works on trees in a
 language whose scopes it knows; closing it here would mean Metaxis learning
@@ -410,8 +410,8 @@ punctuate another rule's output without either of them knowing the other, and
 `for i, x in h` with `at(g, i)` walks two of a group's holes together, which is
 what a repeated group with more than one hole in it otherwise cannot say.
 
-What settled it is worth more than the fix. The obvious cheap answer — look at
-the last character emitted, and skip the separator after a `}` — would have been
+What settled it is worth more than the fix. The obvious cheap answer, look at
+the last character emitted and skip the separator after a `}`, would have been
 *wrong*, and wrong in both directions at once. `examples/clike.mx` reads C's
 braces and emits Solveig, where a `.` is wanted between two statements however
 the one before ended; `examples/groups.mx` reads the same braces and emits
@@ -420,7 +420,7 @@ after the brace. So the input rule and the output rule are about two different
 languages and had to be two rules. Guessing is what this tool declines to do
 about precedence and about scopes, and it declines here for the same reason.
 
-**A literal is moved, not understood — again, in a string template.**
+**A literal is moved, not understood, again in a string template.**
 `examples/pascal.mx` emits `puts('it''s middling')` into C, because a `string`
 hole splices the source text it matched and a splice is all there is.
 `examples/code.mx` writes `replace(drop(x, 1, 1), "''", "'")` and gets
@@ -428,7 +428,7 @@ hole splices the source text it matched and a splice is all there is.
 parentheses above.
 
 **Verbosity, on the common case.** `@infix + 60 add.` becomes
-`@syntax a "+" b 60 => "{a}:add({b})"` — half again as long, on the line a
+`@syntax a "+" b 60 => "{a}:add({b})"`: half again as long, on the line a
 dialect writes forty times. Sugar should be *derived* from `@syntax` rather than
 primitive, so the general form stays the thing that is true. None is implemented.
 
@@ -452,7 +452,7 @@ and it was answered separately: unmarked, the second is refused naming both
 lines; marked `override`, it wins and nothing is said. REFERENCE.md §3.10.
 
 **That answer cost a word, and the word could only go in one place.** Everywhere
-left of the `=>` a bare word is a hole — that is the notation's whole premise —
+left of the `=>` a bare word is a hole, which is the notation's whole premise,
 and a rule whose first hole is called `override` is a legal rule. So the one
 place a bare word cannot be mistaken for a hole is *after* the template, where
 `terminated` already lives, and that is where it went. The premise decided the
@@ -461,7 +461,7 @@ earn its keep on; the cost is that a word about the declaration reads at the far
 end of the line from the declaration it is about.
 
 **And on `@fragment` the same premise put the same word at the opposite end.**
-A fragment's pattern runs to the end of the directive, so there is no *after* —
+A fragment's pattern runs to the end of the directive, so there is no *after*:
 a trailing `override` would sit exactly where the notation says a bare word is a
 hole, and would be silently read as one. So it goes before the `=`:
 
@@ -470,7 +470,7 @@ hole, and would be silently read as one. So it goes before the `=`:
 ```
 
 Which is worth recording as a cost rather than a curiosity. **One word now
-appears at two ends of two directives, and neither position was chosen** — both
+appears at two ends of two directives, and neither position was chosen**: both
 were forced by the same rule, applied to two shapes. A notation that derives its
 syntax from one premise gets consistency where the shapes agree and this where
 they do not, and the honest description is that `override` goes wherever a bare
@@ -484,7 +484,7 @@ error in a downstream compiler points into text nobody wrote. Proto emits a
 `.map` beside its output.
 
 **A rule's own words winning inside its brackets.** Proto has one place where a
-context outranks a declaration — `#[k = v]`, where the pair separator shadows a
+context outranks a declaration: `#[k = v]`, where the pair separator shadows a
 declared `=` at the top level of a key. Here a bracketed rule's interior words
 are ordinary pattern elements, so the case does not arise in the same shape; but
 nothing has been written that tests it, and a `list` kind with a declared
@@ -493,7 +493,7 @@ separator is the shape that would.
 **Expression-mode backtracking has no budget.** Candidates are retried with the
 cursor restored and only a recursion depth of 400 stops it; a pathological
 header would be slow and nothing measures it. Text mode is no longer in that
-position — its matcher became a search on 2026-09-04 and was given a budget of
+position: its matcher became a search on 2026-09-04 and was given a budget of
 200000 attempts per rule at the same time, and it *is* measured: 113KB of
 markdown, 2000 lines, 60ms, with the `**` and `[[…]]` rules of
 `examples/poem.mx`. The expression side has had no such measurement and no such
@@ -503,12 +503,12 @@ budget. See [ROADMAP.md](ROADMAP.md).
 parse error under a newline separator: Python's lexer suppresses the newline
 between an opening bracket and its match and this one does not. It wants a
 bracket depth beside the indent stack, and the thing that makes it more than a
-copy of that work is that **the lexer cannot know what a bracket is** —
+copy of that work is that **the lexer cannot know what a bracket is**:
 everything else it knows came out of a directive, and no directive says *these
 two words nest*. [ROADMAP.md](ROADMAP.md) 2 has the three spellings that would.
 
 **`left` is accepted and does nothing**, since left is the default. It stays
 because writing it is sometimes clearer than leaving it out. (The other half of
-this entry — that a level on a nud rule sets its trailing hole's binding power
-and was documented nowhere but here — stopped being true when
+this entry, that a level on a nud rule sets its trailing hole's binding power
+and was documented nowhere but here, stopped being true when
 [REFERENCE.md](REFERENCE.md) §5 was written.)

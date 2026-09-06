@@ -4,11 +4,60 @@
 now. [ROADMAP.md](ROADMAP.md) is the other half of the ledger and holds what is
 not built; an entry is moved between the two and never copied. Each entry ends
 with the state it was verified at, so a claim here can be checked rather than
-taken. What a thing **costs** is not here — that is
-[notation.md](notation.md)'s "What it costs", and it is written down rather than
-argued away.*
+taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
+"What it costs", and it is written down rather than argued away.*
 
 Newest first.
+
+## The prose rule: no em dash in general prose, and the sweep that made it true
+
+`CLAUDE.md` gained a style guide on 2026-09-06: the em dash is not used in
+general prose, and a comma, a period or a colon stands where it stood. It stays
+where it is part of a fact rather than a sentence: a date or a range, a
+quotation reproduced as written, a title that has one, and anything that is
+code, an example, a transcript or recorded output. `tests/hygiene.sh` runs a
+fourth check that states the rule as a property, so that the sweep below had a
+finish line the suite could see and new writing has a guard.
+
+**Each exemption is one of the guide's, by name.** A fenced block, an inline
+code span and a blockquote line are skipped as code or as reproduced text. A
+line that keeps a dash for a reason the pattern cannot see says so with
+`<!-- as written -->` at its end: an HTML comment, so the page does not show
+it, and the reason is on the line for whoever reads the source. The site's
+build strips it. The dated accounts are not scanned, for `tests/docs.sh`'s
+reason, until the decision to sweep them is taken; the pattern is one line to
+widen. Source comments, `.mx` files and `.out` files had no dash the day this
+was written and are not scanned: a dash in a `.mx` body or a `.out` is the
+tool's data, and the rule is about prose.
+
+**What the check caught before it was ever run properly.** Its first draft was
+pasted into the file's preamble, above the line that lists the tracked files,
+so `awk` was handed no files, read an empty standard input, and printed `ok`.
+That is the failure the limit guard's note warns about, a check that passes
+when its own machinery breaks, and the same file had already caught it once.
+The scan now refuses an empty file list rather than reading nothing as clean.
+
+**The sweep.** Eleven documents, 1,146 dashes on 1,052 lines, and none of them
+in code, a transcript or recorded output, so no test's expectation moved. It
+was done in parallel, one agent per document or pair with one brief, and read
+afterwards. Three things came out of it that were not punctuation. Twenty-five
+error messages quoted in backticks in the reference and here were typeset with
+an em dash where the tool prints two hyphens, each now checked against the
+source line that prints it and made verbatim. The three thesis statements set
+as blockquotes in notation, direction and the survey were the tree's own prose,
+not quotations, and were rewritten like the rest. And parentheses, which the
+guide does not list, appeared in a dozen places where an aside was a list; each
+became a colon with the list after it. What remains is four dashes, each kept
+by name: a quotation from StringTemplate's documentation, a table row where a
+lone dash means none, and the rule's own example in backticks.
+
+**What it left.** The dated accounts, `POSTMORTEM.md`, `CHANGELOG.md` and the
+journal, hold 354 more and are as written; the roadmap item for the sweep is
+that decision. The documents read differently now, with shorter sentences and
+more colons, which is what the rule asks for.
+
+Verified at 16 examples, 82 error cases and nine scripts, **150 `ok` lines**
+where there were 149, and the site built with no marker on any page.
 
 ## The roadmap's numbers: a citation resolves, and an item does not vanish
 
@@ -20,49 +69,48 @@ after an item vanished for one commit and after two source comments were found
 naming a number that had been given to something else.
 
 **The first half is a grep.** A citation is one of the four spellings the tree
-uses — `ROADMAP N`, `ROADMAP.md N`, `docs/ROADMAP.md N`, and the link — and
-nothing looser, so that "item 4 of the roadmap as it then stood" is prose about
-the past and does not match. The dated accounts are not scanned, for
+uses and nothing looser: `ROADMAP N`, `ROADMAP.md N`, `docs/ROADMAP.md N`, and
+the link. So "item 4 of the roadmap as it then stood" is prose about the past
+and does not match. The dated accounts are not scanned, for
 `tests/docs.sh`'s reason: they say what was true on a day. Everything else is a
 claim about now, and a number that has been retired is a claim that is false.
 
 **The second half reads HEAD.** The `## N ·` headings the committed page has
 must all be in the working tree's, unless the commit being prepared is the one
-that moves an item here — `SETTLED='N' make check` says so, and the variable
-reaches the script through `make` without a line in the Makefile. In CI the
-tree is HEAD and the half is vacuous; it is a check for the desk, run before
-the commit that would otherwise have lost the item, which is where the
-postmortem said it belonged.
+that moves an item here: `SETTLED='N' make check` says so, and the variable
+reaches the script through `make` without a line in the Makefile. In CI the tree
+is HEAD and the half is vacuous; it is a check for the desk, run before the
+commit that would otherwise have lost the item, which is where the postmortem
+said it belonged.
 
 **What it can and cannot see.** A retired number resolves to nothing and is
-caught. A number that was *reused* — which the roadmap did until 2026-09-06,
-when numbers became permanent — resolves to the wrong item, and no check by
-number can tell. Writing this found five of the first kind, all naming the
-collections item that landed the day before, and three of the second: two
-source comments citing a measurement item under a number that now belongs to
-`as`, and the Python example citing the island under the number alternation
-has. All eight are fixed to name the [COMPLETED.md](COMPLETED.md) entry or the
-right item, and the three the check could not see are why the roadmap's
-numbers are now for life.
+caught. A number that was *reused*, which the roadmap did until 2026-09-06, when
+numbers became permanent, resolves to the wrong item, and no check by number can
+tell. Writing this found five of the first kind, all naming the collections item
+that landed the day before, and three of the second: two source comments citing
+a measurement item under a number that now belongs to `as`, and the Python
+example citing the island under the number alternation has. All eight are fixed
+to name the [COMPLETED.md](COMPLETED.md) entry or the right item, and the three
+the check could not see are why the roadmap's numbers are now for life.
 
 **It lives in `hygiene.sh`** for the reason the limit guard does: that file is
 the one that checks a property of the tree, and a tenth script for two greps is
 one too many. It runs after the limit guard and before the hygiene example, and
 prints one `ok` line per half.
 
-Proved by planting — a citation of the retired number 4 appended to the
-glossary, then item 8's heading deleted from the page — and watching each come
-back with the file and line, then `SETTLED=8` letting the second through, then
-restoring both. The first plant also showed the two halves in the right order:
-deleting an item that is still *cited* fails the citation half before the
-heading half is reached, so an item cannot be settled out from under a document
-that names it. And the first thing the check caught unplanted was **the draft
-of this entry**, which described the plant by quoting it, in citation form.
+Proved by planting, a citation of the retired number 4 appended to the glossary,
+then item 8's heading deleted from the page, and watching each come back with
+the file and line, then `SETTLED=8` letting the second through, then restoring
+both. The first plant also showed the two halves in the right order: deleting an
+item that is still *cited* fails the citation half before the heading half is
+reached, so an item cannot be settled out from under a document that names it.
+And the first thing the check caught unplanted was **the draft of this entry**,
+which described the plant by quoting it, in citation form.
 
 Verified at 16 examples, 82 error cases and nine scripts, **149 `ok` lines**
 where there were 147.
 
-## Collections — the head of the output is its body's aggregate
+## Collections: the head of the output is its body's aggregate
 
 ```
 $ mx examples/basic.mx
@@ -75,22 +123,22 @@ const char *A_s;
 
 **Three customers, one mechanism, and the rehearsal was the specification.**
 BASIC declares nothing, so the line C wants first is the set of every variable
-any line below mentions; `examples/code.mx` emitted `#include <stdio.h>`
-whether or not a `writeln` fired; and `lib/island.mx` wrote the definition of
-`complain` into the landmark it named rather than having the rule that needs
-it say so. Each is a rule that knows one thing and a head that needs all of
-them, and a rule sees its own holes and nothing else. On 2026-09-06 the whole
-mechanism was faked first with markers in the output and a twelve-line awk pass
-— item 4 of the roadmap as it then stood — and all three compiled and
-ran. What was built is the shape the markers rehearsed and nothing more.
+any line below mentions; `examples/code.mx` emitted `#include <stdio.h>` whether
+or not a `writeln` fired; and `lib/island.mx` wrote the definition of `complain`
+into the landmark it named rather than having the rule that needs it say so.
+Each is a rule that knows one thing and a head that needs all of them, and a
+rule sees its own holes and nothing else. On 2026-09-06 the whole mechanism was
+faked first with markers in the output and a twelve-line awk pass, item 4 of the
+roadmap as it then stood, and all three compiled and ran. What was built is the
+shape the markers rehearsed and nothing more.
 
-**`contribute("vars", text)`** is a statement in a code template, beside
-`emit`: it adds a line to a named collection. A collection keeps one copy of
-each distinct text, in the order first contributed — `T` said nine times is
-declared once — and `@use`d files contributing to one name is the intended case
-and not a conflict, because a contribution is additive and unordered and there
-is nothing for `override` to be needed for. Rule locality survives untouched: a
-rule still says only what *it* adds.
+**`contribute("vars", text)`** is a statement in a code template, beside `emit`:
+it adds a line to a named collection. A collection keeps one copy of each
+distinct text, in the order first contributed: `T` said nine times is declared
+once. `@use`d files contributing to one name is the intended case and not a
+conflict, because a contribution is additive and unordered and there is nothing
+for `override` to be needed for. Rule locality survives untouched: a rule still
+says only what *it* adds.
 
 **`splice("vars")`** is an expression: it gives a placeholder, and the second
 pass replaces the placeholder with the aggregate once expansion is over. The
@@ -101,20 +149,19 @@ inside an indented block stays in the block; a placeholder alone on its line
 with nothing to put there takes the line with it.
 
 **A collection nobody splices goes first.** BASIC has no head, and no rule in a
-file with no head can name where *before the first statement* is. So that is
-the default, for a source with no head; `examples/basic.mx` contributes and
-never splices, and the four declarations lead its output. A source with a head
-names its splice point — `program` in `code.mx`, `usage` in `island.mx` — and
-the rehearsal showed why the default would be wrong for it: C's definitions
-must follow its includes.
+file with no head can name where *before the first statement* is. So that is the
+default, for a source with no head; `examples/basic.mx` contributes and never
+splices, and the four declarations lead its output. A source with a head names
+its splice point, `program` in `code.mx`, `usage` in `island.mx`, and the
+rehearsal showed why the default would be wrong for it: C's definitions must
+follow its includes.
 
 **The pass knows nothing.** It replaces marks and never reads what is between
-them, which was the falsifier the roadmap item carried — *if the pass has to
-know anything about the output language, the agnosticism is spent* — and it
-did not fire in the rehearsal or in the build. The cost that stays is that the
-tool has a second pass over its output where it had one; it is
-`collect_resolve` in `metaxis/src/code.c`, and it is about the size the awk
-was.
+them, which was the falsifier the roadmap item carried, *if the pass has to know
+anything about the output language, the agnosticism is spent*, and it did not
+fire in the rehearsal or in the build. The cost that stays is that the tool has
+a second pass over its output where it had one; it is `collect_resolve` in
+`metaxis/src/code.c`, and it is about the size the awk was.
 
 **What changed in the customers.** `tests/basic.sh` no longer writes a
 prologue: its pin flipped, and it now fails if the four declarations are not
@@ -128,10 +175,9 @@ the last two changed by a byte.
 (*is a statement*), `contribute` with the wrong count, and `splice` with the
 wrong count. `tests/errors.sh` cases 48 to 50.
 
-Verified at 16 examples, 82 error cases and nine check scripts — 116 `ok`
-lines.
+Verified at 16 examples, 82 error cases and nine check scripts: 116 `ok` lines.
 
-## Stage 5 — the tool rewrites its own front end, and text mode was the island
+## Stage 5: the tool rewrites its own front end, and text mode was the island
 
 ```
 $ mx examples/island.mx
@@ -145,21 +191,21 @@ static void usage(void)
 }
 ```
 
-**Rehearsed first, by the stage 3 method, and the rehearsal was the stage.**
-The survey's strongest finding was the island rule — text a file has no rule
-for passes through — and its three proposed shapes were all for expression
-mode. The cheapest thing that tested it cost no tool change: text mode already
-scans, fires a rule where one matches, and copies everything else, so a
-five-line header was pointed at `metaxis/cmd/mx.c` — the tool's own front end,
-a file written for no grammar — to turn `fprintf(stderr, "mx: %s\n", err)`
-into `complain(err)` and insert the definition. Six call sites changed, the
-seventh with a different format string did not, and the rewritten tree built
-and passed every check. That result was then made permanent: the rules are
-`lib/island.mx`, `examples/island.mx` runs them over four representative
-lines, and `tests/island.sh` concatenates them with the real `mx.c` at test
-time — so the two can never drift — compiles what comes out against the
-tree's own objects, and runs the binary on `examples/first.mx` and on a
-missing file. Same output, same message, through `complain`.
+**Rehearsed first, by the stage 3 method, and the rehearsal was the stage.** The
+survey's strongest finding was the island rule, that text a file has no rule for
+passes through, and its three proposed shapes were all for expression mode. The
+cheapest thing that tested it cost no tool change: text mode already scans,
+fires a rule where one matches, and copies everything else, so a five-line
+header was pointed at `metaxis/cmd/mx.c`, the tool's own front end, a file
+written for no grammar, to turn `fprintf(stderr, "mx: %s\n", err)` into
+`complain(err)` and insert the definition. Six call sites changed, the seventh
+with a different format string did not, and the rewritten tree built and passed
+every check. That result was then made permanent: the rules are `lib/island.mx`,
+`examples/island.mx` runs them over four representative lines, and
+`tests/island.sh` concatenates them with the real `mx.c` at test time, so the
+two can never drift, compiles what comes out against the tree's own objects, and
+runs the binary on `examples/first.mx` and on a missing file. Same output, same
+message, through `complain`.
 
 **What the rehearsal measured**, each by running it, is
 [ROADMAP.md](ROADMAP.md) 7: a bare word fires inside identifiers and strings
@@ -168,23 +214,24 @@ stops at the first `)` and is right only when the template keeps it last, and
 declaring C's comments removes them. The example's third line records the
 bracket accident on purpose, the way `tests/hygiene.sh` records `bump`.
 
-**What it found in the tool.** A led rule in text mode — `a "->" b` — was
-accepted and silently never fired: `p->f` came through unchanged with exit 0.
-The reference said *a led rule has nothing to continue* and nothing enforced
-it, which is the shape of defect `seal_check` was written to refuse. It is
-refused now, at the same place, once the header has finished: `a rule that
-begins with a hole is infix, and text mode has nothing for it to continue — it
-could never fire`. `tests/errors.sh` case 79.
+**What it found in the tool.** A led rule in text mode, `a "->" b`, was accepted
+and silently never fired: `p->f` came through unchanged with exit 0. The
+reference said *a led rule has nothing to continue* and nothing enforced it,
+which is the shape of defect `seal_check` was written to refuse. It is refused
+now, at the same place, once the header has finished: `a rule that begins with a
+hole is infix, and text mode has nothing for it to continue -- it could never
+fire`.
+`tests/errors.sh` case 79.
 
 **And two things about writing C from a string template** that the first draft
 got wrong on its first run: `{` is a hole, so C's braces are `{{ }}`, and `\n`
 is a newline, so the source's own `\n` is `\\n`. A code template has neither
 problem.
 
-Verified at 16 examples, 79 error cases and **nine** check scripts — 113 `ok`
+Verified at 16 examples, 79 error cases and **nine** check scripts: 113 `ok`
 lines, seven of them transcripts, the one above included.
 
-## Stage 4 — BASIC→C, and the wall it was picked to reach
+## Stage 4: BASIC→C, and the wall it was picked to reach
 
 ```
 $ mx examples/basic.mx
@@ -201,21 +248,21 @@ L160: if (!(T > 30)) goto L190;
 L190: return 0;
 ```
 
-**Picked for a mechanic, by the roadmap's rule.** The three stages were done
-and the page said the next thing to choose was a translator, not a mechanic.
-The survey's shortlist said collection attributes had a customer — the include
-`examples/code.mx` emits whether or not it is needed — and the source that
-cannot be translated *at all* without them is BASIC: it declares nothing, a
-variable exists because some line mentions it, and C wants every one declared
-before the first statement. That line is the aggregate of the whole program,
-and a rule sees its own holes and nothing else. So `examples/basic.mx` was
-written to reach that wall and record where it is, and `tests/basic.sh` wrote
-the four declarations by hand, compiled the rest, ran it, and checked the
-numbers — pinned in both directions, so that the program must not build
-without the hand-written line and the translator must not have started writing
-it. *(Later the same day it did — the entry above this one — and the pin
-flipped in that commit; the four lines at the top of the transcript are the
-translator's, and the transcript is checked.)*
+**Picked for a mechanic, by the roadmap's rule.** The three stages were done and
+the page said the next thing to choose was a translator, not a mechanic. The
+survey's shortlist said collection attributes had a customer, the include
+`examples/code.mx` emits whether or not it is needed, and the source that cannot
+be translated *at all* without them is BASIC: it declares nothing, a variable
+exists because some line mentions it, and C wants every one declared before the
+first statement. That line is the aggregate of the whole program, and a rule
+sees its own holes and nothing else. So `examples/basic.mx` was written to reach
+that wall and record where it is, and `tests/basic.sh` wrote the four
+declarations by hand, compiled the rest, ran it, and checked the numbers, pinned
+in both directions, so that the program must not build without the hand-written
+line and the translator must not have started writing it. *(Later the same day
+it did, the entry above this one, and the pin flipped in that commit; the four
+lines at the top of the transcript are the translator's, and the transcript is
+checked.)*
 
 **It cost the tool nothing.** No directive, no builtin, no line of C. Four
 things the notation had to reach, and reached:
@@ -225,42 +272,42 @@ things the notation had to reach, and reached:
   line and whose word is the keyword, which is what a Pratt parser makes of it
   without being told. Every line becomes a C label, so `GOTO 80` is `goto L80`.
 - **Each statement is written once and read twice.** A `@template` holds the
-  body — `let(v, e)`, `print(x)` — and a led rule with the line number and a
-  nud rule without it both call it, so `THEN LET T = T + I` costs one line.
+  body, `let(v, e)` or `print(x)`, and a led rule with the line number and a nud
+  rule without it both call it, so `THEN LET T = T + I` costs one line.
 - **The type of a variable is the sigil on its name.** Stage 1 stopped at
   `writeln` because printing a value means knowing its type. `print` reads it
-  off the spelling — `replace(x, "$", "") != x` is *a string variable*, a `"`
-  is a literal, anything else is a number — and the wall is not met, by choice
-  of source and not by a new mechanic.
+  off the spelling: `replace(x, "$", "") != x` is *a string variable*, a `"` is
+  a literal, anything else is a number. The wall is not met, by choice of source
+  and not by a new mechanic.
 - **`FOR` and `NEXT` are two statements**, because they are in BASIC:
   `GOTO 70` jumps to a `NEXT` from inside its own loop and BASIC allows it. So
   `FOR` opens a brace and `NEXT` closes one, the way `examples/asm.mx` emits a
   sequence, and the C nests because the BASIC did. `L70: ; }` is what a label
   before a closing brace has to look like.
 
-**What it found, in the order the runs found it.** The first expansion wrote
-`!T > 30` for `NOT T > 30`: BASIC's `NOT` binds looser than a comparison and
-C's `!` binds tighter than anything, so the operand of `!` is bracketed unless
-it is an atom — `group(a, 80)`, one above the top of the ladder, where the
-first draft asked at `NOT`'s own level. The first compile said `expected ';'
-after return statement`: `END` is the last line, no separator follows it, and
-its semicolon has to be its own. And the wall itself arrived with a second face
-the roadmap had not named: **BASIC has no head.** Pascal has `program` and a
-rule could splice an aggregate there; BASIC's first line is a statement, so the
-*file* would have to be able to say *before the first statement*, and nothing
-in the notation says that. That became the second of the three decisions the
-roadmap's collections item listed, and it is the one the survey did not foresee;
-the item landed the same day, as *Collections* above.
+**What it found, in the order the runs found it.** The first expansion wrote `!T
+> 30` for `NOT T > 30`: BASIC's `NOT` binds looser than a comparison and C's `!`
+binds tighter than anything, so the operand of `!` is bracketed unless it is an
+atom: `group(a, 80)`, one above the top of the ladder, where the first draft
+asked at `NOT`'s own level. The first compile said `expected ';' after return
+statement`: `END` is the last line, no separator follows it, and its semicolon
+has to be its own. And the wall itself arrived with a second face the roadmap
+had not named: **BASIC has no head.** Pascal has `program` and a rule could
+splice an aggregate there; BASIC's first line is a statement, so the *file*
+would have to be able to say *before the first statement*, and nothing in the
+notation says that. That became the second of the three decisions the roadmap's
+collections item listed, and it is the one the survey did not foresee; the item
+landed the same day, as *Collections* above.
 
 **Two things the file says it does not read.** `REM`, because a comment wins
 over a word and would leave the line number standing alone as a statement, so
 the body comments with `'`. And `GOSUB`, which wants a return stack C does not
 have.
 
-Verified at 15 examples, 78 error cases and **eight** check scripts — 109 `ok`
+Verified at 15 examples, 78 error cases and **eight** check scripts: 109 `ok`
 lines, six of them transcripts, the one above included.
 
-## `tests/docs.sh` — the transcripts in `docs/`, run
+## `tests/docs.sh`: the transcripts in `docs/`, run
 
 ```
 $ mx examples/first.mx
@@ -270,23 +317,23 @@ x = 1;
 
 **A transcript is a claim with a `$` in front of it, and the `$` makes it look
 checked.** On 2026-09-05 one of the two in [REFERENCE.md](REFERENCE.md) had been
-written instead of run — `mx -g examples/pascal.mx` shown printing a backend
-that file does not declare — and [POSTMORTEM.md](POSTMORTEM.md) 19 said the
-check was cheap enough to build. It is built. `tests/docs.sh` finds every fenced
-`$ mx …` line in `docs/*.md` and `README.md`, runs it from the tree root with
-`mx` replaced by the binary under `tests/limit.sh`, and compares what the
-terminal would have shown: stdout and stderr together, the rest of the line
-handed to the shell as written, so `2>&1 >/dev/null` in a transcript means what
-it means at a prompt. The exit status is not looked at, because a transcript
-cannot show one either. The block above is one of the five it runs, and was
-run before it was pasted.
+written instead of run, `mx -g examples/pascal.mx` shown printing a backend that
+file does not declare, and [POSTMORTEM.md](POSTMORTEM.md) 19 said the check was
+cheap enough to build. It is built. `tests/docs.sh` finds every fenced `$ mx …`
+line in `docs/*.md` and `README.md`, runs it from the tree root with `mx`
+replaced by the binary under `tests/limit.sh`, and compares what the terminal
+would have shown: stdout and stderr together, the rest of the line handed to the
+shell as written, so `2>&1 >/dev/null` in a transcript means what it means at a
+prompt. The exit status is not looked at, because a transcript cannot show one
+either. The block above is one of the five it runs, and was run before it was
+pasted.
 
 **The two decisions the roadmap said were not obvious.** *Elision*: a line that
-is exactly `…` means *skip ahead* — the next line of the transcript is looked
-for further down the output, and what lies between is not compared; a trailing
-`…` matches whatever remains. So REFERENCE.md keeps eliding, because forty lines
-of grammar would make it worse for a reader, and the check bends instead. *Where
-it runs*: from the tree root, so a document writes `examples/use.mx` and never a
+is exactly `…` means *skip ahead*. The next line of the transcript is looked for
+further down the output, and what lies between is not compared; a trailing `…`
+matches whatever remains. So REFERENCE.md keeps eliding, because forty lines of
+grammar would make it worse for a reader, and the check bends instead. *Where it
+runs*: from the tree root, so a document writes `examples/use.mx` and never a
 path relative to itself. A third the roadmap did not foresee: trailing
 whitespace is stripped on both sides before comparing, because an editor strips
 it from a document, and a document cannot hold what the tool turned out to be
@@ -301,8 +348,8 @@ rightly change. The journal is the same kind of page and is not under
 
 **What it found on its first run.** Two things, and neither was a wrong answer.
 `mx -g` printed a trailing space after any rule without a level, and two spaces
-before `terminated` — `show` in `metaxis/cmd/mx.c` put a space after every
-element instead of between them — invisible on a terminal and impossible for a
+before `terminated`. `show` in `metaxis/cmd/mx.c` put a space after every
+element instead of between them, invisible on a terminal and impossible for a
 document to hold, so the two `-g` transcripts could never have matched exactly.
 Spaces now go between; the trace `-t` prints is unchanged. And the first
 transcript in REFERENCE.md still said `$ pt examples/first.mx`, the tool's old
@@ -314,10 +361,10 @@ fails, an elision to a line that is not there fails, output that goes on past
 the transcript fails, and a transcript that claims no output fails; a trailing
 `…`, an error transcript read from stderr, and a block with a second `$ make`
 after the checked command all pass. A document set with no transcripts in it is
-a failure and not a pass, for the reason `hygiene.sh` gives — a check whose own
+a failure and not a pass, for the reason `hygiene.sh` gives: a check whose own
 machinery breaks must not read as `ok`.
 
-Verified at 14 examples, 78 error cases and **seven** check scripts — 106 `ok`
+Verified at 14 examples, 78 error cases and **seven** check scripts: 106 `ok`
 lines, five of them transcripts.
 
 ## `indent(s, n)`, and C that reads like something somebody wrote
@@ -331,7 +378,7 @@ int main(void) {
     } else printf("%d\n", total);
 ```
 
-**`examples/code.out` was flat.** Braces opened and nothing moved — every
+**`examples/code.out` was flat.** Braces opened and nothing moved: every
 statement at column zero, including the bodies of four procedures and a
 `switch`. It compiled, it ran, it produced the right numbers, and it read like
 nothing anybody wrote. That is the whole customer: the tool's flagship output
@@ -344,7 +391,7 @@ composes for free**: an inner block is already indented by the time the outer on
 indents it, so a `switch` inside an `if` inside `main` comes out three deep
 without any rule knowing how deep it is.
 
-Five rules in `examples/code.mx` use it — `begin…end`, `repeat…until`, both
+Five rules in `examples/code.mx` use it: `begin…end`, `repeat…until`, both
 `case` forms and the outer `begin…end.` that becomes `main`.
 
 **And the check that mattered is that nothing changed.** `tests/pascal.sh`
@@ -355,10 +402,10 @@ formatting feature.
 `examples/asm.out` was checked and left alone: it already indents its
 instructions by hand and by assembly's own convention, so it has no customer.
 **The string template has no equivalent**, and is not getting one until
-something asks — `examples/pascal.mx` is the file that would use it, and its
+something asks: `examples/pascal.mx` is the file that would use it, and its
 output is recorded as deliberately wrong for other reasons.
 
-Verified at 14 examples, 78 error cases and six check scripts — 100 `ok` lines.
+Verified at 14 examples, 78 error cases and six check scripts: 100 `ok` lines.
 
 ## `tests/scale.sh`: one input large enough to hide nothing
 
@@ -382,7 +429,7 @@ goes into the repository.
 
 **The check is that it finishes, not that it finished quickly.** A wall-clock
 threshold on a shared runner is a flaky test, and what this guards against is
-not a machine 20% slower — it is a cost that squares. The old lexer took ~39
+not a machine 20% slower, it is a cost that squares. The old lexer took ~39
 seconds on this input and is killed by `tests/limit.sh`; the fixed one takes a
 sixth of a second. The limit is not a budget, it is the gap between those two
 answers. The times either side are **printed rather than asserted**, because a
@@ -390,15 +437,15 @@ number that is reported gets read and a number that is asserted gets tuned.
 
 **And it checks the answer, not only the clock.** The two programs share a
 preamble character for character, so the difference in output lines must equal
-the difference in statements exactly — which assumes nothing about how many
-lines a `program` and a `var` section become. A lexer that got fast by dropping
-tokens would pass a stopwatch and fails this.
+the difference in statements exactly, which assumes nothing about how many lines
+a `program` and a `var` section become. A lexer that got fast by dropping tokens
+would pass a stopwatch and fails this.
 
 **Proved by breaking it.** The window in `metaxis/src/lex.c` was reverted, the
 tool rebuilt, and `scale.sh` reported the timeout with the right message; then
 restored. A check nobody has watched fail is a check nobody knows the shape of.
 
-Verified at 14 examples, 78 error cases and **six** check scripts — 100 `ok`
+Verified at 14 examples, 78 error cases and **six** check scripts: 100 `ok`
 lines.
 
 ## `mx -t`, and the quadratic it found
@@ -423,10 +470,10 @@ goes to stderr**, so `mx -t f.mx > out` still writes the expansion and nothing
 else.
 
 **It is an instrument before it is a convenience.** The roadmap's **budget for
-expression-mode backtracking** asked for a measurement before a budget was picked — *a budget
-chosen without one is a number somebody made up* — and specified a large
-program in a declared dialect, timed. That measurement is now taken, and it
-settles the item **against**:
+expression-mode backtracking** asked for a measurement before a budget was
+picked, *a budget chosen without one is a number somebody made up*, and
+specified a large program in a declared dialect, timed. That measurement is now
+taken, and it settles the item **against**:
 
 | | |
 | --- | --- |
@@ -434,11 +481,11 @@ settles the item **against**:
 | generated 4985-line Pascal | 31,206 candidates, **0 restored**, deepest 5 |
 | the depth limit it runs against | 400 |
 
-**Backtracking was never the problem, and there is no budget to pick.** What
-the measurement found instead is in [POSTMORTEM.md](POSTMORTEM.md) 18: expansion
-was **quadratic in the size of the input** — 4985 lines took 67 seconds — and
-the cause was `regexec()` measuring the whole remaining file on every call,
-three classes per token. Matching against a bounded window took the same file to
+**Backtracking was never the problem, and there is no budget to pick.** What the
+measurement found instead is in [POSTMORTEM.md](POSTMORTEM.md) 18: expansion was
+**quadratic in the size of the input**, 4985 lines took 67 seconds, and the
+cause was `regexec()` measuring the whole remaining file on every call, three
+classes per token. Matching against a bounded window took the same file to
 **174ms**, and lexing is now linear: 16000 statements in 524ms.
 
 Two other quadratics were found and fixed on the way and **neither was the
@@ -446,10 +493,10 @@ cause**: `line_at()` rescanning from byte 0 per token, and `push()` copying the
 whole token array per token. Both are kept because they are right; their
 comments say plainly that they were not it.
 
-Verified at 14 examples, 78 error cases and five check scripts — 99 `ok` lines,
+Verified at 14 examples, 78 error cases and five check scripts: 99 `ok` lines,
 unchanged before and after, because none of this changes what is emitted.
 
-## `as`: a rule may emit more than once — and the reason it was built is half wrong
+## `as`: a rule may emit more than once, and the reason it was built is half wrong
 
 ```
 @syntax a "*" b 70 => "({a} * {b})"
@@ -459,7 +506,7 @@ unchanged before and after, because none of this changes what is emitted.
 One `=>` per target, `as <name>` tags one, `mx -b <name>` picks. **The untagged
 template is the default and the fallback**, so a second target costs only the
 rules that actually differ, and a file with one target is unchanged in every
-respect — one emit with no tag is what a rule has always had.
+respect: one emit with no tag is what a rule has always had.
 
 **The shape is what kept it small.** A rule carries an `Emit` array;
 `grammar_select()` runs once between the header and expansion and copies the
@@ -476,7 +523,7 @@ declines to answer by position everywhere else (§3.10).
 `examples/backends.mx` is the customer: one grammar, two targets, both C. `mx`
 brackets every operand and braces every branch; `mx -b tight` asks each operand
 its level and writes a single statement unbraced. **Both compile and both print
-`7 2`** — the difference is what it reads like and not what it means.
+`7 2`**: the difference is what it reads like and not what it means.
 
 ### And the falsification, which the item wrote down for itself
 
@@ -492,15 +539,15 @@ pattern by pattern:
   pair with an infix `a ":" s` rule; `code.mx` writes `[ v ":" s ]*` and walks
   two parallel lists, because a string template cannot interleave two lists at
   all.
-- So `pascal.mx` also carries **one rule the other does not need** — the arm
-  rule itself.
+- So `pascal.mx` also carries **one rule the other does not need**: the arm rule
+  itself.
 
 `as` chooses a **template**, never a pattern, so those three cannot be shared,
 and forcing them would mean giving one target a grammar written for the other.
 **The two Pascal files therefore do not merge**, and the 272 duplicated lines
 this was built to remove are still there.
 
-What is built is still worth having — it is the general mechanic, it has a
+What is built is still worth having: it is the general mechanic, it has a
 working customer, and it serves 36 of the 39 rules that motivated it. What is
 left is narrower and better understood than when the item was written, and it is
 back on [ROADMAP.md](ROADMAP.md) as that narrower thing.
@@ -511,7 +558,7 @@ measurement rather than an argument, and the measurement disagreed. The
 condition was met partially and precisely, which is the most useful way for one
 to be met.
 
-Verified at 14 examples, 78 error cases and five check scripts — **99 `ok`
+Verified at 14 examples, 78 error cases and five check scripts: **99 `ok`
 lines**, and two of them are one file read out twice.
 
 ## `@mode` stops replacing itself in silence
@@ -529,7 +576,7 @@ directives and widening it unasked is what the item it came from existed to
 prevent. Now six things take `override` and none is an exception.
 
 **The item named one silence and there were three.** `@mode expression zzz` also
-ignored the `zzz` — `@token` and `@separator` had been taught to refuse trailing
+ignored the `zzz`: `@token` and `@separator` had been taught to refuse trailing
 text earlier the same day and `@mode` was missed by that work too. And the two
 together had made a third: **`@mode expression override` parsed, and meant
 nothing**, because the word after the mode was never read. All three are closed
@@ -537,17 +584,17 @@ by the same eight lines, and the third could only ever have been found by
 writing the first two.
 
 **Why `override` rather than a flat refusal**, which was the item's open
-question. A second `@mode` in one file is always a mistake — but **two used
-files are the case that cannot be written around.** A file with no body can
-still declare the mode its rules need, because a set of text-mode rules is
-usable only in text mode, and a file that uses two such libraries has to be able
-to say which it meant. That is exactly the problem `override` was built for one
+question. A second `@mode` in one file is always a mistake, but **two used files
+are the case that cannot be written around.** A file with no body can still
+declare the mode its rules need, because a set of text-mode rules is usable only
+in text mode, and a file that uses two such libraries has to be able to say
+which it meant. That is exactly the problem `override` was built for one
 directive over, and giving `@mode` a second mechanic of its own would have been
 a new concept for no gain. The word does not become noise: `override` with
 nothing to displace is an error here as everywhere else.
 
-Verified at 13 examples, **72 error cases** and five check scripts — three new
-cases, one per silence — and **91 `ok` lines**. Closes the roadmap's
+Verified at 13 examples, **72 error cases** and five check scripts, and **91
+`ok` lines**. The three new cases are one per silence. Closes the roadmap's
 **`@mode` declared twice**, which is why the items below it moved up.
 
 *(Named, not numbered. An entry here that said "closes" and a roadmap number was wrong
@@ -560,7 +607,7 @@ number is handed to something else. A completion record cites what it closed.)*
 stating a property: **the tool is never run except through `tests/limit.sh`.**
 
 `tests/limit.sh` exists so a hang is reported rather than waited on, and it only
-works where it is used — a test script added next month that runs the binary
+works where it is used: a test script added next month that runs the binary
 directly is a hole in the one guard this suite has against the failure no
 recorded `.out` can express, and it would pass every check here on the day it
 was written.
@@ -569,9 +616,9 @@ was written.
 places the suite runs the tool" go through `limit.sh`. There were seven that
 morning and eight by the evening, and a close-out read the sentence and did not
 count ([POSTMORTEM.md](POSTMORTEM.md) 16). So the guard counts nothing. Three
-shapes name the binary without running it — where the path is *stored*, a make
-rule header, and handing the path to a script this same check covers — and each
-is exempted by name rather than by a pattern broad enough to hide a fourth.
+shapes name the binary without running it: where the path is *stored*, a make
+rule header, and handing the path to a script this same check covers. Each is
+exempted by name rather than by a pattern broad enough to hide a fourth.
 
 **It lives in `hygiene.sh` rather than in a sixth script** because that file was
 already the one that checks a *property* rather than an output, and a whole
@@ -579,9 +626,9 @@ script for one grep is one too many. That was the item's open decision and this
 is the answer.
 
 **Two things were found by writing it, and both are the same shape.** The first
-pattern matched *its own text* — this file is one of the files being scanned —
-so the guard reported itself; the bracket classes in it are what fix that, and
-they are commented, because they look like decoration and are not. The second is
+pattern matched *its own text*, this file being one of the files scanned, so
+the guard reported itself; the bracket classes in it are what fix that, and they
+are commented, because they look like decoration and are not. The second is
 worse and is the one worth carrying: an early draft had a regex `awk` could not
 parse, so **`awk` exited 2, the substitution came back empty, and the guard
 printed `ok`.** A check that passes when its own machinery breaks is worse than
@@ -589,10 +636,10 @@ no check, because it also silences the check that would have caught the thing.
 The `|| exit` after the substitution is that fix, and it is the first thing in
 this suite to guard its own failure rather than only the tool's.
 
-Proved by planting a violation — `"$MX" examples/first.mx` appended to
-`tests/asm.sh` — and watching it come back with the file and line, then
-removing it. Closes the roadmap's **check that every run of `mx` is under the
-limit**, which is why the items below it moved up.
+Proved by planting a violation, `"$MX" examples/first.mx` appended to
+`tests/asm.sh`, and watching it come back with the file and line, then removing
+it. Closes the roadmap's **check that every run of `mx` is under the limit**,
+which is why the items below it moved up.
 
 Verified at 13 examples, 69 error cases and five check scripts, **88 `ok` lines**
 where there were 87.
@@ -619,11 +666,11 @@ macos-latest    ok      asm.sh: it assembles, runs, and prints 14 90 10 20
 
 **The skip branch in `tests/asm.sh` had existed since stage 2 and had never once
 been observed to work**, because the author's machine is arm64 and the branch is
-unreachable there. Its first execution was on this run. The Linux row is also the
-first time this code has been compiled by anything but clang — **gcc 13.3.0,
-`-Wall -Wextra`, no warnings** — and the first time `tests/limit.sh` has run
-under `dash` rather than macOS `sh`, which matters because that file does process
-group management and is the one piece of the suite most likely to be
+unreachable there. Its first execution was on this run. The Linux row is also
+the first time this code has been compiled by anything but clang, **gcc 13.3.0,
+`-Wall -Wextra`, no warnings**, and the first time `tests/limit.sh` has run
+under `dash` rather than macOS `sh`, which matters because that file does
+process group management and is the one piece of the suite most likely to be
 shell-specific.
 
 `LIMIT` is raised to 30 for the runners. A shared machine is a loaded machine
@@ -640,7 +687,7 @@ compared against Proto and against nothing else. Every argument in `docs/` had
 been checked against the code, which is the only thing the tree can check.
 
 **What it is.** Three families, because the tools that do something like this
-fail to be this tool in three different directions rather than one — a codemod
+fail to be this tool in three different directions rather than one: a codemod
 family that is agnostic in delivery and not in kind (Comby ships a delimiter
 description per language and cannot read a notation invented this morning), a
 transformation-system family that reads anything and charges a grammar artefact
@@ -660,11 +707,11 @@ scored by evidence from outside the repository.
 pattern side and quoted output inside `.OUT` in 1964, which is this notation's
 premise, both halves, on a machine with 8K of six-bit memory. `examples/code.mx`
 is 272 lines duplicated from `examples/pascal.mx` and that is a maintenance cost
-rather than a demonstration — now [ROADMAP.md](ROADMAP.md) 3. And **collection
+rather than a demonstration, now [ROADMAP.md](ROADMAP.md) 3. And **collection
 attributes** (JastAdd, Silver) are a better-shaped answer to
 [direction.md](direction.md)'s declared environment than the key/value store it
 sketches: contribution is union rather than assignment, so two `@use`'d files
-contributing is the intended case and rule locality survives — with a price this
+contributing is the intended case and rule locality survives, with a price this
 tool is exposed to, since the aggregate is not known until the last contribution
 and a one-pass tool would need a placeholder resolved afterwards.
 
@@ -674,7 +721,7 @@ mechanic is picked by finding the translator that would ask for it; a survey
 finds mechanics the other way round, so the eight without a customer stayed in
 `prior-art.md`, which is now where an idea with no customer lives.
 
-Verified at 13 examples, 69 error cases and five check scripts, green — no code
+Verified at 13 examples, 69 error cases and five check scripts, green: no code
 changed.
 
 ## Stage 3: a block that is an indentation
@@ -686,18 +733,18 @@ changed.
 
 Python ends a block by out-denting. Nothing in this tool could say that: a
 `stmts` hole is refused unless a word follows it to stop at, and Python has no
-such word — no `}`, no `end`. **This is the first delimiter the tool owns rather
+such word: no `}`, no `end`. **This is the first delimiter the tool owns rather
 than one a string declares**, which is why it was a decision before it was a
 task, and the decision is the entry.
 
 **Two halves, and they are independent.** `indent` on `@separator` gives the
 lexer a stack of columns and two tokens no file spells; the `block` kind is how
-a pattern reads them. The lexer half is the bulk of the work — and it is the
-same bulk under every notation that was considered, which is what freed the
-notation to be chosen on how it reads.
+a pattern reads them. The lexer half is the bulk of the work, and it is the same
+bulk under every notation that was considered, which is what freed the notation
+to be chosen on how it reads.
 
-**Why `block` is a kind and not a pair of quoted words.** A synthetic marker —
-`"⇥" b:stmts "⇤"`, with the lexer emitting tokens spelled that way — needs
+**Why `block` is a kind and not a pair of quoted words.** A synthetic marker,
+`"⇥" b:stmts "⇤"`, with the lexer emitting tokens spelled that way, needs
 *nothing* in the tool and was how the whole thing was rehearsed before any code
 was written. It was declined. The premise is that a quoted thing is foreign text
 **you can find in the file**; an indent has no spelling, so such a string quotes
@@ -708,8 +755,8 @@ name a token nobody wrote, quoting has stopped being the thing that tells a
 mention from a declaration. A bare word outside the quotes is how this notation
 already says *this one is Metaxis's*, and it says it here.
 
-A third spelling — letting a `stmts` hole with no stop word mean *to the dedent*
-under a nesting separator — was declined for costing an error: a rule ending in
+A third spelling, letting a `stmts` hole with no stop word mean *to the dedent*
+under a nesting separator, was declined for costing an error: a rule ending in
 `b:stmts` because its author forgot the word would be **silently accepted**.
 That is the silence `override` was built to remove, one directive over.
 
@@ -720,9 +767,9 @@ to read before anyone proposes it again.
 
 And here is the rehearsal, whole, because an argument against something is worth
 nothing without the version that **works**. This ran before any of the above was
-built, on the tool exactly as it then stood, and produced correct nested C on its
-first go — the markers standing where an indent-aware lexer would later put the
-two tokens it emits:
+built, on the tool exactly as it then stood, and produced correct nested C on
+its first go, the markers standing where an indent-aware lexer would later put
+the two tokens it emits:
 
 ```
 @comment "#" eol
@@ -760,23 +807,23 @@ of in a scratch directory that no clone has.
 - **Nesting.** An inner block consumes its own `dedent` before an enclosing hole
   can see it, because the hole owns both delimiters.
 - **A word after a block.** `b:block "else"` works, and a `block` hole is
-  therefore not greedy — it ends itself, so `two holes in a row` does not apply
+  therefore not greedy: it ends itself, so `two holes in a row` does not apply
   to what follows it. This is the shape a `stmts` hole could never have had.
 - **A blank or comment-only line closes nothing**, because every newline
   restarts the column count and the indentation measured is always that of the
   line carrying the next token.
 - **A statement after a block needs no separator**, because *a separator is not
-  wanted after one that ended in a word* already covers it — `}` and `end` and a
+  wanted after one that ended in a word* already covers it: `}` and `end` and a
   `dedent` are one case. The output side needed nothing invented at all:
   `terminated(b)` answers for a block's last statement exactly as it does for
   `begin … end`, which is what stops the `}` closing over an unterminated one.
 
 **And a test that does something no other one here does.** The body of
-`examples/python.mx` is Python — not Python-shaped, Python, which `python3`
-runs. So `tests/python.sh` compiles the C *and* runs the source, and compares
-the two answers. A translation that is wrong the same way on both sides of an
-operator passes a diff and passes `tests/pascal.sh`; it fails this. Both halves
-print `40 80 50`.
+`examples/python.mx` is Python: not Python-shaped, Python, which `python3` runs.
+So `tests/python.sh` compiles the C *and* runs the source, and compares the two
+answers. A translation that is wrong the same way on both sides of an operator
+passes a diff and passes `tests/pascal.sh`; it fails this. Both halves print `40
+80 50`.
 
 **What the example does not do, in its own closing note.** `elif` is one rule
 per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 6 declines to build
@@ -808,14 +855,14 @@ not go red, it stopped.
 to kill it, which is what GNU `timeout` uses. macOS has no `timeout(1)` and this
 tree takes no dependencies, so it is the portable shape: start the command, race
 it against a sleeper, and let whichever finishes first decide. **Every place the
-suite runs `mx` goes through it** — the Makefile's `check` and `record` loops and
+suite runs `mx` goes through it**: the Makefile's `check` and `record` loops and
 one or two calls in each test script. `make check LIMIT=30` raises it for a
 loaded machine.
 
 *This paragraph said "all six places" when it was written and there were seven,
 and the close-out that day did not catch it; there are eight now. The count has
 been taken out rather than corrected, because a number counted by hand in prose
-is a claim nothing checks — the check that would is now in `tests/hygiene.sh`,
+is a claim nothing checks. The check that would is now in `tests/hygiene.sh`,
 and [POSTMORTEM.md](POSTMORTEM.md) 16 is what it cost.*
 
 **It costs nothing when nothing hangs.** The full run is 2.3 seconds, and the
@@ -825,7 +872,7 @@ seconds is three orders of magnitude of headroom.
 **Two mistakes while building it, both kept in the file's comments** because
 both are easy to make again. The watchdog inherited stdout, so under
 `x=$(limit.sh …)` the command substitution waited for the *sleeper* to release
-the pipe and a 62-case run took over ten minutes — a background process holds a
+the pipe and a 62-case run took over ten minutes: a background process holds a
 pipe whether or not it writes to it. And `kill -9` on the child orphaned the
 child's own children, which is the precise failure this file exists because of;
 the command now runs under `set -m` and the process *group* is killed.
@@ -851,24 +898,24 @@ examples/pascal.out   void Scale(int n, int k)      <- recorded, and wrong
 is the first thing to put weight on `@fragment` beyond the case it was built
 for.
 
-**A type became a rule of its own** — `@syntax "real" => "double"`, a word
-alone. That is what lets a parameter list hold a *hole* where the type goes, so
-the fragment is `[ p:name ":" t ]* sep ";"` with **two** holes, and the template
-walks them in step with `for i, x in p` and `at(t, i)`. `@fragment` was argued on
-2026-09-05 against a spelling that would have capped a fragment at one hole; this
-is the customer that would have broken it, arriving the same day.
+**A type became a rule of its own**: `@syntax "real" => "double"`, a word alone.
+That is what lets a parameter list hold a *hole* where the type goes, so the
+fragment is `[ p:name ":" t ]* sep ";"` with **two** holes, and the template
+walks them in step with `for i, x in p` and `at(t, i)`. `@fragment` was argued
+on 2026-09-05 against a spelling that would have capped a fragment at one hole;
+this is the customer that would have broken it, arriving the same day.
 
 **The declaration cannot use the hole, and that is a finding.** `a ":" t` reads
 every `case` arm as a declaration: `1: writeln(11)` and `mod: integer` are both
 `expr ":" expr` and nothing tells them apart without knowing what the left side
 is. So declarations keep one quoted rule per type and the parameter list gets
-the hole — legal only because inside `"(" … ")"` after a procedure name there is
+the hole, legal only because inside `"(" … ")"` after a procedure name there is
 no arm to confuse it with. It is the same context wall as `writeln`, `Banner;`
 and C's `typedef`, reached from the type side.
 
 **The string template writes the wrong type, on purpose.** `join ", int "` puts
 one word in front of every turn and cannot vary it, and a string template
-splices each list joined with no way to interleave two — the same limitation the
+splices each list joined with no way to interleave two: the same limitation the
 `case` arms met, but with no workaround available, because the two lists have to
 come back apart in the output. So `examples/pascal.mx` emits `int k` for a
 parameter declared `real`: output that compiles, links, runs and is wrong.
@@ -883,9 +930,9 @@ kind needs writing down.
 
 **The program body is still shared.** Both files read the same Pascal, so every
 difference between the two recorded outputs is still caused by the template form
-alone — which is what makes that diff an argument rather than a comparison of
-two programs. Keeping that was the reason for choosing this over letting the
-bodies diverge.
+alone, which is what makes that diff an argument rather than a comparison of two
+programs. Keeping that was the reason for choosing this over letting the bodies
+diverge.
 
 **What it did not do.** `writeln(k)` is not written, because printing a `real`
 would need the rule to know its argument's type. That is [ROADMAP.md](ROADMAP.md)
@@ -906,14 +953,14 @@ Verified at 12 examples, 62 error cases, `tests/hygiene.sh`, `tests/asm.sh`, and
 against those names first. So a class called one of them was declared, accepted,
 and never consulted: `@token expr` produced no complaint at all and a rule using
 `x:expr` quietly read an expression, and `@token text` surfaced as `a 'text'
-hole belongs to @mode text` — an error about the wrong thing, naming a mode the
+hole belongs to @mode text`: an error about the wrong thing, naming a mode the
 file may never have mentioned.
 
 **Refusing the name at `@token` is the whole fix**, because those are the only
 two namespaces that meet. A `@fragment` is spliced with `@name` and shares a
 namespace with neither, which is why this item stayed three names and two lines
-rather than growing when fragments arrived — see the entry below for why that
-was the right side to put it on.
+rather than growing when fragments arrived. See the entry below for why that was
+the right side to put it on.
 
 Found while writing a Python example whose string class was called `text`.
 
@@ -932,7 +979,7 @@ Verified at 12 examples byte-identical, 62 error cases, `tests/hygiene.sh`,
 `examples/pascal.mx` and `examples/code.mx` each wrote that parameter list
 twice, once in `procedure` and once in `function`, because this tool could name
 a rule and a piece of template and nothing else. Each now writes it once, and
-both files expand byte-identically to what they expanded to before — which is
+both files expand byte-identically to what they expanded to before, which is
 what makes it a refactor rather than a rewrite.
 
 **It is spliced, not called, and that is the design decision.** `@template`
@@ -940,13 +987,13 @@ named a piece of template on the same day and the open question was whether
 these were one mechanic or two. They are two. A template is *called* at
 expansion, takes arguments, has a scope and can recurse; a fragment is copied
 into the pattern *at declaration* and has none of those. By the time any rule is
-matched, its elements are indistinguishable from ones written out by hand — the
+matched, its elements are indistinguishable from ones written out by hand: the
 rule is checked, sealed, matched and clashed as one pattern, and nothing
 downstream of the header knows a fragment was ever involved.
 
 **It brings its own holes**, which is why the two rules above splice `{p}`
 without declaring `p`. That is also the argument for the spelling. The obvious
-alternative was to write it where a hole's kind goes — `p:params`, which is what
+alternative was to write it where a hole's kind goes: `p:params`, which is what
 [direction.md](direction.md) had sketched and what ROADMAP called `@kind`. A
 *kind* says what one hole holds; a fragment says what sequence of elements goes
 here. Putting both in one syntactic slot would have been the same mistake that
@@ -966,14 +1013,14 @@ directive and is forced rather than chosen. Everywhere else the word goes last,
 because that is the one place a bare word cannot be part of the thing being
 declared. A fragment's pattern runs to the end of the directive, so there is no
 such place after it: a trailing `override` would be read as a hole called
-`override` — precisely the silent misreading the word exists to prevent.
+`override`, precisely the silent misreading the word exists to prevent.
 
 **What it cost was one new refusal, and not the one expected.** A pattern that
 declares one hole name twice is now an error. `bind_put` fills the first hole it
 finds by name, so the second could never be reached; writing that by hand was
 always a mistake and nothing in the tree had ever written one, so nothing
 refused it. Splicing one fragment twice into a rule is two of every hole it
-declares, which makes the mistake easy to make by accident — so the check landed
+declares, which makes the mistake easy to make by accident, so the check landed
 with the feature that asked for it, and it refuses the hand-written case too.
 
 Verified at 12 examples byte-identical, 59 error cases, `tests/hygiene.sh`,
@@ -989,17 +1036,18 @@ Verified at 12 examples byte-identical, 59 error cases, `tests/hygiene.sh`,
 @syntax a "+" b 60 => { load(a) load(b) emit "\tadd x0, x0, x1\n" }
 ```
 
-`examples/asm.mx` had written that test out at every operand — eight times,
-identically — because this tool could name a rule and nothing else. It now
-writes it once.
+`examples/asm.mx` had written that test out at every operand, eight times,
+identically, because this tool could name a rule and nothing else. It now writes
+it once.
 
 **Called as a statement, and that is the design decision.** A template emits
 into whatever called it rather than returning a value, because `emit` already
 writes to one place and a return would have needed a second mechanism for
 nothing. So a template call is a statement form, a builtin call stays an
 expression, and the two mistakes that invites each get their own message rather
-than a shared confusing one: `'level' is a builtin and gives a value — put it in
-an 'emit'`, and `'t' is a template — it is called as a statement`.
+than a shared confusing one:
+`'level' is a builtin and gives a value -- put it in an 'emit'`, and
+`'t' is a template -- it is called as a statement`.
 
 **Its body sees its parameters and nothing else.** Not the caller's holes. That
 is what makes it readable on its own and checkable where it is written, and it
@@ -1012,14 +1060,14 @@ declared after it, or one that arrived through `@use`, and the order a file
 writes its directives in cannot change the answer.
 
 **What it actually bought, measured rather than asserted.** The rules section of
-`examples/asm.mx` went from 2458 bytes to 1473 — a little under half — and
-*gained three lines*, because eight copies of a hundred-character test became
-eight calls of eight characters plus a three-line declaration. The expansion is
+`examples/asm.mx` went from 2458 bytes to 1473, a little under half, and *gained
+three lines*, because eight copies of a hundred-character test became eight
+calls of eight characters plus a three-line declaration. The expansion is
 byte-identical to what the file emitted before, which is the proof that the
 refactor is one: `diff` against the recorded output is empty.
 
 **Two things found while building it.** A statement that is a bare word with no
-`(` is not assumed to be a call — saying which statement forms exist is more use
+`(` is not assumed to be a call: saying which statement forms exist is more use
 than guessing at the one meant, so that message is repinned rather than
 narrowed. And parameters were capped at 8 in the evaluator with a silent
 truncation, which surfaced as `nothing here is called 'i'` for a parameter that
@@ -1035,14 +1083,14 @@ assembles, links against a four-line runtime and runs on the CPU it is written
 for. `2 + 3 * 4` prints 14, `1 < 2 ? 10 : 20` prints 10, and the conditional
 jumps to labels the input never mentions.
 
-**The question stage 2 existed to answer was whether the output side
-generalises past targets shaped like the input, and it does.** A Pascal
-expression becomes a C expression one node at a time — the output nests where
-the input nested. Assembly does not nest: it is a sequence, and an expression is
-a run of instructions leaving a value somewhere agreed. So the value a rule
-passes up stopped being *the phrase* and became *the code that computes the
-phrase*, and **nothing in the tool had to change for that**. It is the same
-bottom-up combining it always was, which is the strongest confirmation
+**The question stage 2 existed to answer was whether the output side generalises
+past targets shaped like the input, and it does.** A Pascal expression becomes a
+C expression one node at a time: the output nests where the input nested.
+Assembly does not nest: it is a sequence, and an expression is a run of
+instructions leaving a value somewhere agreed. So the value a rule passes up
+stopped being *the phrase* and became *the code that computes the phrase*, and
+**nothing in the tool had to change for that**. It is the same bottom-up
+combining it always was, which is the strongest confirmation
 [direction.md](direction.md)'s framing has had.
 
 The discipline is a stack machine: every rule's output is code that leaves
@@ -1052,12 +1100,12 @@ rule, which is what keeps the rules composable at all.
 
 **Two things had to be worked around, and both are findings.**
 
-**A literal is not code.** `3` is a bare token, a rule cannot match a bare token,
-so nothing turns it into `mov x0, #3`. What distinguishes a literal from a
-subexpression is `level(h)`: every rule in the file declares a level, so
+**A literal is not code.** `3` is a bare token, a rule cannot match a bare
+token, so nothing turns it into `mov x0, #3`. What distinguishes a literal from
+a subexpression is `level(h)`: every rule in the file declares a level, so
 `level(h) == 1000` means *nothing here produced this*. That works, and it is the
 same limitation `examples/pascal.mx` meets when it cannot translate a string
-literal — met from the opposite direction, at the leaves of a code generator
+literal, met from the opposite direction, at the leaves of a code generator
 instead of inside a call.
 
 **A label is needed twice**, at the branch and at the place it jumps to, and
@@ -1080,7 +1128,7 @@ and `tests/asm.sh`; `make check` clean.*
 ## Arithmetic, `num(h)`, and a file that runs its language instead of writing it
 
 `-`, `*`, `/` and `%` in a code template, binding tighter than `+` `-`, which
-bind tighter than a comparison. `num(h)` reads a hole's text as a number — the
+bind tighter than a comparison. `num(h)` reads a hole's text as a number: the
 whole text or none of it, so `'12abc'` is an error rather than 12. `+` now
 **adds** when both sides are already numbers and **joins** when they are not,
 which is the rule comparison has always used; nothing else about it changed.
@@ -1118,16 +1166,16 @@ if 1 then 10 else (1 / 0)      →      pt: '/' by zero
 A hole is filled by parsing and expanding its subexpression **before** the
 template runs, so a rule can select between two values that have already been
 computed and cannot leave one uncomputed. **Evaluation is eager and cannot be
-otherwise.** Every construct an interpreter needs that a calculator does not —
-a short circuit, a loop, a recursion, a definition used before it runs — is a
-thing that must *not* happen, and none of them is reachable.
+otherwise.** Every construct an interpreter needs that a calculator does not is
+a thing that must *not* happen, and none of them is reachable: a short circuit,
+a loop, a recursion, a definition used before it runs.
 
 So what arithmetic bought is exact: an **evaluator for expressions**. The gap to
-an interpreter is **deferral** — a hole held unexpanded and run on demand — which
+an interpreter is **deferral**, a hole held unexpanded and run on demand, which
 is a much larger idea than this was, and is not on the roadmap because nothing
 has asked for it yet. direction.md's naming section is rewritten to say so, and
-records that the risk it had predicted (would it read well?) was not the one that
-bit.
+records that the risk it had predicted (would it read well?) was not the one
+that bit.
 
 *Verified at 11 examples, 42 error cases, `tests/hygiene.sh` and
 `tests/pascal.sh`; `make check` clean.*
@@ -1139,7 +1187,7 @@ nothing could use: `[ v ":" s ]*` gives two **parallel lists**, and neither kind
 of template could put them back together. A string one splices each of them
 joined; a code one's `for` walked a single list with no way to say *where* it
 was. So the pair had to be folded into one value by an infix rule before the
-group ever saw it — which is what `examples/pascal.mx` still does for its `case`
+group ever saw it, which is what `examples/pascal.mx` still does for its `case`
 arms, and what it now says it is doing.
 
 ```
@@ -1156,12 +1204,12 @@ counting from 0. One name is the old form and means what it always did.
 
 **`at` out of range is an error, not an empty string**, and that is the part
 worth arguing about. Two groups of different lengths is exactly the mistake this
-feature invites — it is the failure mode of walking two lists in step — so the
-one place that can notice it says so, rather than emitting nothing and letting a
+feature invites, the failure mode of walking two lists in step, so the one
+place that can notice it says so, rather than emitting nothing and letting a
 short arm list read as a translation that worked.
 
 **The bug in it was mine and it hung.** Two frames go on the environment for a
-loop with an index, and the restore said `ev->env = fi.up` — which is the *first*
+loop with an index, and the restore said `ev->env = fi.up`, which is the *first*
 frame, not what was there before both. The second turn then linked a frame to
 itself, and `lookup` walked a cycle forever. It surfaced as the first test
 hanging rather than as a wrong answer, which is the one kind of failure this
@@ -1195,10 +1243,10 @@ end
 ```
 
 Both translate rather than rename. Pascal's `until` says when to *stop* and C's
-`while` says when to *go on*, so the condition is inverted. Pascal's case arms do
-not fall through and C's do, so every arm gains a `break` the source never wrote
-— and the recorded output proves it, because a missing `break` would print the
-default arm as well and `tests/pascal.sh` checks the numbers.
+`while` says when to *go on*, so the condition is inverted. Pascal's case arms
+do not fall through and C's do, so every arm gains a `break` the source never
+wrote, and the recorded output proves it, because a missing `break` would print
+the default arm as well and `tests/pascal.sh` checks the numbers.
 
 **The roadmap said `case` needed no new mechanics. That was wrong**, and finding
 out how is the useful part. The arms want to be a repeated group of
@@ -1207,17 +1255,17 @@ parallel lists**, and nothing puts them back together. A code template's `for`
 walks one list and has no index; a string template splices each of them joined.
 There is no `zip` and no `v[i]`.
 
-**The workaround is to make the arm a rule** — `a ":" s` — so the pair becomes
-one value before the group ever sees it, and the group has a single hole to
-loop over. It works, and it is not a general answer: it needs the two parts to
-be joinable by an operator rule, and it only parses because `a ":" "integer"` is
+**The workaround is to make the arm a rule**, `a ":" s`, so the pair becomes one
+value before the group ever sees it, and the group has a single hole to loop
+over. It works, and it is not a general answer: it needs the two parts to be
+joinable by an operator rule, and it only parses because `a ":" "integer"` is
 declared first and both patterns are three elements long, so declaration order
 is what tries the type before the arm. Add a second Pascal type and it has to go
 above that line, with nothing enforcing it. Both files say so in a comment.
 
 So the roadmap gained an item with a customer rather than a guess, which is the
 second time this stage has produced one: `for` wants an index, or a second loop
-variable. Its next customer is already visible — a `var` section whose
+variable. Its next customer is already visible: a `var` section whose
 declarations have different types is the same shape, and `real` beside `integer`
 walks into it.
 
@@ -1252,7 +1300,7 @@ values instead of two.
 Standard Pascal returns by assigning to the function's own name, and that is not
 reachable here: the `:=` inside a body is an ordinary rule, and nothing tells it
 which function it is inside. A rule sees its own pattern and no context at all.
-So `Result := e` is a rule of its own — which also demonstrates a nud rule
+So `Result := e` is a rule of its own, which also demonstrates a nud rule
 claiming a token a led rule would otherwise have taken, and leaves `Result`
 usable as an ordinary name everywhere else.
 
@@ -1266,7 +1314,7 @@ two parameters have different types, which is where the loop earns its place and
 where `real` will put it.
 
 **And one thing that cannot be written at all.** A parameterless procedure is
-called in Pascal by writing its bare name — `Banner;` — and nothing distinguishes
+called in Pascal by writing its bare name, `Banner;`, and nothing distinguishes
 that from reading a variable called `Banner`. Same token, same position; telling
 them apart wants a symbol table, which this tool does not have and has not
 claimed to. So the example declares none: it could be written and never called.
@@ -1294,7 +1342,7 @@ statement*, so a template can decide whether to **punctuate** it.
 
 C wants `if (c) x = 1; else …` and forbids `if (c) { … }; else …`, and which of
 the two a branch is depends entirely on the rule that filled the hole. Before
-this, `examples/code.mx` braced every branch unconditionally — correct either
+this, `examples/code.mx` braced every branch unconditionally: correct either
 way, and noise around every single statement.
 
 **Nothing had to be computed; something had to stop being thrown away.** The
@@ -1302,7 +1350,7 @@ flag already existed per rule, and the parse already carried it: `Out` returns
 `{ level, terminated }` from `p_expr` and only `level` reached `bind_put`.
 `Bind` gained the field beside `level`, `Val` gained it beside `level`, and the
 builtin reads it the way `level` does. That is the whole change, and the shape
-of it is the point — a question a template could not ask was one field of
+of it is the point: a question a template could not ask was one field of
 plumbing, not a new idea.
 
 **A `stmts` hole answers for its last statement**, which is the one a word after
@@ -1311,9 +1359,9 @@ own joining and discarding it at the end. A bare token, and a hole nothing
 filled, are false.
 
 **Two things only a compiler could have said.** The first draft emitted the
-semicolon at the end of a rule as well as before an `else`, and got `x = 1;;`
-— because `@separator` is what ends a statement, and a rule that also ends one
-is writing it twice. The rule is that **a template punctuates inside itself and
+semicolon at the end of a rule as well as before an `else`, and got `x = 1;;`,
+because `@separator` is what ends a statement, and a rule that also ends one is
+writing it twice. The rule is that **a template punctuates inside itself and
 never at its end**. The second: a block's last statement had never had a
 semicolon at all, since a separator goes *between* two statements and never
 after the last, and `begin … end` closed straight over it. Both were invisible
@@ -1323,8 +1371,8 @@ until `tests/pascal.sh` started compiling, and one of them predates this change.
 A string template has no way to emit conditionally, so this is a code-template
 builtin exactly as `level` and `group` are. `examples/pascal.mx` still braces
 every branch, and the recorded diff between the two files now shows three
-differences rather than two — parentheses, punctuation, and the literal — one
-for each thing a template can ask that a string cannot.
+differences rather than two: parentheses, punctuation, and the literal, one for
+each thing a template can ask that a string cannot.
 
 *Verified at 10 examples, 36 error cases, `tests/hygiene.sh` and
 `tests/pascal.sh`; `make check` clean.*
@@ -1343,7 +1391,7 @@ ok      pascal.sh: the C compiles, runs, and computes 39
 ```
 
 **The number is the point.** Every other example is pinned to a recorded `.out`,
-which catches a change and nothing else — an expansion can be wrong in any way
+which catches a change and nothing else: an expansion can be wrong in any way
 that still looks plausible and the diff passes it. `39` is what the Pascal
 computes, worked out from the Pascal; if `mod`, the precedence, the loop or a
 branch were translated wrongly it would be some other number and nothing else in
@@ -1356,13 +1404,13 @@ a branch that is a block must not have one. Wrong since the day they were
 written, green in every recorded output the whole time, because it was plausible.
 Every branch is now braced, which is correct either way.
 
-**And it named the next mechanic.** Which of those two a branch is depends on the
-rule that filled the hole, and that is exactly what `terminated` already records
-— per rule, tracked through the parse. A template cannot ask: `level(h)` reads
-`Bind.level` and there is no `Bind.terminated` beside it. So the braces are the
-brace-shaped twin of `pascal.out`'s parenthesis noise, with the same cause, and
-`terminated(h)` is on the roadmap with a customer that asked for it rather than
-a guess that it would be wanted.
+**And it named the next mechanic.** Which of those two a branch is depends on
+the rule that filled the hole, and that is exactly what `terminated` already
+records, per rule, tracked through the parse. A template cannot ask: `level(h)`
+reads `Bind.level` and there is no `Bind.terminated` beside it. So the braces
+are the brace-shaped twin of `pascal.out`'s parenthesis noise, with the same
+cause, and `terminated(h)` is on the roadmap with a customer that asked for it
+rather than a guess that it would be wanted.
 
 **`var` needed no new machinery**, which was the useful thing to learn about the
 stage. A type is a quoted *word* rather than a `name` hole, because a hole
@@ -1370,14 +1418,14 @@ splices the token it matched and `integer` has to come out as `int`; `,` is an
 ordinary infix rule at 20 and `:` one at 15, so `total, mod: integer` parses the
 way it reads; and `var` is a rule that does nothing to what follows it, which is
 what lets one `var` cover a section the way Pascal writes it. Everything else
-stage 1 still wants — `procedure`, `function`, `repeat`, `case` — is the same
-kind of work.
+stage 1 still wants is the same kind of work: `procedure`, `function`,
+`repeat`, `case`.
 
 **The half that stays wrong is pinned too.** `pascal.mx` cannot translate
 `'it''s'` into `"it's"`, and its output is the one in this tree expected *not*
 to compile. `tests/pascal.sh` fails if it ever starts, so whoever fixes it has
-to edit the test and the file's closing note in the same commit — the same
-device `tests/hygiene.sh` uses on `bump: 105 0`, for the same reason.
+to edit the test and the file's closing note in the same commit: the same device
+`tests/hygiene.sh` uses on `bump: 105 0`, for the same reason.
 
 *Verified at 10 examples, 36 error cases, `tests/hygiene.sh` and
 `tests/pascal.sh`; `make check` clean.*
@@ -1386,7 +1434,7 @@ device `tests/hygiene.sh` uses on `bump: 105 0`, for the same reason.
 
 Three things could be declared twice and quietly were: a rule's pattern, a
 `@token` class name, and `@separator`. Now the second is an error naming both
-lines, unless it says `override`, in which case it wins and nothing is said —
+lines, unless it says `override`, in which case it wins and nothing is said,
 because it was said in the source.
 
 ```
@@ -1398,13 +1446,13 @@ because it was said in the source.
 work.** It said the later declaration wins, silently. For `@token` and
 `@separator` it did. For a *rule* it is the opposite: candidates under one
 leading word are tried longest-first with declaration order breaking a tie, so
-the **earlier** wins and the later is unreachable — the file that wrote the
+the **earlier** wins and the later is unreachable: the file that wrote the
 second template gets the first one's output. So the tool had two opposite silent
 behaviours and the item's own example, `"+"`, was the one it described wrongly.
 
 **A diamond had to stop being a collision before a collision rule could mean
 anything.** `@use` read a file once per route to it, so `a` and `b` both using
-`base`, and one file using both, declared everything in `base` twice — a file
+`base`, and one file using both, declared everything in `base` twice: a file
 colliding with itself over declarations nobody wrote twice, which any rule here
 would have fired on first. A file is now read once, identity being the resolved
 path. Proto does the same and for the same reason. A cycle now ends instead of
@@ -1419,7 +1467,7 @@ file say it. `override` with nothing to displace is refused too, so the word
 stays true when the declaration it was written against moves away.
 
 **The word could only go in one place, and the notation put it there.** Left of
-the `=>` a bare word is a hole — the premise the whole notation rests on — and a
+the `=>` a bare word is a hole, the premise the whole notation rests on, and a
 rule whose first hole is called `override` is legal. After the template there is
 no pattern, so a bare word cannot be anything else; `terminated` was already
 there for exactly that reason. `terminated` and `override` may both appear, in
@@ -1428,7 +1476,7 @@ either order, and a hole may still be called either.
 **What counts as one pattern is what matching can tell apart**: same elements,
 same order, same words, same hole kinds, same group shapes. Hole names are not
 part of it, since `a "+" b` and `x "+" y` match the same text. Levels are not
-either. Two rules that merely share a leading word do not collide — that is the
+either. Two rules that merely share a leading word do not collide: that is the
 candidate mechanism, and `if`/`if…else` and `examples/poem.mx`'s `-`/`--`/`---`
 depend on it.
 
@@ -1438,40 +1486,40 @@ the line that wrote it. A class and a separator are checked where they are
 written, because a later one replaces the earlier in place.
 
 `examples/use.mx` is the recorded evidence: it uses `lib/arith.mx` and a new
-`lib/vector.mx` that uses `lib/arith.mx` too — a diamond — and overrides
-arith's `/`.
+`lib/vector.mx` that uses `lib/arith.mx` too, a diamond, and overrides arith's
+`/`.
 
 **And one thing found while testing it.** `@token name "…" garbage` and
-`@separator ";" garbage` were accepted with the extra word ignored — `@syntax`
+`@separator ";" garbage` were accepted with the extra word ignored: `@syntax`
 had always refused trailing text and these two never had. It stopped being
 harmless the moment they took an optional bare word: `dtake` matches a prefix,
-so `overridden` would have been read as `override` with three characters
-dropped in silence. Both now refuse trailing text.
+so `overridden` would have been read as `override` with three characters dropped
+in silence. Both now refuse trailing text.
 
 *Verified at 9 examples, 36 error cases, `tests/hygiene.sh`; `make check` clean.*
 
 ## A class-kind hole is refused in text mode
 
 `@syntax "[" x:name "]"` under `@mode text` used to take everything up to the
-`]` and never consult the kind. It is now refused where it is written:
-`'x:name' asks for one token of a class, and text mode has no tokens — every
-hole there is text`.
+`]` and never consult the kind. It is now refused where it is written: `'x:name'
+asks for one token of a class, and text mode has no tokens -- every hole there
+is text`.
 
 **Refused rather than honoured, and only the class kind.** `expr` and `stmts`
 both mean *read up to the word that stops you*, which is exactly what a
 text-mode hole already does, so those degrade honestly and were left alone. A
-class kind says something else — *one token, matching this regex* — and text
-mode has no tokens at all to say it about. So it was not a kind being
-approximated; it was a kind being ignored while the file went on looking
-correct. Honouring it, by running the class's regex at that position, is what to
-build if somebody asks for it; nobody has, and refusing costs nothing that
-`:text` or a bare hole does not already give.
+class kind says something else, *one token, matching this regex*, and text mode
+has no tokens at all to say it about. So it was not a kind being approximated;
+it was a kind being ignored while the file went on looking correct. Honouring
+it, by running the class's regex at that position, is what to build if somebody
+asks for it; nobody has, and refusing costs nothing that `:text` or a bare hole
+does not already give.
 
 **The check runs at seal, not at the rule that declared it**, which is the part
 worth keeping. `@mode` is a directive like any other: a rule may be written
 before the mode is, or in a file that `@use` pulled in and that names no mode at
 all. Checking inside `@syntax` would have caught the file that happens to
-declare its mode first and let the other two through — the same silent pass, one
+declare its mode first and let the other two through: the same silent pass, one
 directive-order away. Once the header has finished speaking the mode is settled
 and every rule is in, so all three are caught, and the error still points at the
 line and the file that wrote the hole. `grammar_seal` gained an error path for
@@ -1488,24 +1536,24 @@ the form, which is why no recorded output changed.
 `[ … ]`, `[ … ]*` and `[ … ]+` work in `@mode text`. `examples/poem.mx` writes a
 markdown image whose title is optional and a shortcode whose argument list is
 not, one rule each, and both use a code template because both need to ask
-something — whether the optional part was there, and what each turn was.
+something: whether the optional part was there, and what each turn was.
 
 **What it cost was the matcher.** Text mode was a single forward scan: walk the
 elements once, find a hole's end by looking for the next literal word. A group
 makes that impossible, because an optional part may or may not be there and what
 really follows a hole is not known until the rest of the pattern has been tried.
-So matching is now a search — take an alternative, try the whole remainder, put
-the cursor and every binding back on failure — with a step budget against a
+So matching is now a search: take an alternative, try the whole remainder, put
+the cursor and every binding back on failure, with a step budget against a
 pattern that has too many ways to match.
 
 **And one bound, which took two attempts.** A hole may not span the word that
 *closes* the rule. The first version said *every word still to come*, which
-fixed the defect it was written for and quietly broke
-`"![" alt "](" src [ " " title ] ")"` — the group's space is a later word, and
-`alt` is allowed to contain spaces. The image rule simply stopped firing, and
-the output looked like prose that no rule had claimed, which is what text mode
-does with anything it does not recognise. The closer is the one word whose
-arrival means this construct has ended.
+fixed the defect it was written for and quietly broke `"![" alt "](" src [ " "
+title ] ")"`: the group's space is a later word, and `alt` is allowed to contain
+spaces. The image rule simply stopped firing, and the output looked like prose
+that no rule had claimed, which is what text mode does with anything it does not
+recognise. The closer is the one word whose arrival means this construct has
+ended.
 
 A search costs more than a scan, so it was measured rather than assumed: 113KB
 of markdown, 2000 lines, through the `**`, `[[…]]` and dash rules of
@@ -1523,13 +1571,13 @@ and nothing is joined after it.
 
 **The cheap answer would have been wrong, and wrong in both directions.**
 Looking at the last character emitted and skipping the separator after a `}`
-fails for `examples/clike.mx`, which reads C's braces and emits Solveig — where
-a `.` is wanted between two statements however the one before ended — and it
-fails the other way for C's own `struct { … };`. `examples/groups.mx` reads the
-same braces as clike.mx and emits JavaScript, where the brace does end a
-statement. So the input rule and the output rule are about two different
-languages and had to stay two rules. Guessing is what this tool declines to do
-about precedence and about scopes, and it declined here for the same reason.
+fails for `examples/clike.mx`, which reads C's braces and emits Solveig, where a
+`.` is wanted between two statements however the one before ended, and it fails
+the other way for C's own `struct { … };`. `examples/groups.mx` reads the same
+braces as clike.mx and emits JavaScript, where the brace does end a statement.
+So the input rule and the output rule are about two different languages and had
+to stay two rules. Guessing is what this tool declines to do about precedence
+and about scopes, and it declined here for the same reason.
 
 The word sits **after the template**, which is the one place in a rule where a
 bare word cannot be anything else, since a hole only appears in the pattern. So
@@ -1538,7 +1586,7 @@ it reserves nothing: `examples/reserved.mx` has a rule whose hole is called
 
 This was the fifth of the code template's five customers, and the one that did
 not come with the other four, because it turned out not to be a property of a
-template at all but of a rule — so it works on both kinds.
+template at all but of a rule, so it works on both kinds.
 
 *Verified at 9 examples, 28 error cases, `tests/hygiene.sh`; `make check` clean.*
 
@@ -1559,12 +1607,12 @@ them.
 Four of the five customers [ROADMAP.md](ROADMAP.md) recorded for it are served,
 each named a file and each is now a recorded output:
 
-  - **per-element output** — `for x in p sep ", " { emit "int " + x }`, where
+  - **per-element output**: `for x in p sep ", " { emit "int " + x }`, where
     `join` could only put one fixed text between turns;
-  - **output that depends on an optional part** — `matched(h)` and `count(h)`;
-  - **parenthesisation** — `level(h)` and `group(h, n)`, which needed the
+  - **output that depends on an optional part**: `matched(h)` and `count(h)`;
+  - **parenthesisation**: `level(h)` and `group(h, n)`, which needed the
     expander to start recording the level a hole was parsed at;
-  - **translating a literal** — `replace` and `drop`.
+  - **translating a literal**: `replace` and `drop`.
 
 The fifth, a rule that says it needs no separator after it, is not a property of
 a template and did not come with the others; it landed as `terminated` in the
@@ -1607,7 +1655,7 @@ asks on the first file: `examples/groups.mx` writes one call rule covering every
 arity there is.
 
 Every hole is bound whether or not its group matched, so a template never has to
-ask whether a part was there — and, when this was written, could not ask, which
+ask whether a part was there, and, when this was written, could not ask, which
 is why an absent optional part still left `if (!0) { ; }` in the output. That
 was the plainest customer for the code template, which arrived two entries above
 and can ask with `matched(h)`.
@@ -1619,8 +1667,8 @@ and can ask with `matched(h)`.
 A template may ask for a name nothing else uses. One expansion, one name: two
 `{~t}` in a template are the same name and the next use of the rule is a
 different one. A candidate is refused if it occurs anywhere in the source or in
-any template any rule declared, `@use` included — a substring test, so it errs
-in the safe direction.
+any template any rule declared, `@use` included: a substring test, so it errs in
+the safe direction.
 
 **It closes exactly half of hygiene**, and finding out which half was the
 result. A template that *introduces* a name is fixed. A template that *reaches
@@ -1633,7 +1681,7 @@ it: `swap: 2 1`, `bump: 105 0`.*
 
 ## The reference
 
-[REFERENCE.md](REFERENCE.md) states what every part of a `.mx` file means —
+[REFERENCE.md](REFERENCE.md) states what every part of a `.mx` file means:
 directives, patterns, groups, kinds, levels, templates, both modes, the command
 line, every error message the tool can produce, and the limits. It states and
 does not argue; [notation.md](notation.md) argues.
@@ -1643,7 +1691,7 @@ memory, and two of them were wrong. See [POSTMORTEM.md](POSTMORTEM.md) 2.
 
 ## The tool
 
-C11 and `make`, plus POSIX `<regex.h>` for `@token` — the only thing here that
+C11 and `make`, plus POSIX `<regex.h>` for `@token`, the only thing here that
 Proto does not also need, and the price of letting a file say what a literal is.
 
 `metaxis/src/header.c` is the fixed half: the directive grammar, which no file
@@ -1662,13 +1710,13 @@ word.
 
 ## The notation
 
-Everything a directive says about text — the text it recognises and the text it
-emits — is inside a string, and everything outside a string is Metaxis's own
+Everything a directive says about text, the text it recognises and the text it
+emits, is inside a string, and everything outside a string is Metaxis's own
 fixed vocabulary.
 
 Two things fell out of it rather than being designed in. Four rule directives
 collapsed to one, because once words are quoted a pattern's shape says whether
-it is prefix, infix, postfix, circumfix or mixfix — and a pattern beginning with
+it is prefix, infix, postfix, circumfix or mixfix, and a pattern beginning with
 a hole is a led rule while one beginning with a word is a nud rule, which is the
 Pratt distinction read off instead of declared. And the lexer stopped being a
 fixed budget, because the header is read before the body.

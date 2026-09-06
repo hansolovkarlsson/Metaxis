@@ -226,7 +226,11 @@ def main():
     for name, navtitle, srcpath in PAGES:
         if srcpath is None: title, body, toc = examples_page()
         else:
-            title, body, toc = render_md(open(os.path.join(ROOT, srcpath)).read())
+            text = open(os.path.join(ROOT, srcpath)).read()
+            # The marker says, in the source, why an em dash stays; the page
+            # does not need telling. See tests/hygiene.sh, the prose rule.
+            text = text.replace('<!-- as written -->', '')
+            title, body, toc = render_md(text)
             title = inline(title)
         open(os.path.join(OUT, name + '.html'), 'w').write(page(name, navtitle, title, body, toc))
         print(f'{name}.html  {os.path.getsize(os.path.join(OUT, name + ".html")) // 1024} KB')

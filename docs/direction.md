@@ -1,6 +1,6 @@
 # Direction
 
-*Where this could go, and why — the theory of the tool rather than the list of
+*Where this could go, and why: the theory of the tool rather than the list of
 jobs. [ROADMAP.md](ROADMAP.md) says what to build next and what would settle it;
 this page says what the next things are **for**, and which futures are being
 declined. It is the one record here allowed to be speculative, and every claim
@@ -13,7 +13,7 @@ plans is worse than no page.*
 ## What Metaxis is, said accurately
 
 A `.mx` file declares a grammar in its header and is then read with it. In
-expression mode that grammar is a Pratt parser — leading words, binding powers,
+expression mode that grammar is a Pratt parser: leading words, binding powers,
 candidates tried longest-first with the cursor restored. In text mode it is a
 backtracking search. Either way, **a rule takes the values its children produced
 and combines them into its own**, and that value is text.
@@ -22,11 +22,11 @@ Which is to say: Metaxis is a **bottom-up attribute grammar in which the
 attribute type is fixed at text**.
 
 `examples/asm.mx` is the sharpest demonstration of that, because there the text
-is not the output language at all — it is *the code that computes the
+is not the output language at all: it is *the code that computes the
 subexpression*, accumulated upward, and the tool needed no change to carry it.
 
 That sentence is worth keeping, because everything below follows from it. The
-attribute is synthesised — it flows up, from the leaves, as the parser reduces.
+attribute is synthesised: it flows up, from the leaves, as the parser reduces.
 
 One thing does flow down, and naming it sharpens the point rather than spoiling
 it: the **binding power** a hole is read at is an inherited parameter, set by the
@@ -43,7 +43,7 @@ diagnosis, and acting on it would be the most expensive mistake available.
 A Pratt grammar is a real grammar. It handles the dangling `else`, right
 associativity, mixfix, and prefix-versus-infix on the same word, and it does so
 in `examples/pascal.mx` today without a special case anywhere. EBNF is not more
-powerful there; it is differently shaped — a *recogniser*, read top-down, where
+powerful there; it is differently shaped: a *recogniser*, read top-down, where
 this is a *rewrite*, read bottom-up.
 
 What is genuinely missing is much narrower, and it turned up four times in one
@@ -57,7 +57,7 @@ afternoon of writing Pascal:
   folds the pair into one value before the group sees it. **A parameter list
   whose types differ is the same limitation with no workaround**: the two lists
   have to come back apart in the output, so folding cannot help, and that file
-  writes `int k` for a parameter declared `real` — recorded, and pinned by
+  writes `int k` for a parameter declared `real`: recorded, and pinned by
   `tests/pascal.sh`.
 - `var a, b: integer` is read by reusing the `,` and `:` operator rules, which
   works and is a structural hack.
@@ -66,7 +66,7 @@ afternoon of writing Pascal:
 A fifth instance arrived from stage 2, in a code generator rather than a
 grammar: `examples/asm.mx` wrote the same two lines at eight operands, and
 `@template` now names them. **The common cause is that this tool could name a
-rule and nothing else** — and both halves of that are now built.
+rule and nothing else**, and both halves of that are now built.
 
 The pattern-shaped half is `@fragment`, spliced with `@name`:
 
@@ -84,7 +84,7 @@ and nothing since has argued otherwise.
 was wrong in a way worth keeping.** A kind says what *one hole* holds; a
 fragment says what *sequence of elements* goes here, and it arrives carrying
 holes of its own. Putting both in the slot after a `:` would have been one
-position meaning two unrelated things — the same mistake that splitting
+position meaning two unrelated things, the same mistake that splitting
 `@template` from this one had just avoided, one level down. The name went with
 the spelling: `@fragment` is what this page's own prose had been calling it all
 along.
@@ -98,12 +98,12 @@ story.**
 | what could not be done | what it needed |
 | --- | --- |
 | assign to a function's own name, as standard Pascal returns | knowing which function the rule is inside |
-| call a parameterless procedure — `Banner;` | telling a call from a variable read |
+| call a parameterless procedure, `Banner;` | telling a call from a variable read |
 | `writeln` with arguments of mixed type | types |
 | Pascal's `real` beside its `integer` | types |
 | the reach-out half of hygiene ([POSTMORTEM.md](POSTMORTEM.md) 3) | seeing a scope |
 | C's `typedef` name against an ordinary identifier | a symbol table |
-| ~~Python's blocks~~ — **built 2026-09-05** | lexer state that survives between tokens |
+| ~~Python's blocks~~, **built 2026-09-05** | lexer state that survives between tokens |
 
 Seven entries, one sentence: **a rule sees its own pattern and nothing else.**
 
@@ -112,12 +112,12 @@ Python's blocks were built, and the rule that reads one still sees nothing but
 its own pattern. The state went *below* the rules, into the lexer, where
 `@separator … indent` put it: the lexer already survives between tokens, so
 giving it a stack of columns asked nothing of the property this page is about.
-That is the shape of the exception, and it is narrow — **the six that remain all
+That is the shape of the exception, and it is narrow: **the six that remain all
 want state that flows between rules, and no amount of lexer will produce it.**
 It is worth knowing which side of that line a wish falls on before costing it.
 
 This is not a defect. It is the property that makes a rule composable, `@use`-able
-and language-agnostic, and it is downstream of the premise — a directive
+and language-agnostic, and it is downstream of the premise: a directive
 mentions foreign text only inside strings, so a rule is a closed statement about
 a shape, with nowhere for a reference to the rest of the program to live.
 
@@ -130,13 +130,13 @@ that list would be adding structure to solve a context problem.
 If the attribute is text and flows only upward, there are exactly two ways to
 grow, and they are the two halves of an attribute grammar.
 
-### 1 · Let what flows up be a value — **done, and it stopped short of the name**
+### 1 · Let what flows up be a value: **done, and it stopped short of the name**
 
 Built 2026-09-05: `-`, `*`, `/`, `%`, `num(h)`, and a `+` that adds when both
 sides are numbers and joins when they are not. `examples/calc.mx` is the first
 file here that runs its notation instead of translating it. It reads well, and
 **it is a calculator and not an interpreter**, because a hole is expanded before
-the template that uses it runs — so a rule can select between computed values and
+the template that uses it runs, so a rule can select between computed values and
 cannot leave one uncomputed. `if 1 then 10 else (1 / 0)` divides by zero.
 
 **What remains is deferral, not an operator**: a hole that can be held
@@ -158,7 +158,7 @@ table the tool imposes but **a store the templates keep**:
 ```
 
 The tool still knows nothing about types, scopes or declarations. The **file**
-says what context it needs and builds it as the text is consumed — which is the
+says what context it needs and builds it as the text is consumed, which is the
 bottom-up version of a symbol table, accumulated rather than computed by a pass.
 Every row of the table above becomes reachable.
 
@@ -168,9 +168,9 @@ files writing one key is the same problem two used files declaring one word had,
 and it will want the same kind of answer that `override` was.
 
 **2026-09-06: half of this landed in a different shape, and the half that
-compromises locality did not.** The survey found the known answer — collection
-attributes, JastAdd's and Silver's — and it was built as `contribute` and
-`splice` (REFERENCE §8.4). A rule *adds* to a named aggregate and never reads
+compromises locality did not.** The survey found the known answer: collection
+attributes, JastAdd's and Silver's. It was built as `contribute` and `splice`
+(REFERENCE §8.4). A rule *adds* to a named aggregate and never reads
 one, so nothing flows *down*: a collection is still synthesised, still upward,
 and two files contributing to one name is the intended case rather than a
 conflict. It answers the include, the declarations and the definition. It does
@@ -191,7 +191,7 @@ is the thing the other two consume.
 **A definitional interpreter is exactly what Futamura's projections operate on.**
 Specialise an interpreter with respect to a program and the result is a compiled
 program; specialise the specialiser and the result is a compiler. If Metaxis
-generates interpreters, it does not compete with Futamura — it feeds it, and the
+generates interpreters, it does not compete with Futamura: it feeds it, and the
 pair covers ground neither does alone: invent a notation in an afternoon, get an
 interpreter for it immediately, and project it into a machine when it is worth
 keeping.
@@ -201,10 +201,10 @@ first projection*. Not by performing projections, which Futamura already does,
 but by producing the artefact they need from a notation that did not exist that
 morning.
 
-## What to call it — the description scored, the name chosen
+## What to call it: the description scored, the name chosen
 
 *This section is about two things that were run together for a day and are
-better kept apart: **the description** — what sentence introduces the tool — and
+better kept apart: **the description**, what sentence introduces the tool, and
 **the name**. The description is below and was scored. The name is at the foot,
 was surveyed on the same day, and was **decided**.*
 
@@ -216,7 +216,7 @@ was true, so that it could be scored rather than drifted into. It was scored
 within hours, and it moved, so it is rewritten here rather than added to.
 
 **What held.** *Meant to prototype* is the honest half and the strongest thing
-about the tool. One word widened: **notation**, not language — `examples/poem.mx`
+about the tool. One word widened: **notation**, not language. `examples/poem.mx`
 turns prose into HTML, which is a notation without an `if` in it, and the broader
 word covers the DSL, the config format and the markup too.
 
@@ -227,18 +227,18 @@ precisely at the point where an interpreter begins: a hole is expanded before
 the template that uses it runs, so a rule can select between computed values but
 cannot leave one uncomputed. `if 1 then 10 else (1 / 0)` divides by zero.
 Evaluation is eager, and everything an interpreter needs that a calculator does
-not — a short circuit, a loop, a recursion — is a thing that must *not* happen.
+not is a thing that must *not* happen: a short circuit, a loop, a recursion.
 
 So the three descriptions, kept apart, with the middle one newly earned:
 
 | | |
 | --- | --- |
 | **before 2026-09-05** | a language-agnostic rewriter; the grammar is declared in the header of the file it reads |
-| **now** | that, and an **evaluator for expressions** — a `.mx` file can compute rather than emit, bottom-up and eagerly |
+| **now** | that, and an **evaluator for expressions**: a `.mx` file can compute rather than emit, bottom-up and eagerly |
 | **not yet** | a generic interpreter generator for prototyping notations |
 
 **What the third row now costs is deferral, not an operator.** A hole that can be
-held unexpanded and run on demand — see the first of the two directions above.
+held unexpanded and run on demand: see the first of the two directions above.
 That is a much larger idea than the one this section originally priced, and no
 date is being put on it, because the estimate here has already been wrong once
 in the direction of *too near*.
@@ -251,25 +251,25 @@ distance is worth more than the phrase was.
 
 **The method, though, is the part to keep.** A claim written down before the
 evidence, specific enough to be wrong in public, was wrong in public within a
-day — and the useful correction was not the one it predicted. It had named
+day, and the useful correction was not the one it predicted. It had named
 *reading* as the risk; reading was fine, and eagerness was the wall. That is the
 ordinary case rather than a surprise, and it is the argument for building the
 cheap thing rather than reasoning about it, which is the same argument
 [POSTMORTEM.md](POSTMORTEM.md) 9 makes about the staging.
 
-### The name — **decided 2026-09-05: Metaxis**
+### The name, **decided 2026-09-05: Metaxis**
 
 **Hans, 2026-09-05:** *rename it to Metaxis.* And, on reading it back:
 *Meta as in meta-compiler, Taxis as in order, metaxis as in between. It fits.*
 
 The tool was called **Prototype** for its first two days and is now **Metaxis**,
 `mx` on the command line, `.mx` on a file. `README.md` had said *working name*
-since the first commit, so nothing had to be undone — only chosen. This
+since the first commit, so nothing had to be undone, only chosen. This
 subsection is rewritten rather than added to, as this page requires of itself;
 the evidence for every candidate, and the four branches that closed, are in
 [prior-art.md](prior-art.md) § 1, dated, so that none of it needs re-deriving.
 
-**Why this one.** Greek **μεταξύ** — Plato's *in-betweenness*, and in Augusto
+**Why this one.** Greek **μεταξύ**: Plato's *in-betweenness*, and in Augusto
 Boal's theatre *"the state of belonging completely and simultaneously to two
 different autonomous worlds."* The property this page states as the tool's own
 is that **neither the language read nor the language written is the tool's own**:
@@ -292,15 +292,15 @@ recommended here for *scanning* as `pro-` + `taxis`; its actual derivation is
 the sound was liked. Metaxis survives the same test: **the meaning is real, the
 third reading is labelled as constructed, and the name does not depend on it.**
 
-**What it beat, in one line each.** `Schorre` — a citation, since META II is this
+**What it beat, in one line each.** `Schorre`: a citation, since META II is this
 tool's premise both halves ([prior-art.md](prior-art.md) § 2), and it matches the
-house, but nobody can pronounce it. `Landin` — the 700 languages, the off-side
+house, but nobody can pronounce it. `Landin`: the 700 languages, the off-side
 rule, *syntactic sugar*; primes toward functional programming, which this is not.
-`Ostracon` — a cheap surface for drafts; still faintly implies *draft*.
-`Maquette` — declined for closing the same door `Prototype` did.
+`Ostracon`: a cheap surface for drafts; still faintly implies *draft*.
+`Maquette`: declined for closing the same door `Prototype` did.
 
 **And the door that closed is the real reason the old name had to go.** The
-searchability was the loud problem — a dormant JavaScript framework, five other
+searchability was the loud problem: a dormant JavaScript framework, five other
 meanings of the word in this field, and `.pt` already being PyTorch's checkpoint
 extension. The deep problem was that **`Prototype` means the small model made
 before the real thing**, and the third row of the table above aims at a tool that
@@ -312,7 +312,7 @@ stale.
 build, the examples, the tests and the present-tense records all say Metaxis and
 `.mx`. **The work journal, `CHANGELOG.md` and `POSTMORTEM.md` were left alone**,
 because they are dated accounts of what happened and the tool really was called
-Prototype when they were written — rewriting them would make yesterday's entries
+Prototype when they were written. Rewriting them would make yesterday's entries
 claim a name that did not exist. [work-journal/README.md](work-journal/README.md)
 says so at the top.
 
@@ -321,13 +321,13 @@ inside it said Metaxis the working tree itself was still called `Prototype`; the
 GitHub repository was already `Metaxis`, so the directory was the last
 disagreement left, and the only one a reader meets before opening anything. It
 is now `Metaxis` too. Nothing in the build, the tests or the records reads its
-own path, so the rename was a `mv` and this paragraph — `make check` passes
+own path, so the rename was a `mv` and this paragraph: `make check` passes
 unchanged from the new location.
 
 ## What it should not become
 
 **A serious C or Python front end.** It plays to every weakness in the table
-above — context, types, symbol tables — it duplicates Phoenix, and the honest
+above: context, types, symbol tables. It duplicates Phoenix, and the honest
 answer to "can it read C" is *not without becoming a different tool*. C's hard
 part is not its grammar; it is that `x * y` cannot be parsed without knowing
 whether `x` is a typedef. Python's hard part is not its grammar either; it is
@@ -345,12 +345,12 @@ Reading a *subset* of either, to demonstrate that the notation reaches, is
 worth doing and is what the stages in [ROADMAP.md](ROADMAP.md) are for. Claiming
 the whole language is not.
 
-## What is actually different about it — **rewritten 2026-09-05, second pass**
+## What is actually different about it, **rewritten 2026-09-05, second pass**
 
 *This section used to read "One property, and no other tool here has it: the
 language definition and the program that uses it live in the same file and are
 read in one pass." That claim was surveyed against the tools that actually
-exist and **four of them falsify it** — Seed7, Coq's `Notation`, Prolog's
+exist and **four of them falsify it**: Seed7, Coq's `Notation`, Prolog's
 `op/3` and Katahdin all put a syntax declaration in the file and use it on the
 next line, and Prolog has done so since 1972. The survey, the evidence and what
 survives are [prior-art.md](prior-art.md) § 2. The property is restated below
@@ -360,7 +360,7 @@ one, because it says what the tool is for rather than what it is first at.*
 One property, and it is a conjunction rather than a single fact:
 
 > **The language definition and the program that uses it live in the same file
-> and are read in one pass — and neither the language read nor the language
+> and are read in one pass. And neither the language read nor the language
 > written is the tool's own.**
 
 Every tool that shares the first half declares syntax **for its own host
@@ -402,7 +402,7 @@ for it on the way.
 **Taken since.** Stage 3 was the first delimiter the *tool* owns rather than one
 a string declares, and the notation it wanted was the decision. It went to a
 `block` kind over two synthetic quoted words, on the ground that a string
-naming an indent would be quoting text the source does not contain — the
+naming an indent would be quoting text the source does not contain: the
 premise kept in letter and spent in meaning. The three stages are done.
 
 **Next, and what would falsify each:**
@@ -418,7 +418,7 @@ names a number of steps, read it as a guess and build the cheapest thing that
 tests it.
 
 **Stage 3 is the one estimate on this page that came in right, and it is not a
-counter-example — it is the method.** Its distances were not reasoned about
+counter-example: it is the method.** Its distances were not reasoned about
 either; they were *measured*, by rehearsing the whole feature by hand before a
 line of it was written. [POSTMORTEM.md](POSTMORTEM.md) 15 has the account. The
 sentence above stands, with one clause added: **build the cheapest thing that

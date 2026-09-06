@@ -7,11 +7,10 @@ when you do. It explains and it does not argue: [REFERENCE.md](REFERENCE.md)
 states what every part of a file means, [notation.md](notation.md) argues for
 why it is shaped that way, and where this page and either of those disagree,
 they are right and this page is wrong. A word this page uses without
-explaining — nud, led, Pratt, attribute grammar — is in
-[glossary.md](glossary.md). **Every transcript here is run by
-`make check`** — `tests/docs.sh` finds each `$ mx …` line in `docs/`, runs it,
-and compares — so nothing on this page can drift from the tool without the
-suite going red.*
+explaining is in [glossary.md](glossary.md): nud, led, Pratt, attribute
+grammar. **Every transcript here is run by `make check`**: `tests/docs.sh`
+finds each `$ mx …` line in `docs/`, runs it, and compares, so nothing on this
+page can drift from the tool without the suite going red.*
 
 Run the files from the tree root, after `make`:
 
@@ -40,7 +39,7 @@ directives said to print instead.
 
 So a `.mx` file is not a program in Metaxis. It is a program in a language of
 its own choosing, with a preface that says what that language is and what to
-turn it into. The tool knows nothing in advance — not `+`, not `if`, not that
+turn it into. The tool knows nothing in advance: not `+`, not `if`, not that
 a number is a number. Every one of those is declared, in the file, or it is
 not there.
 
@@ -48,7 +47,7 @@ Three things are worth holding onto through everything below.
 
 **Quotes mean "the text says this."** Inside a directive, anything in double
 quotes is a piece of foreign text: a word the body will contain, or a piece
-of output to write. Anything outside quotes is Metaxis's own vocabulary — a
+of output to write. Anything outside quotes is Metaxis's own vocabulary: a
 directive name, a hole, a number, a bracket. This one rule is what lets a
 directive *mention* a word like `if` without *being* an `if` statement, and it
 is the whole reason the notation works.
@@ -97,7 +96,7 @@ Read it top to bottom.
   is `"{e}"`: whatever `e` held, and nothing else. So brackets are read and
   then dropped.
 - **`@syntax a "+" b 60 => "add({a}, {b})"`** is the rule for addition. The
-  pattern begins with a hole, so this is an *infix* rule — something before
+  pattern begins with a hole, so this is an *infix* rule: something before
   the `+` and something after. The `60` is its **level**, how tightly it
   binds; §3 is about that. The template writes a function call around the two
   holes.
@@ -172,7 +171,7 @@ not have to look like punctuation; `div` is a word made of letters.
 
 **But declaring a word does not reserve it.** The line `then = 3` uses `then`
 as a variable name, and `if then then then` uses it as a name, a word, and a
-name again — and the tool gets every one of them right, without being told.
+name again, and the tool gets every one of them right, without being told.
 It can, because a rule matches a word *by position*: the `if` rule wants the
 word `then` after its first hole, so whatever sits there is checked against
 the text `then`. Anywhere else, `then` is just a token of the class `name`.
@@ -206,7 +205,7 @@ because the shape is visible in the pattern:
 | `"\|" a "\|"` | circumfix: a word on each side |
 | `"if" c "then" t "else" f` | mixfix: words and holes interleaved |
 
-A rule that **begins with a hole** continues something already read — it
+A rule that **begins with a hole** continues something already read. It
 needs a level, so the tool knows when to apply it. A rule that **begins with
 a word** starts something new and does not need one.
 
@@ -289,7 +288,7 @@ attempts; §14 shows it.
 
 ## 4 · What a hole takes
 
-A hole is a bare name, and by default it takes **one expression** — as much
+A hole is a bare name, and by default it takes **one expression**: as much
 as the rules can read, up to the next word the pattern is waiting for or the
 end of the statement. That is usually what you want, and sometimes it is
 exactly wrong.
@@ -325,7 +324,7 @@ $ mx docs/tutorial/04-greedy.mx
 mx: docs/tutorial/04-greedy.mx:6: no rule reads 'to' here
 ```
 
-The plain hole `i` took an expression, and `i = 1` *is* an expression — the
+The plain hole `i` took an expression, and `i = 1` *is* an expression: the
 assignment rule made it one. So the hole swallowed `i = 1`, the pattern then
 wanted a `=` and found `to`, and the rule failed. **This is the one thing
 quoting does not settle by itself**: whether a hole should read an expression
@@ -337,9 +336,9 @@ The kinds:
 | --- | --- |
 | `expr` | one expression. The default. |
 | *a class name* | exactly one token of that class, as its source text |
-| `stmts` | a sequence of statements, up to the pattern's next word — §5 |
-| `block` | an indented run of statements — §11 |
-| `text` | raw text, in text mode only — §12 |
+| `stmts` | a sequence of statements, up to the pattern's next word, §5 |
+| `block` | an indented run of statements, §11 |
+| `text` | raw text, in text mode only, §12 |
 
 One rule about holes follows from how they read. Two plain holes in a row
 are refused, because the first would take everything the second wants.
@@ -350,7 +349,7 @@ $ mx docs/tutorial/04-adjacent.mx
 mx: docs/tutorial/04-adjacent.mx:2: two holes in a row: the first would take everything the second wants
 ```
 
-Two *class-kind* holes in a row are fine — `"pair" a:number b:number` — since
+Two *class-kind* holes in a row are fine, `"pair" a:number b:number`, since
 each takes exactly one token.
 
 ---
@@ -396,7 +395,7 @@ printf("%d\n", x)
 ```
 
 **On the way in**, `;` separates statements. A `stmts` hole reads statements
-up to the word the pattern is waiting for — here `end` — so `block … end`
+up to the word the pattern is waiting for, here `end`, so `block … end`
 holds two of them. And notice that `end` is followed by `while` with no `;`
 between: a separator is wanted between two statements, **but not after one
 that ended in a word**. That is what lets `end`, or C's `}`, stand on its own
@@ -404,7 +403,7 @@ line.
 
 **On the way out**, statements are joined with `;` and a newline. The last
 statement of a `stmts` hole is joined after nothing, so the `block` template
-writes `{b};` — the `;` its last statement needs — by hand.
+writes `{b};`, the `;` its last statement needs, by hand.
 
 **`terminated`** after a template says: *what this rule emits already ends a
 statement, so do not put the separator after it.* Both block rules say it,
@@ -425,7 +424,7 @@ anywhere in the tool.
 ## 6 · Groups: a part that repeats, or need not be there
 
 `[ … ]` is Metaxis's own bracket. It is outside the strings, so it can never
-be confused with a bracket the body writes — one of those would be quoted.
+be confused with a bracket the body writes: one of those would be quoted.
 
 `docs/tutorial/06-groups.mx`:
 
@@ -468,7 +467,7 @@ and what joins them on the way out (`join ", "`). `join` defaults to whatever
 Before groups this was a rule per arity, or it was not written.
 
 **Every hole a pattern declares is always bound.** `get y` did not have an
-`or` part, and `d` came out as the empty string — `get(y, [])`. A string
+`or` part, and `d` came out as the empty string: `get(y, [])`. A string
 template never has to ask whether a part was there, and cannot; a code
 template can, with `matched(d)`, and §7 is about that.
 
@@ -537,7 +536,7 @@ How to read a code template:
   it binds looser than `n`. `2 * 3` inside a `+` was produced at level 70,
   which is not below 60, so no brackets; `1 + 2` inside a `*` was produced at
   60, which is below 70, so brackets. The right operand asks for one more than
-  the left — `group(b, 61)` — which is what keeps `a - (b - c)` bracketed and
+  the left, `group(b, 61)`, which is what keeps `a - (b - c)` bracketed and
   `a - b - c` not.
 - **`terminated(h)`** asks whether what filled `h` already ends a statement,
   which is exactly what a rule declares about itself with `terminated`. The
@@ -553,7 +552,7 @@ brace, not a hole. The doubling rule belongs to string templates only.
 
 A hole inside a repeated group is a **list** in a code template. A string
 template only ever sees the turns joined; the code template can walk them,
-and — the case that matters — can walk two lists in step.
+and can walk two lists in step, which is the case that matters.
 
 `docs/tutorial/07-lists.mx`:
 
@@ -584,8 +583,8 @@ scale(int n, double k);
 42
 ```
 
-`p` and `t` are two holes in one group, so they are two parallel lists —
-the names and the types — and `for i, x in p` binds the position as well as
+`p` and `t` are two holes in one group, so they are two parallel lists, the
+names and the types, and `for i, x in p` binds the position as well as
 the turn so that `at(t, i)` can fetch the matching type. That is what turns
 `scale(n: int, k: double)` into `scale(int n, double k)`, and a string
 template cannot write it, because it has no way to interleave two lists.
@@ -643,7 +642,7 @@ is read. The same list, with the exact error texts, is REFERENCE §8.3 and
 A template that introduces a temporary variable has a problem: whatever name
 it picks might already be in use by the code around it. `{~t}` in a string
 template, and `fresh("t")` in a code template, ask for **a name nobody else
-has** — one that occurs nowhere in the source and in no template.
+has**: one that occurs nowhere in the source and in no template.
 
 `docs/tutorial/08-fresh.mx`:
 
@@ -675,20 +674,20 @@ different one. So the second swap, which swaps a variable actually called
 one template is one name, `i__4`, which is what a loop needs.
 
 Why `i__4` and not `i__3`: the body of the loop was expanded before the loop's
-own template ran — a hole is always filled before the template that uses it —
-and the swap inside took `t__3` first. The counter is shared, so no two names
+own template ran, and the swap inside took `t__3` first. A hole is always
+filled before the template that uses it. The counter is shared, so no two names
 from anywhere in the file can ever be the same.
 
 This closes half of a problem called **hygiene**: a template's own temporary
-can never capture a caller's name. The other half — a template that reaches
-*out* for a name the caller has shadowed — stays open, and notation.md says
+can never capture a caller's name. The other half, a template that reaches
+*out* for a name the caller has shadowed, stays open, and notation.md says
 why it is a price rather than a bug.
 
 ---
 
 ## 9 · Saying things once: `@use`, `override`, `@fragment`, `@template`
 
-`docs/tutorial/09-arith.mx` is a library — directives and no body:
+`docs/tutorial/09-arith.mx` is a library, directives and no body:
 
 ```
 @token number "[0-9]+"
@@ -744,7 +743,7 @@ int answer()
   without declaring it, because the fragment did.
 - **`@template name(x, y) { … }`** names a piece of *output*. It is called as
   a statement, sees only its parameters, and emits into whoever called it.
-  A list — `p` here — goes through a parameter unchanged.
+  A list, `p` here, goes through a parameter unchanged.
 
 Fragment and template are two mechanics and not one, on purpose: one is
 spliced into a pattern at declaration and the other is called at expansion,
@@ -757,7 +756,7 @@ and a single word covering both would mean two things.
 Everything so far has written one output. Suppose the same source is wanted
 in two: the same little language, printed once as C and once as Python. The
 grammar is the expensive half of a file, and it does not change between those
-two — what changes is what a handful of rules *print*. So the tool lets a rule
+two. What changes is what a handful of rules *print*. So the tool lets a rule
 carry more than one template, and lets the command line say which.
 
 Under a rule, each `=>` is one target's output. A template followed by
@@ -810,7 +809,7 @@ mx: no rule emits 'ruby' -- this file declares python
 
 **A file whose every template is tagged has no default.** Run it without `-b`
 and the tool refuses, naming the rule, rather than letting the first tag win
-by being written first — position decides nothing in a header, and this is
+by being written first: position decides nothing in a header, and this is
 not the place to start. `docs/tutorial/10-tagged.mx` tags both of its
 templates:
 
@@ -925,7 +924,7 @@ between, and why a nested block is consumed before the enclosing one sees its
 
 The `braces` template shows a rule that comes up in every block-structured
 output: the separator goes *between* statements and never after the last, so
-the block's last statement needs its own `;` — unless it is itself a
+the block's last statement needs its own `;`, unless it is itself a
 `terminated` rule, in which case it must not have one. `terminated(b)` asked
 of a `stmts` or `block` hole answers for the last statement in it.
 
@@ -1102,7 +1101,7 @@ mx: docs/tutorial/14-unread.mx:4: no rule reads '+' here
 When the header is accepted and the body does something unexpected, two
 flags show what the tool actually did.
 
-**`mx -g`** prints the grammar the header built — the token classes, every
+**`mx -g`** prints the grammar the header built: the token classes, every
 word the lexer will look for, and every rule with its shape and level. §10
 shows one. If a word you expected is missing from the `words` line, no rule
 quoted it; if a rule shows as `prefix` when you meant infix, its pattern
@@ -1133,17 +1132,17 @@ The examples in `examples/` are each a complete translator, and every one is
 run by `make check` against a recorded output or, for five of them, compiled
 and executed:
 
-- `first.mx` and `tour.mx` — the shape, and every fixity in one file.
-- `pascal.mx` and `code.mx` — one Pascal grammar, string templates and code
+- `first.mx` and `tour.mx`: the shape, and every fixity in one file.
+- `pascal.mx` and `code.mx`: one Pascal grammar, string templates and code
   templates, with the diff between their outputs as the argument.
-- `asm.mx` — C in, arm64 out: a target that is a sequence, not a tree.
-- `python.mx` — blocks by indentation, run under `python3` as well as
+- `asm.mx`: C in, arm64 out, a target that is a sequence, not a tree.
+- `python.mx`: blocks by indentation, run under `python3` as well as
   compiled as C.
-- `basic.mx` — a source that declares nothing, and collections.
-- `lib/island.mx` with `tests/island.sh` — the tool rewriting its own front
+- `basic.mx`: a source that declares nothing, and collections.
+- `lib/island.mx` with `tests/island.sh`: the tool rewriting its own front
   end in text mode.
 - `poem.mx`, `groups.mx`, `use.mx`, `backends.mx`, `hygiene.mx`, `calc.mx`,
-  `reserved.mx`, `clike.mx` — one concept each.
+  `reserved.mx`, `clike.mx`: one concept each.
 
 [REFERENCE.md](REFERENCE.md) is the complete statement of what every part
 means, and is organised the way this page is. [notation.md](notation.md) is

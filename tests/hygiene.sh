@@ -1,12 +1,14 @@
 #!/bin/sh
-# hygiene.sh -- the three checks that read the tree instead of running it.
+# hygiene.sh -- the four checks that read the tree instead of running it.
 #
 # The last one is the file's original job and most of what is below. The
 # first is the limit guard, added because it is the same kind of check -- a
 # property nothing else here can express -- and a sixth script for one grep
 # would have been one too many; it closed a roadmap item and is
 # docs/COMPLETED.md's "The limit guard" now. The second is the roadmap's
-# numbers, added on the same reasoning, for docs/POSTMORTEM.md 20.
+# numbers, added on the same reasoning, for docs/POSTMORTEM.md 20. The third
+# is the prose rule in CLAUDE.md, added so that a sweep of the documents had a
+# finish line the suite could see, and so that new writing has a guard.
 #
 # ---------------------------------------------------------------------------
 # 1 - the limit guard
@@ -65,7 +67,30 @@
 
 
 # ---------------------------------------------------------------------------
-# 3 - hygiene: one half fixed, one half charged, run rather than argued.
+# 3 - the prose rule: no em dash in general prose.
+#
+# CLAUDE.md's style guide says the em dash is not used in prose, and names
+# where it stays: a fact (a date, a range), a quotation reproduced as written,
+# a name or title that has one, and anything that is code, an example, a
+# transcript or recorded output. Each exemption here is one of those, by name:
+#
+#   a fenced block       code, a transcript, recorded output
+#   an inline code span  `like this`
+#   a blockquote line    reproduced as written
+#   <!-- as written -->  on the line: a quotation, a title, a fact. The marker
+#                        is an HTML comment, so a rendered page does not show
+#                        it, and it says why the dash is there to whoever
+#                        reads the source.
+#
+# What is scanned is every tracked Markdown file except the dated accounts
+# (POSTMORTEM.md, CHANGELOG.md, the journal), which are left as written until
+# the decision to sweep them is taken; widen the pattern below when it is.
+# Source comments, .mx files and .out files had none the day this was written
+# and are not scanned: a dash in a .mx body or a .out is the tool's data, and
+# the rule is about prose.
+#
+# ---------------------------------------------------------------------------
+# 4 - hygiene: one half fixed, one half charged, run rather than argued.
 #
 # It expands examples/hygiene.mx, compiles the C that comes out and runs it.
 # Three outcomes are named below and each says something different, because
@@ -181,6 +206,38 @@ if [ -n "$lost" ]; then
     exit 1
 fi
 echo "ok      hygiene.sh: every roadmap item at HEAD is still on the page"
+
+# --- 3: the prose rule. Described at the head of the file.
+pages=$(echo "$tracked" | grep -E '\.md$' |
+    grep -v -E '^docs/(POSTMORTEM|CHANGELOG)\.md$|^docs/work-journal/')
+if [ -z "$pages" ]; then
+    echo "FAILED  hygiene.sh: the prose scan found no Markdown to read, which"
+    echo "        cannot be right; an empty scan must not read as a pass."
+    exit 1
+fi
+prose=$(echo "$pages" | xargs awk '
+        FNR == 1              { fence = 0 }
+        /^```/                { fence = !fence; next }
+        fence                 { next }
+        /^>/                  { next }
+        /<!-- as written -->/ { next }
+        { l = $0; gsub(/`[^`]*`/, "", l)
+          if (l ~ /—/) printf "%s:%d:%s\n", FILENAME, FNR, $0 }') || {
+    echo "FAILED  hygiene.sh: the prose scan did not run -- awk exited $?."
+    exit 1
+}
+
+if [ -n "$prose" ]; then
+    n=$(echo "$prose" | wc -l | tr -d ' ')
+    echo "FAILED  hygiene.sh: an em dash in general prose, on $n lines."
+    echo "        CLAUDE.md's style guide: a comma, a period or a colon instead."
+    echo "        If it is a quotation, a title or a fact, say so on the line"
+    echo "        with <!-- as written -->; if it is code, put it in backticks."
+    echo "$prose" | head -20 | sed 's/^/            /'
+    [ "$n" -gt 20 ] && echo "            ... and $((n - 20)) more"
+    exit 1
+fi
+echo "ok      hygiene.sh: no em dash in general prose"
 
 TMP="${TMPDIR:-/tmp}/mx-hygiene.$$"
 mkdir -p "$TMP" || exit 1

@@ -4,8 +4,8 @@ Metaxis is a rewriter. A `.mx` file has two halves: a **header** of
 directives that say what the second half's syntax is and what to turn it
 into, and a **body** written in that syntax. The tool reads the header,
 builds a reader for the language it describes, reads the body with it, and
-prints what the templates say. Nothing is built in — not `+`, not `if`, not
-that a number is a number — so the file that declares `+` could have declared
+prints what the templates say. Nothing is built in, not `+`, not `if`, not
+that a number is a number, so the file that declares `+` could have declared
 anything else, and the tool never quietly prefers the language it was written
 in.
 
@@ -34,8 +34,8 @@ x = 1;
 **Everything a directive says about foreign text is inside a string.** A
 quoted word in a pattern is text the body must contain; a quoted template is
 text to write. Everything outside the quotes is Metaxis's own fixed
-vocabulary — a directive name, a hole, a level, a bracket — which no file can
-change. That is what lets a directive *mention* `if` without *being* an `if`
+vocabulary, which no file can change: a directive name, a hole, a level, a
+bracket. That is what lets a directive *mention* `if` without *being* an `if`
 statement, and it is why a `.mx` file can read a language with keywords
 without ever having a keyword list: `then` is a word where a rule quoted it
 and a name everywhere else, by position.
@@ -56,23 +56,23 @@ suite, and each picked because it would ask the tool for something:
 
 ## Where to read
 
-- **[Tutorial](tutorial.html)** — one concept per section, each with a file
+- **[Tutorial](tutorial.html)**: one concept per section, each with a file
   you can run and the output it gives. Every transcript is checked by the
   suite.
-- **[Glossary](glossary.html)** — the concepts in the order they depend on
+- **[Glossary](glossary.html)**: the concepts in the order they depend on
   each other, then every term of art, for a reader meeting Pratt parsers,
   attribute grammars or hygiene here first.
-- **[Reference](reference.html)** — what every part of a `.mx` file means,
+- **[Reference](reference.html)**: what every part of a `.mx` file means,
   exhaustively, with a contents table and an index.
-- **[Examples](examples.html)** — every example in the tree with its source
+- **[Examples](examples.html)**: every example in the tree with its source
   and recorded output side by side.
-- **[Notation](notation.html)** — why it is shaped this way and what that
+- **[Notation](notation.html)**: why it is shaped this way and what that
   costs, argued rather than stated.
-- **[Direction](direction.html)** — where it could go, and which futures are
+- **[Direction](direction.html)**: where it could go, and which futures are
   declined.
-- **[Prior art](prior-art.html)** — the tools that do something like this,
+- **[Prior art](prior-art.html)**: the tools that do something like this,
   and how this one scores against them.
-- **[Changelog](changelog.html)** and **[Roadmap](roadmap.html)** — when
+- **[Changelog](changelog.html)** and **[Roadmap](roadmap.html)**: when
   things shipped, and what is not built and why.
 
 ## Getting it
