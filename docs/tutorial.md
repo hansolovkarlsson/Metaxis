@@ -593,9 +593,46 @@ a number so that `*` can multiply rather than join. The last rule computes
 instead of writing: a `.mx` file can be a calculator, and `examples/calc.mx`
 is one.
 
-The full list of what a code template can ask is in REFERENCE §8.3, and it is
-short: `matched`, `count`, `at`, `num`, `level`, `terminated`, `group`,
-`replace`, `drop`, `indent`, `fresh`, `splice`.
+### 7.2 Everything a code template can say
+
+There are five kinds of statement, and they are the only things that can stand
+on a line of their own inside `{ … }`:
+
+| statement | does |
+| --- | --- |
+| `emit expr` | Appends text to the rule's output. The only way anything gets out. |
+| `if expr { … } else { … }` | Branches. A list is true when it has turns, a number when it is not zero, a text when it is not empty. |
+| `for x in h { … }` | Loops over the turns of a repeated hole. `for i, x in h` also binds the position, counting from 0. `sep expr` after the list emits that text between turns. |
+| `name(args)` | Calls a `@template`. It emits into the caller and sees only its own parameters. |
+| `contribute(name, text)` | Adds one line to a named collection, once per distinct text. §13. |
+
+An expression joins text with `+`, compares with `==`, `!=`, `<`, `<=`, `>`,
+`>=`, combines with `and`, `or` and `not`, and does arithmetic with `-`, `*`,
+`/` and `%` on numbers. `+` adds when both sides are already numbers and joins
+otherwise; the other four want numbers, which is what `num(h)` is for.
+
+And the builtins, which are the functions an expression can call:
+
+| builtin | gives |
+| --- | --- |
+| `matched(h)` | Whether the optional group holding `h` matched at all. |
+| `count(h)` | How many turns a repeated hole took. |
+| `at(h, n)` | The turn at position `n`, counting from 0. Out of range is an error, which is how two lists of different lengths get caught. |
+| `num(h)` | The hole's text read as a number. All of the text must be the number: `12abc` is an error, not 12. |
+| `level(h)` | The level of the rule that filled `h`, or 1000 for a bare token. |
+| `terminated(h)` | Whether what filled `h` already ends a statement. For a `stmts` or `block` hole, the last statement answers. |
+| `group(h, n)` | `h`, wrapped in parentheses when its level is below `n`. |
+| `replace(s, from, to)` | `s` with every `from` replaced by `to`. |
+| `drop(s, front, back)` | `s` with that many characters removed from each end. |
+| `indent(s, n)` | Every line of `s` moved right by `n` spaces, the first included, and an empty line left empty. |
+| `fresh(label)` | A name nobody else has. The same label gives the same name within one application of a rule. §8. |
+| `splice(name)` | A placeholder that the second pass replaces with the collection's aggregate. §13. |
+
+Every name in a code template is checked at the `@syntax` that wrote it: a
+misspelled builtin, a wrong number of arguments, a hole the pattern does not
+have, or a template called where a value was wanted is refused before any body
+is read. The same list, with the exact error texts, is REFERENCE §8.3 and
+§8.4.
 
 ---
 

@@ -11,8 +11,10 @@ are grouped by the day the work happened, newest first.
 ## 2026-09-06
 
 **A tutorial**, `docs/tutorial.md`, with sixteen runnable files under
-`docs/tutorial/`: one concept per section, and every transcript checked by
-`make check`.
+`docs/tutorial/`: one concept per section, every statement and builtin a code
+template has in two tables, and every transcript checked by `make check`.
+REFERENCE.md gained a contents table at the top and an index of terms at the
+end.
 
 **A statement that ends in a word like `end` needs no separator after it**,
 as the reference always said. It did: the check asked whether the last token

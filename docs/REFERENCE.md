@@ -17,6 +17,34 @@ but the notation it is there to explain.
 output printed beside it; the rest are fragments written for this page, and
 where one names a file it is lifted from that file.
 
+### Contents
+
+| § | | § | |
+| --- | --- | --- | --- |
+| 1 | A first file | 6 | How the body is read — expression mode |
+| 2 | The shape of a file | 6.1 | The lexer |
+| 2.1 | The header | 6.2 | The parser |
+| 2.2 | Where the header ends | 6.3 | Statements |
+| 2.3 | Comments in the header | 7 | Text mode |
+| 2.4 | Metaxis strings | 8 | Templates |
+| 3 | Directives | 8.1 | The string template |
+| 3.1 | `@token` | 8.2 | Fresh names |
+| 3.2 | `@comment` | 8.3 | The code template |
+| 3.3 | `@separator` | 8.4 | Collections |
+| 3.4 | `@syntax` | 9 | The command line |
+| 3.5 | `@use` | 10 | Errors |
+| 3.6 | `@mode` | 11 | Limits |
+| 3.7 | `@end` | 12 | Differences from Proto |
+| 3.8 | `@template` | | |
+| 3.9 | `@fragment` | | Index — at the end of the page |
+| 3.10 | `override` | | |
+| 4 | Patterns | | |
+| 4.1 | What shape a pattern is | | |
+| 4.2 | What a pattern may not be | | |
+| 4.3 | Kinds | | |
+| 4.4 | Groups | | |
+| 5 | Levels and binding | | |
+
 ---
 
 ## 1 · A first file
@@ -1242,3 +1270,96 @@ Both take a file that declares its own grammar. Where they part:
 
 `docs/notation.md` argues about which of those are gains and which are the
 price. This page only says which are which.
+
+---
+
+## Index
+
+Every term this page defines or uses, and the section that says what it means.
+Where a term has one home and several mentions, the home is first.
+
+| term | § |
+| --- | --- |
+| `-b`, choosing a backend | 9, 3.4 |
+| `-g`, printing the grammar | 9 |
+| `-o`, writing to a file | 9 |
+| `-t`, tracing the parse | 9, 6.2 |
+| `@comment` | 3.2, 2.3, 6.1, 7 |
+| `@end` | 3.7, 2.2 |
+| `@fragment`, `@name` splice | 3.9, 4 |
+| `@mode` | 3.6, 7 |
+| `@separator` | 3.3, 6.3, 6.1 |
+| `@syntax` | 3.4, 4, 5, 8 |
+| `@template` | 3.8, 8.3 |
+| `@token` | 3.1, 4.3, 6.1 |
+| `@use` | 3.5, 3.10 |
+| `as name`, tagging a template | 3.4, 9 |
+| `at(h, n)` | 8.3 |
+| Backend | 3.4, 9 |
+| Binding power | 5, 6.2 |
+| `block` kind | 4.3, 3.3, 6.1 |
+| Body, where it begins | 2.2 |
+| Brackets, Metaxis's own `[ … ]` | 4.4 |
+| Candidates, longest first | 6.2, 3.10 |
+| Circumfix | 4.1 |
+| Class, token | 3.1, 4.3, 6.1 |
+| Class wins a tie | 6.1 |
+| Code template `=> { … }` | 8.3, 8 |
+| Collections | 8.4 |
+| Comments in the body | 3.2, 6.1, 7 |
+| Comments in the header, `;` | 2.3 |
+| `contribute(name, text)` | 8.4 |
+| `count(h)` | 8.3 |
+| Dangling `else` | 6.2 |
+| Dedent | 3.3, 6.1, 4.3 |
+| Directives, the grammar of | 3 |
+| `drop(s, front, back)` | 8.3 |
+| `emit` | 8.3 |
+| Errors, every message | 10 |
+| Escapes in a string, the five | 2.4 |
+| Expression mode | 6, 3.6 |
+| `expr` kind | 4.3, 5 |
+| Fixity, read off the pattern | 4.1 |
+| `for x in h`, `for i, x in h` | 8.3 |
+| Fresh names, `{~t}`, `fresh(label)` | 8.2, 8.1, 8.3, 3.8 |
+| `group(h, n)` | 8.3 |
+| Groups, `[ … ]`, `[ … ]*`, `[ … ]+` | 4.4, 4.2 |
+| Header, where it ends | 2.1, 2.2 |
+| Hole | 4, 4.3, 4.2 |
+| Hygiene | 8.2 |
+| `if … else` in a code template | 8.3 |
+| `indent`, on `@separator` | 3.3, 6.1 |
+| `indent(s, n)` | 8.3 |
+| Infix | 4.1, 5 |
+| `join` | 4.4 |
+| Kinds of hole | 4.3 |
+| Led rule | 4.1, 5, 6.2 |
+| Level | 5, 3.4, 8.3 |
+| `level(h)` | 8.3 |
+| Limits | 11 |
+| List, a hole in a repeated group | 4.4, 8.3, 3.8 |
+| `matched(h)` | 8.3 |
+| Mixfix | 4.1 |
+| Nud rule | 4.1, 5, 6.2 |
+| `num(h)` | 8.3 |
+| `override` | 3.10 |
+| Pattern | 4, 4.1, 4.2 |
+| Postfix | 4.1 |
+| Pratt parser | 6.2 |
+| Prefix | 4.1 |
+| `replace(s, from, to)` | 8.3 |
+| `right`, associativity | 5 |
+| `sep` | 4.4 |
+| Separator, on the way in and out | 3.3, 6.3 |
+| `splice(name)` | 8.4, 8.3 |
+| Statements | 6.3, 3.3 |
+| `stmts` kind | 4.3, 6.3 |
+| String template `=> "…"` | 8.1, 8 |
+| Strings, Metaxis | 2.4 |
+| `terminated` | 3.4, 6.3, 8.3 |
+| Text mode | 7, 3.6 |
+| `text` kind | 4.3, 7 |
+| Token | 6.1, 3.1 |
+| Trace | 9 |
+| Word, a quoted string in a pattern | 4, 6.1, 6.3 |
+| `{{` and `}}` | 8.1 |
