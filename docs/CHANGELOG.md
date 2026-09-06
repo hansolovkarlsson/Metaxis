@@ -5,7 +5,7 @@ Only what shipped and is visible from outside: a directive that appeared, a
 behaviour that changed, a message somebody will now see. Internal reworking, and
 the reasoning behind any of it, belongs in [the journal](work-journal/) instead.*
 
-Prototype has not been released, so there are no version numbers yet. Entries
+Metaxis has not been released, so there are no version numbers yet. Entries
 are grouped by the day the work happened, newest first.
 
 ## 2026-09-05

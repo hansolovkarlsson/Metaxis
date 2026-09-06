@@ -14,7 +14,7 @@ left ([ROADMAP.md](../ROADMAP.md)), what was built
 ([POSTMORTEM.md](../POSTMORTEM.md)), and when something shipped
 ([CHANGELOG.md](../CHANGELOG.md)). Three more sit beside them and are not
 records of the work but of the thing: [REFERENCE.md](../REFERENCE.md) states
-what a `.pt` file means, [notation.md](../notation.md) argues for why it is
+what a `.mx` file means, [notation.md](../notation.md) argues for why it is
 shaped that way, and [direction.md](../direction.md) argues for where it could
 go. If a paragraph would fit in one of those, it belongs there and not here.
 

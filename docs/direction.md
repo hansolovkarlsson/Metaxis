@@ -306,6 +306,14 @@ Prototype when they were written — rewriting them would make yesterday's entri
 claim a name that did not exist. [work-journal/README.md](work-journal/README.md)
 says so at the top.
 
+**The containing folder followed on 2026-09-06.** For a day after everything
+inside it said Metaxis the working tree itself was still called `Prototype`; the
+GitHub repository was already `Metaxis`, so the directory was the last
+disagreement left, and the only one a reader meets before opening anything. It
+is now `Metaxis` too. Nothing in the build, the tests or the records reads its
+own path, so the rename was a `mv` and this paragraph — `make check` passes
+unchanged from the new location.
+
 ## What it should not become
 
 **A serious C or Python front end.** It plays to every weakness in the table
