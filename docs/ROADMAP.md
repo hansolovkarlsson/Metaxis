@@ -326,6 +326,49 @@ this far down.
 
 ---
 
+## 8 · A conformance suite — for a second engine, when one is wanted
+
+**Hans, 2026-09-06:** *we perhaps need a conformance suite if someone likes
+the Metaxis syntax but wants to write their own engine and needs to confirm
+compatibility.*
+
+Most of one exists. Every script in `tests/` takes the engine as its first
+argument and defaults to `./bin/mx`; the sixteen examples and the 83 error
+cases are input and expected output with no C in them. A second engine could
+be pointed at the tree today. What is missing is not the suite but four
+decisions the suite would force, each a place where
+[REFERENCE.md](REFERENCE.md) states this implementation rather than the
+language:
+
+- **Token regexes are POSIX ERE.** `@token` hands its pattern to the host
+  `<regex.h>`. An engine in another language has a different alternation and
+  class semantics. Either the reference names a regex subset the language
+  owns, or it says tokens are host-defined and the suite avoids the
+  differences.
+- **Fresh names are observable.** §8.2's generated names are bytes a `.out`
+  records, so a byte-diff suite makes the naming scheme part of the language.
+  Pin it deliberately, or compare after normalising it.
+- **Error messages are pinned to their text.** Right for one implementation,
+  wrong for a second. The conformance form is *refused, at this line*, with
+  the wording left to the engine.
+- **The limits table.** §11 needs one sentence saying whether those are
+  minimums a conforming engine must reach or facts about this one.
+
+Two tiers, if it is built: the byte-diff pairs are required, and the six
+scripts that compile and run what they produced are optional, because they
+need a C compiler, Free Pascal and `python3` and test meaning rather than
+bytes. `-t`'s trace is this tool's and is excluded.
+
+**What it costs.** A published suite says the syntax is settled, and 7 above
+and 6 below say it is not. It would need a version stamp, and every item that
+moves would move the suite too — a cost per change, forever. That is why the
+four decisions are worth settling now, as sentences in the reference, and the
+suite is not: settled, the answer to a second engine is *point it at `tests/`
+and read §11*, and no door has been closed. Nobody has asked; this item says
+so.
+
+---
+
 ## 6 · Alternation inside a pattern — explored, not wanted yet
 
 **Hans, 2026-09-04, exploring, and saying so:** *anything regarding alternation
