@@ -16,6 +16,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Serif"
 .wrap{display:grid;grid-template-columns:1fr;gap:0 3rem;max-width:1100px;margin:0 auto;padding:2.5rem 1.25rem 5rem}
 @media(min-width:960px){.wrap{grid-template-columns:270px minmax(0,68ch)}.rail{position:sticky;top:4rem;align-self:start;max-height:calc(100vh - 5rem);overflow-y:auto;overflow-x:hidden}}
 main{min-width:0}
+.wrap.norail{grid-template-columns:minmax(0,68ch);justify-content:center}
+.rail li.d3{margin-left:1.1em;font-size:.8rem;color:var(--mute)}
+.rail li.d3 a{color:var(--mute)}
 .eyebrow{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 .5rem}
 .masthead{grid-column:1/-1;border-bottom:1px solid var(--rule);padding-bottom:1.25rem;margin-bottom:2rem}
 h1{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:600;font-size:2.3rem;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}

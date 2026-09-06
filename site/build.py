@@ -134,7 +134,7 @@ def render_md(src):
             mm = re.match(r'(\d+(?:\.\d+)?) · (.*)', text)
             num, name = (mm.group(1), mm.group(2)) if mm else ('', text)
             anchor = slug(text)
-            if depth == 2: toc.append((num, inline(name), anchor))
+            if depth in (2, 3): toc.append((num, inline(name), anchor, depth))
             numspan = f'<span class="num">{num}</span>' if num else ''
             out.append(f'<h{depth} id="{anchor}">{numspan}<span class="t">{inline(name)}</span></h{depth}>')
             i += 1; continue
@@ -182,7 +182,7 @@ def examples_page():
         base = name[:-3]
         src = open(os.path.join(ROOT, 'examples', name)).read()
         anchor = slug(base)
-        toc.append(('', base, anchor))
+        toc.append(('', base, anchor, 2))
         out.append(f'<h2 id="{anchor}"><span class="t">{esc(base)}</span></h2><p>' + inline(desc) + '</p>')
         out.append(render_code(src, 'examples/' + name, 'mx'))
         for outname in sorted(f for f in os.listdir(os.path.join(ROOT, 'examples')) if f.startswith(base + '.out') or f.startswith(base + '-') and f.endswith('.out')):
@@ -197,7 +197,7 @@ def page(name, navtitle, title, body, toc):
     rail = ''
     if toc and len(toc) > 2:
         rail = '<nav class="rail" aria-label="On this page"><p class="eyebrow">On this page</p><ol>' + ''.join(
-            f'<li><a href="#{a}">' + (f'<span class="num">{n}</span>' if n else '') + f'<span class="t">{t}</span></a></li>' for n, t, a in toc) + '</ol></nav>'
+            f'<li class="d{d}"><a href="#{a}">' + (f'<span class="num">{n}</span>' if n else '') + f'<span class="t">{t}</span></a></li>' for n, t, a, d in toc) + '</ol></nav>'
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(re.sub(r"<[^>]+>", "", title))} · Metaxis</title>
@@ -205,7 +205,7 @@ def page(name, navtitle, title, body, toc):
 <link rel="icon" type="image/png" href="logo.png">
 <style>{CSS}</style></head>
 <body><header class="top"><a class="brand" href="index.html"><img class="mark" src="logo.png" alt="">Metaxis</a><nav class="site" aria-label="Site">{nav}<a href="{GH}">GitHub</a></nav></header>
-<div class="wrap"><header class="masthead{" hero" if name == "index" else ""}">{"<img class=\"hero-mark\" src=\"logo.png\" alt=\"The Metaxis mark: a solid block and a wireframe cube, interlocked\">" if name == "index" else ""}<div><p class="eyebrow">{esc(navtitle)}</p><h1>{title}</h1></div></header>{rail}<main>{body}</main></div>
+<div class="wrap{"" if rail else " norail"}"><header class="masthead{" hero" if name == "index" else ""}">{"<img class=\"hero-mark\" src=\"logo.png\" alt=\"The Metaxis mark: a solid block and a wireframe cube, interlocked\">" if name == "index" else ""}<div><p class="eyebrow">{esc(navtitle)}</p><h1>{title}</h1></div></header>{rail}<main>{body}</main></div>
 <footer class="foot"><p>Generated from the documents in the tree by <code>site/build.py</code>. Every transcript on these pages is run by the test suite.</p></footer></body></html>'''
 
 def main():
