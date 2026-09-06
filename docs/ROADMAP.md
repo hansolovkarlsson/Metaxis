@@ -280,85 +280,56 @@ tool already flows: the one context mechanism that does not want a store, and
 the reason [direction.md](direction.md)'s `remember`/`recall` sketch is not the
 shape to build.
 
-**What it costs, and it is the decision.** The aggregate is not known until the
-last contribution is made, and the rule that wants it runs *first* — the head of
-a program is expanded before its body. So the splice cannot be a splice; it has
-to be a placeholder resolved after expansion, which is a second pass over the
-output text and a new thing in a tool that has one. Three things to decide
-before writing it, and stage 4 found the second:
+**What it costs.** The aggregate is not known until the last contribution is
+made, and the rule that wants it runs *first* — the head of a program is
+expanded before its body. So the splice cannot be a splice; it has to be a
+placeholder resolved after expansion, which is a second pass over the output
+text and a new thing in a tool that has one.
 
-- **How a rule contributes.** A statement in a code template —
-  `contribute("vars", v)` — is the obvious spelling, and it keeps the rule
-  saying only what *it* adds.
-- **Where the aggregate goes when the source has no head.** Pascal has
-  `program` and a rule can splice there. BASIC has nothing before its first
-  line, so the *file* has to be able to say *before the first statement*, and
-  nothing in the notation says that today. This is the part the test wraps by
-  hand, and it is the part that is not obvious.
-- **Whether a collection deduplicates and orders.** `T` is mentioned nine times
-  and wants declaring once, in some order a diff can rely on.
+**Rehearsed 2026-09-06, by the stage 3 method, and the pass did not need to
+know C.** The whole mechanic was faked with no tool change: rules emitted
+`@@vars:int T;@@` markers into their output where a contribution would go and
+`@@splice:vars@@` where the aggregate would, and a twelve-line awk pass over
+the output collected the distinct contributions in first-seen order, replaced
+the splice, and deleted the markers. `scratch/collect/` on the day, the journal
+after. Three customers, three results:
 
-**What would falsify it.** If the placeholder pass turns out to need to know
-anything about the output language — where in C it is safe to substitute, how
-to indent it — then the agnosticism is spent and the feature is not worth it.
-The stage 3 method applies: rehearse the pass by hand on `examples/basic.out`
-first, and write the plan after.
+- **BASIC.** `LET` and `FOR` contribute `int T;` or `const char *A_s;`, the
+  sigil deciding. Nothing splices, so the aggregate went first, and
+  `examples/basic.out` compiled and ran **without the hand-written prologue
+  `tests/basic.sh` supplies** — 39, 4, it's middling, 40.
+- **Pascal.** `writeln` contributes the include and `program` splices it.
+  `examples/code.out` compiled and ran; a copy with every `writeln` removed got
+  no include, which is the customer's whole point.
+- **The island.** The `fprintf` rule contributes the definition of `complain`
+  and the `usage` rule splices it. The rewritten `mx.c` compiled against the
+  tree's objects and ran.
 
-## 7 · The island rule — text mode wants a lexer
+**What the rehearsal settled**, which is the plan:
 
-*Numbered 7 because a number here is stable once given; by this page's own
-order it belongs after 4, being stage 5's.*
+- **A contribution is a complete line of output text**, and a collection is its
+  distinct contributions in first-seen order, joined with newlines. Dedup by
+  exact text was enough for every case; `T` was contributed nine times and
+  declared once.
+- **The file names the splice point; the start of the output is the default
+  when it does not.** The default is right for BASIC, which has no head, and
+  would be wrong for C, where the definition must follow the includes — and C
+  did not need it, because the rewrite could name `usage` as its landmark. So
+  the default is for sources with no head and is not a guess about where a
+  head is.
+- **The pass is text and knows nothing.** It replaced markers and never looked
+  between them, and every output compiled. The falsifier did not fire.
+- **An empty aggregate leaves an empty line** at its splice, which is cosmetic
+  and is the one thing the awk pass got slightly wrong.
 
-**The customer.** `tests/island.sh` rewrites `metaxis/cmd/mx.c` with
-`lib/island.mx` and runs the result, so a rewrite over a real file exists and
-is checked. It works because its two rules stay inside what text mode knows.
-The rehearsal that preceded it — `scratch/island/` on the day, the journal
-after — tried the three things a rewrite over real C wants next, and each one
-failed in a way that is now measured:
-
-- **No tokens.** Renaming `usage` also rewrote the word inside the usage string;
-  renaming `err` turned `stderr` into `stde`. A rename over real code is wrong
-  without an identifier boundary, and a text-mode hole is a run of characters.
-  [REFERENCE.md](REFERENCE.md) §7 already refuses a class kind in text mode
-  and says honouring it is this page's job *if anybody asks*. This is somebody
-  asking.
-- **No brackets.** A hole over `f(x, g(y))` stops at the first `)`. The rewrite
-  in `lib/island.mx` comes out right only because its template keeps the hole
-  last, so the leftover `))` is copied through behind it; a template that reused
-  the hole wrote `log(f(x, g(y); complain(f(x, g(y)))`. `examples/island.mx`
-  records the accident on purpose.
-- **Comment-aware means comment-removing.** Declaring C's `/* */` so that rules
-  stop firing inside comments deleted the comments from the output — six lines
-  of `mx.c` — because a text-mode comment is removed, which is right for a
-  document and wrong for a rewrite that must give the file back.
-
-**What this says about the shape.** The survey offered three shapes for
-islands in *expression* mode — skip a token, skip to the separator, a declared
-fallback rule — and the rehearsal did not ask for any of them. What the rewrite
-wants is text mode plus the three things Comby knows and nothing more:
-identifiers, balanced brackets, and strings and comments that are *skipped over*
-rather than removed. That is a smaller mechanic than any of the three, it does
-not touch expression mode, and it does not touch the completeness that lets an
-expression grammar report its own bugs. Each piece has its own decision:
-
-- a class kind in text mode would have to mean *one token of this class, at a
-  boundary* — which is a lexer inside a scan, and where the token ends is the
-  question;
-- a bracket-aware hole needs to know which characters are brackets, and
-  [ROADMAP.md](ROADMAP.md) 2 has already met the question of whether a bracket
-  is declared (`@bracket "(" ")"`) or known;
-- a comment that is skipped rather than removed is a third thing `@comment`
-  would mean, and may want its own word.
-
-**And one thing the stage could not do**, which is not this item's: the
-definition of `complain` went in front of `usage` because that line happened
-to exist. The honest place is *before the first function*, and saying that is
-[ROADMAP.md](ROADMAP.md) 4's second decision, met now from C as well as BASIC.
-
-**Why it is not built today.** Each piece has a customer in the rehearsal and
-none in a file that ships; the rewrite that ships was written to need none of
-them. Build the first piece when a rewrite is wanted that a bare-word rule gets
-wrong, which will be the first rename.
+**What to build, in the shape the markers rehearsed:** `contribute("vars",
+text)` as a statement in a code template, one per rule per application, into
+expander state rather than the output text; `splice("vars")` as an expression
+that emits a placeholder; a directive for the file with no head to say a
+collection goes first; and the pass, run once over the whole output after
+expansion, which the markers have already written the specification of. The
+cost that stays is the pass itself — the tool has one pass today and this is a
+second — and it was measured at twelve lines of awk.
 
 ## 5 · Source maps
 
