@@ -12,6 +12,44 @@ Newest first.
 
 ---
 
+## 26 · A count that read 9 under one grep and 10 under the other
+
+**Issue.** `tests/island.sh` gained a rename on 2026-09-06 and pinned what it
+did to `metaxis/cmd/mx.c` by number: ten `out`s become `res`. The first
+version counted them with `grep -ow res | wc -l`. The test read 9. The same
+command at the prompt read 10, on a file that `diff` called identical to the
+one the test had just made.
+
+**Root cause.** Two greps. The test runs under `sh`, which takes the system's
+BSD grep from its path; the interactive shell had another one first. BSD grep
+with `-o` and `-w` together reports one match on a line that holds two,
+`res[strlen(res) - 1]`, so the number was a property of the machine and not
+of the file. The suite runs on Linux and macOS, and the pin would have been
+green on one and red on the other from its first push.
+
+**What found it.** The hand count and the test disagreeing on the same file,
+before the commit. Not the suite: on the machine the number was measured on,
+the suite would have agreed with the number, which is the trap. A number
+pinned by hand is measured with whatever tool is at hand, and the shell
+script and the prompt do not share a path.
+
+**Solution.** The test splits the file into identifiers first,
+`tr -c 'A-Za-z0-9_' '\n'`, and counts whole lines with `grep -cx`, which
+every grep agrees on. The script says why in a comment, so the readable
+version is not put back.
+
+**Learnings.** **A pinned number is a claim about a file, and it has to be
+produced by an operation the platforms cannot disagree on.** Splitting and
+counting lines is one; a flag combination whose semantics differ between
+two implementations of the same name is not, and the difference is invisible
+until the other platform runs it. What would catch the next one is the
+check the tree already makes for outputs, applied to counts: derive the
+number by two routes before pinning it, or push and read both CI runs before
+believing it. And a command tried at the prompt is not the command in the
+test, because the prompt's path is not the script's.
+
+---
+
 ## 25 · Two verdicts written from the documents, and both refuted by a six-line file
 
 **Issue.** A page of languages, [languages.md](languages.md), was drafted
