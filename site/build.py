@@ -57,11 +57,14 @@ def link(target):
 
 def inline(t):
     t = esc(t)
-    t = re.sub(r'`([^`]+)`', lambda m: '<code>' + m.group(1) + '</code>', t)
+    codes = []
+    def stash(m):
+        codes.append('<code>' + m.group(1) + '</code>'); return '\x00%d\x00' % (len(codes) - 1)
+    t = re.sub(r'`([^`]+)`', stash, t)
     t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
     t = re.sub(r'(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])', r'<em>\1</em>', t)
     t = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', lambda m: '<a href="' + link(m.group(2)) + '">' + m.group(1) + '</a>', t)
-    return t
+    return re.sub(r'\x00(\d+)\x00', lambda m: codes[int(m.group(1))], t)
 
 def hl_header_line(line):
     if line.lstrip().startswith(';'):
@@ -133,7 +136,7 @@ def render_md(src):
             anchor = slug(text)
             if depth == 2: toc.append((num, inline(name), anchor))
             numspan = f'<span class="num">{num}</span>' if num else ''
-            out.append(f'<h{depth} id="{anchor}">{numspan}{inline(name)}</h{depth}>')
+            out.append(f'<h{depth} id="{anchor}">{numspan}<span class="t">{inline(name)}</span></h{depth}>')
             i += 1; continue
         if l.startswith('---'): flush(); i += 1; continue
         if l.startswith('> '):
@@ -180,7 +183,7 @@ def examples_page():
         src = open(os.path.join(ROOT, 'examples', name)).read()
         anchor = slug(base)
         toc.append(('', base, anchor))
-        out.append(f'<h2 id="{anchor}">{esc(base)}</h2><p>' + inline(desc) + '</p>')
+        out.append(f'<h2 id="{anchor}"><span class="t">{esc(base)}</span></h2><p>' + inline(desc) + '</p>')
         out.append(render_code(src, 'examples/' + name, 'mx'))
         for outname in sorted(f for f in os.listdir(os.path.join(ROOT, 'examples')) if f.startswith(base + '.out') or f.startswith(base + '-') and f.endswith('.out')):
             got = open(os.path.join(ROOT, 'examples', outname)).read()
@@ -194,7 +197,7 @@ def page(name, navtitle, title, body, toc):
     rail = ''
     if toc and len(toc) > 2:
         rail = '<nav class="rail" aria-label="On this page"><p class="eyebrow">On this page</p><ol>' + ''.join(
-            f'<li><a href="#{a}">' + (f'<span class="num">{n}</span>' if n else '') + f'{t}</a></li>' for n, t, a in toc) + '</ol></nav>'
+            f'<li><a href="#{a}">' + (f'<span class="num">{n}</span>' if n else '') + f'<span class="t">{t}</span></a></li>' for n, t, a in toc) + '</ol></nav>'
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(re.sub(r"<[^>]+>", "", title))} · Metaxis</title>
