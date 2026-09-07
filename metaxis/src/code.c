@@ -448,6 +448,7 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { "splice",  1, "where a collection's aggregate goes"      },
     { "recall",  1, "what was remembered under a key"          },
     { "known",   1, "whether a key has been remembered"        },
+    { "expand",  1, "a text run through this file's rules in text mode" },
     { NULL, 0, NULL }
 };
 
@@ -965,6 +966,13 @@ static int call(Ev *ev, Expr *e, Val *out)
         *out = v_bool(store_get(ev->g, as_text(a[0])) != NULL);
         return 0;
     }
+    if (!strcmp(e->s, "expand")) {
+        char *err = NULL;
+        char *t = text_reenter(ev->g, as_text(a[0]), &err);
+        if (!t) { ev->err = err ? err : xstrdup("a text rule expands into itself"); return -1; }
+        *out = v_text(t);
+        return 0;
+    }
     if (!strcmp(e->s, "drop")) {
         char  *t = as_text(a[0]);
         size_t n = strlen(t);
@@ -1256,6 +1264,27 @@ static int resolve_block(Grammar *g, const char *where, Stmt *v, int n, char **e
     return 0;
 }
 
+/* Whether a block calls the builtin `n` anywhere, holes and strings of that
+   name not counted. `expand` re-enters text mode and has no meaning under
+   expression mode, and since `@mode` may come after the rule that calls it,
+   the refusal waits for the seal. */
+static int expr_calls(Expr *e, const char *n)
+{
+    if (!e) return 0;
+    if (e->kind == E_CALL && !strcmp(e->s, n)) return 1;
+    for (int i = 0; i < e->nargs; i++) if (expr_calls(e->args[i], n)) return 1;
+    return expr_calls(e->a, n) || expr_calls(e->b, n);
+}
+
+static int block_calls(Stmt *v, int nv, const char *n)
+{
+    for (int i = 0; i < nv; i++) {
+        if (expr_calls(v[i].e, n) || expr_calls(v[i].sep, n)) return 1;
+        if (block_calls(v[i].body, v[i].nbody, n) || block_calls(v[i].alt, v[i].nalt, n)) return 1;
+    }
+    return 0;
+}
+
 int code_check_calls(Grammar *g, char **err)
 {
     for (int i = 0; i < g->nrule; i++) {
@@ -1263,6 +1292,11 @@ int code_check_calls(Grammar *g, char **err)
         if (!r->body) continue;
         if (resolve_block(g, xfmt("%s:%d", r->file, r->line), r->body, r->nbody, err) < 0)
             return -1;
+        if (g->mode != MODE_TEXT && block_calls(r->body, r->nbody, "expand")) {
+            *err = xfmt("%s:%d: 'expand' runs a text through this file's rules in text"
+                        " mode, and this file is in expression mode", r->file, r->line);
+            return -1;
+        }
     }
     for (int i = 0; i < g->ntmpl; i++) {
         Tmpl *t = &g->tmpl[i];
@@ -1275,6 +1309,11 @@ int code_check_calls(Grammar *g, char **err)
         for (int k = 0; k < t->nparam && k < 32; k++) sc.n[sc.n_++] = t->param[k];
         if (check_block(NULL, where, t->body, t->nbody, &sc, err) < 0) return -1;
         if (resolve_block(g, where, t->body, t->nbody, err) < 0) return -1;
+        if (g->mode != MODE_TEXT && block_calls(t->body, t->nbody, "expand")) {
+            *err = xfmt("%s: 'expand' runs a text through this file's rules in text"
+                        " mode, and this file is in expression mode", where);
+            return -1;
+        }
     }
     return 0;
 }

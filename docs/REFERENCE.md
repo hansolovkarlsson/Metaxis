@@ -894,7 +894,10 @@ else is copied through unchanged.
   nested in the hole fires for the match and for none of the candidates the
   search rejected. Until 2026-09-07 it fired once per candidate, which a
   `contribute` or a `fresh` inside it could see
-  ([POSTMORTEM.md](POSTMORTEM.md) 35).
+  ([POSTMORTEM.md](POSTMORTEM.md) 35). A template can also run a text
+  through the rules itself with `expand(text)` (§8.3), one level deeper than
+  the rule it is in, under the same cap; that is how a macro's body is
+  expanded again after it is substituted.
 - If a rule's pattern does not complete, nothing is consumed and the next rule is
   tried; if none matches, one character is copied and the scan moves on.
 - A comment declared with `@comment` is removed. **A comment that is alone on
@@ -1065,6 +1068,7 @@ cannot leave one uncomputed. See its header for what that rules out.
 | `splice(name)` | where the aggregate of the collection `name` goes, §8.4 |
 | `recall(key)` | what a `remember` kept under `key`; an error if nothing did, §8.5 |
 | `known(key)` | whether anything is remembered under `key`, §8.5 |
+| `expand(text)` | `text` run through this file's rules in text mode, one level deeper than the rule that is running, so the 64 cap of §7 applies. Text mode only: under expression mode it is refused at the seal, `'expand' runs a text through this file's rules in text mode, and this file is in expression mode`. What asked for it is a macro's body expanded again after substitution, `examples/cpp.mx` |
 
 Everything in a code template is checked at the `@syntax` that wrote it: a name
 that is neither a hole nor a loop variable, a builtin nobody has, the wrong
@@ -1299,6 +1303,7 @@ not read, or memory it could not get.
 | `'remember' takes 2 -- the key and what to keep under it -- and was given 1` | §8.5 |
 | `'forget' is a statement -- it drops a key from the store on a line of its own and has no value to use here` | §8.5 |
 | `'forget' takes 1 -- the key to drop -- and was given 2` | §8.5 |
+| `'expand' runs a text through this file's rules in text mode, and this file is in expression mode` | §8.3 |
 | `a rule that begins with a hole is infix, and text mode has nothing for it to continue -- it could never fire` | §7 |
 | `a bracket opens with one word and closes with another, and '|' is both` | §3.11 |
 | `'x' is already a bracket, declared at file:line` | §3.11 |
@@ -1490,6 +1495,7 @@ Where a term has one home and several mentions, the home is first.
 | Escapes in a string, the five | 2.4 |
 | Exit status | 10 |
 | Expression mode | 6, 3.6 |
+| `expand(text)` | 8.3, 7 |
 | `expr` kind | 4.3, 5 |
 | Fixity, read off the pattern | 4.1 |
 | `for x in h`, `for i, x in h` | 8.3 |

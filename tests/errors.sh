@@ -404,6 +404,13 @@ expect "'known' takes 1 and was given 2" <<'EOF'
 @syntax "f" a => { emit known("k", a) }
 EOF
 
+# `expand` re-enters text mode, so under expression mode it means nothing; the
+# refusal waits for the seal because `@mode` may follow the rule.
+expect "'expand' runs a text through this file's rules in text mode, and this file is in expression mode" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { emit expand(a) }
+EOF
+
 expect "'t' is a template" <<'EOF'
 @token number "[0-9]+"
 @template t(x) { emit x }

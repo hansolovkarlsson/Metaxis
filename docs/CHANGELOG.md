@@ -10,6 +10,13 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`expand(text)`: a template runs a text through this file's rules.** Text
+mode only, one level deeper than the rule that is running, under the same
+64 cap; refused at the seal under expression mode. `examples/cpp.mx` uses
+it to rescan a macro's body at use, so a body that names a macro defined
+later gets the later value, and a `busy:` key in the store stops a macro
+that names itself the way cpp stops it.
+
 **`examples/cpp.mx`: a C preprocessor in three text-mode rules, stage 6
 begun.** Object-like macros: `#define` remembers, `#undef` forgets, and a
 rule on every identifier recalls. `tests/cpp.sh` compiles what comes out,

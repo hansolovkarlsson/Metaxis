@@ -293,6 +293,9 @@ int   rule_has_hole(Rule *r, const char *name);
 int   code_mentions(Rule *r, const char *n);
 char *expand_text(Grammar *g, const char *src, size_t from,
                   const char *file, char **err);
+/* `expand(text)` from a template: the text through this file's rules in text
+   mode, one level deeper than the rule that is running. NULL with *err set. */
+char *text_reenter(Grammar *g, const char *s, char **err);
 
 /* ------------------------------------------------------------------- files */
 

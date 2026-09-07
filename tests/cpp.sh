@@ -41,14 +41,16 @@ idents() { tr -c 'A-Za-z0-9_' '\n' < "$TMP/out.c" | grep -cx "$1"; }
 dirs=$(grep -c '^#' "$TMP/out.c")
 inc=$(grep -c '^#include <stdio.h>$' "$TMP/out.c")
 lim=$(idents LIMIT)
-gone=$(( $(idents TOTAL) + $(idents GREETING) ))
+gone=$(( $(idents TOTAL) + $(idents GREETING) + $(idents A) + $(idents B) ))
 step=$(idents STEP)
-if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] || [ "$step" != 3 ]; then
+self=$(idents SELF)
+if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] || [ "$step" != 3 ] || [ "$self" != 2 ]; then
     echo "FAILED  cpp.sh: the rules did not do what they do to examples/cpp.mx's body"
     echo "        directives left: $dirs (want 1, the include: $inc)"
     echo "        LIMIT as an identifier: $lim (want 1, inside the string)"
-    echo "        TOTAL and GREETING left: $gone (want 0)"
+    echo "        TOTAL, GREETING, A and B left: $gone (want 0)"
     echo "        STEP left: $step (want 3: the undefined variable, its use, and the comment)"
+    echo "        SELF left: $self (want 2: the variable and its use, the macro having stopped at itself)"
     exit 1
 fi
 
@@ -73,7 +75,8 @@ want=$("$TMP/b")
 # too.
 expected='limit=10 step=3 total=30
 LIMIT is not a macro inside a string
-17'
+17
+5 4'
 
 if [ "$got" != "$want" ]; then
     echo "FAILED  cpp.sh: the preprocessed program and the compiler's own disagree"
@@ -88,7 +91,7 @@ if [ "$got" != "$expected" ]; then
     exit 1
 fi
 
-echo "ok      cpp.sh: four macros defined, one undefined, and cc's own preprocessor agrees"
+echo "ok      cpp.sh: seven macros defined, one undefined, and cc's own preprocessor agrees"
 echo "            no directive left but the include, LIMIT kept inside its string,"
-echo "            and both programs print the same three lines"
+echo "            and both programs print the same four lines"
 exit 0

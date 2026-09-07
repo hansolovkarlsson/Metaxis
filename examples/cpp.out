@@ -8,5 +8,7 @@ int main(void)
     printf("LIMIT is not a macro inside a string\n");
     int STEP = 7;                 /* an ordinary variable now, STEP being undefined */
     printf("%d\n", STEP + 10);
+    int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
+    printf("%d %d\n", 5, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     return 0;
 }

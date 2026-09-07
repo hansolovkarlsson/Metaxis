@@ -602,6 +602,21 @@ char *expand_expr(Grammar *g, Toks *tk, char **err)
 
 static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char **err);
 
+/* The depth of the text rule whose template is running, for text_reenter(). */
+static int text_cur_depth;
+
+/* `expand(text)`, REFERENCE §8.3: a template runs a text through this file's
+   rules, one level deeper than the rule it is in, so the 64 cap catches a
+   body that expands into itself exactly as it catches a hole that does. It is
+   the one builtin that puts the scanner back on the stack from inside a
+   template, and roadmap item 11's preprocessor is what asked: a macro's body
+   is expanded again after substitution, and a `#include`d file's text has to
+   go through the rules it was included into. */
+char *text_reenter(Grammar *g, const char *s, char **err)
+{
+    return text_expand(g, s, strlen(s), text_cur_depth + 1, err);
+}
+
 static int text_comment(Grammar *g, const char *s, size_t len, size_t i,
                         size_t *start, size_t *end)
 {
@@ -909,7 +924,16 @@ static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
     *end = t.end;
     if (bind_expand(&t) < 0) return NULL;
 
-    if (r->body) return code_eval(g, r, b, nb, err);
+    if (r->body) {
+        /* `expand(text)` in the template re-enters text mode one level down
+           from here, so the depth this rule fired at is left where
+           text_reenter() can find it, and put back after. */
+        int saved = text_cur_depth;
+        text_cur_depth = depth;
+        char *out = code_eval(g, r, b, nb, err);
+        text_cur_depth = saved;
+        return out;
+    }
 
     P p = { g, NULL, 0, 0, 0, NULL, -1 };
     char *out = subst(&p, r, b, nb);

@@ -50,7 +50,21 @@
 @syntax "#define " n:name " " b "\n" => { remember("def:" + n, b) }
 @syntax "#undef " n:name "\n"        => { forget("def:" + n) }
 
-@syntax x:name => { if known("def:" + x) { emit recall("def:" + x) } else { emit x } }
+; A name that is a macro is replaced by its body run through these rules
+; again, which is cpp's rescan: `#define A B` then `#define B 5` gives `A`
+; the value 5, because `B` is looked up when `A` is used and not when it was
+; defined. cpp's rule for a body that names its own macro is that the name
+; is not expanded again while it is being expanded, which is what stops
+; `#define SELF SELF`; here that is a `busy:` key remembered for the
+; duration and forgotten after. Without it the depth cap would stop it
+; instead, at 64, with an error.
+@syntax x:name => {
+    if known("def:" + x) and not known("busy:" + x) {
+        remember("busy:" + x, "1")
+        emit expand(recall("def:" + x))
+        forget("busy:" + x)
+    } else { emit x }
+}
 
 @end
 #include <stdio.h>
@@ -59,6 +73,9 @@
 #define STEP 3
 #define TOTAL (LIMIT * STEP)
 #define GREETING "limit=%d step=%d total=%d\n"
+#define A B
+#define B 5
+#define SELF SELF
 
 int main(void)
 {
@@ -68,5 +85,7 @@ int main(void)
 #undef STEP
     int STEP = 7;                 /* an ordinary variable now, STEP being undefined */
     printf("%d\n", STEP + LIMIT);
+    int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
+    printf("%d %d\n", A, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     return 0;
 }
