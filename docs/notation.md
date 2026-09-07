@@ -358,6 +358,24 @@ not about the language. The day this pass needs to know where in C a
 declaration may go is the day the mechanism is wrong, and that sentence is
 written down so that it can be checked.
 
+**The store compromises rule locality, and by exactly as much as a
+collection does.** Until 2026-09-07 a rule's output depended on its own
+holes and on nothing that had run before it, which is what let a `@use`d
+file be read without reading the file that uses it. `remember` and `recall`
+(REFERENCE §8.5) end that: a rule may now emit differently because of a rule
+that fired earlier in the body. The bill has two lines. A file that recalls
+a key is only right if something remembered it first, so the order of the
+source now matters to the output in a way the notation cannot show at the
+rule, only at the key. And two files that spell one key interfere without
+either being told, since a write is a body event and nothing in the header
+can be asked to refuse it; the defence is the one collections have, a prefix
+in the key that says whose it is, and it is a convention rather than a
+check. What was bought is the half of context that flows down, which every
+row of [direction.md](direction.md)'s table of failures wanted, with the
+tool still knowing nothing about types, scopes or macros. The day a
+`.mx` file cannot say which of its rules wrote a key is the day this wants
+a declaration, and that sentence is written down so that it can be checked.
+
 **Output parenthesisation is the author's problem, in a string template.**
 Metaxis knows the input grammar because the file declared it, and a string
 template can splice and nothing else. So `examples/pascal.mx` writes

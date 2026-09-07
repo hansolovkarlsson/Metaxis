@@ -31,13 +31,13 @@ where one names a file it is lifted from that file.
 | 3.1 | `@token` | 8.2 | Fresh names |
 | 3.2 | `@comment` | 8.3 | The code template |
 | 3.3 | `@separator` | 8.4 | Collections |
-| 3.4 | `@syntax` | 9 | The command line |
-| 3.5 | `@use` | 10 | Errors |
-| 3.6 | `@mode` | 11 | Limits |
-| 3.7 | `@end` | 12 | Differences from Proto |
-| 3.8 | `@template` | | |
-| 3.9 | `@fragment` | | Index, at the end of the page |
-| 3.10 | `override` | | |
+| 3.4 | `@syntax` | 8.5 | The store |
+| 3.5 | `@use` | 9 | The command line |
+| 3.6 | `@mode` | 10 | Errors |
+| 3.7 | `@end` | 11 | Limits |
+| 3.8 | `@template` | 12 | Differences from Proto |
+| 3.9 | `@fragment` | | |
+| 3.10 | `override` | | Index, at the end of the page |
 | 3.11 | `@bracket` | | |
 | 4 | Patterns | | |
 | 4.1 | What shape a pattern is | | |
@@ -1051,6 +1051,8 @@ cannot leave one uncomputed. See its header for what that rules out.
 | `indent(s, n)` | `s` with every line moved right by `n` spaces, **including the first**, and an empty line left empty. Block indentation, which is what a brace wants; nesting composes, because an inner block is already indented when the outer one indents it |
 | `fresh(label)` | a name nobody else has, §8.2 |
 | `splice(name)` | where the aggregate of the collection `name` goes, §8.4 |
+| `recall(key)` | what a `remember` kept under `key`; an error if nothing did, §8.5 |
+| `known(key)` | whether anything is remembered under `key`, §8.5 |
 
 Everything in a code template is checked at the `@syntax` that wrote it: a name
 that is neither a hole nor a loop variable, a builtin nobody has, the wrong
@@ -1133,6 +1135,49 @@ use here`.
 it, so a program that never prints gets none; `lib/island.mx` has the rule that
 introduces a call contribute the definition. All three are compiled and run by
 the suite.
+
+### 8.5 The store
+
+A collection flows upward and is read by nobody until the second pass. The
+**store** is the other half: a rule writes a key at the moment it runs and a
+rule that runs later reads it, so what a rule emits can depend on a rule
+that ran before it. It is read and written **in body order**, which is the
+order text mode scans and the order expression mode reduces, and nothing is
+resolved afterwards: a key read before it is written is not yet written.
+
+```
+@syntax "#define " n:name " " b "\n" => { remember("def:" + n, b) }
+@syntax "#undef " n:name "\n"        => { forget("def:" + n) }
+@syntax "use " n:name => { if known("def:" + n) { emit recall("def:" + n) } else { emit n } }
+```
+
+- **`remember(key, text)`** is a statement, beside `emit` and `contribute`,
+  and has no value. It keeps `text` under `key`; a second `remember` of the
+  same key replaces the first.
+- **`forget(key)`** is a statement and drops the key. Forgetting a key nobody
+  remembered is not an error: `#undef X` with no `X` defined is legal C, and
+  `known` is there for a template that wants to ask.
+- **`recall(key)`** is an expression and gives what is remembered. A key
+  nobody remembered is `'recall' has nothing remembered under 'key'`, an
+  error and not an empty string, for the reason `at` out of range is: a name
+  that was never defined reading as nothing would be the quiet kind of wrong.
+- **`known(key)`** is an expression and is true when the key is remembered.
+
+**A key is a string the file spells, as a collection's name is.** Two rules,
+or two `@use`d files, writing one key is not refused: the last write in body
+order wins. That is the intended reading for the customer, where `#undef`
+and a second `#define` *mean* replacement, and it is the answer collections
+took. A write is a body event and not a header declaration, so `override`
+(§3.10), which settles two declarations, has nothing to attach to. What it
+costs is that a used file and its user can interfere through a key neither
+knew the other spelled, exactly as they can through a collection's name;
+[notation.md](notation.md)'s "What it costs" says so.
+
+Both work in either mode. Like `contribute`, neither statement is a keyword:
+a hole may be called `remember`, because a name with `(` after it where a
+statement was expected can be nothing but a call. Using a statement where a
+value is wanted is `'remember' is a statement -- it writes the store on a
+line of its own and has no value to use here`.
 
 ---
 
@@ -1238,6 +1283,10 @@ not read, or memory it could not get.
 | `no kind or token class called 'x'` | §4.3, or a `@token` that has not been declared yet |
 | `'contribute' is a statement -- it adds to a collection on a line of its own and has no value to use here` | §8.4 |
 | `'contribute' takes 2 -- the collection's name and what to add to it -- and was given 1` | §8.4 |
+| `'remember' is a statement -- it writes the store on a line of its own and has no value to use here` | §8.5 |
+| `'remember' takes 2 -- the key and what to keep under it -- and was given 1` | §8.5 |
+| `'forget' is a statement -- it drops a key from the store on a line of its own and has no value to use here` | §8.5 |
+| `'forget' takes 1 -- the key to drop -- and was given 2` | §8.5 |
 | `a rule that begins with a hole is infix, and text mode has nothing for it to continue -- it could never fire` | §7 |
 | `a bracket opens with one word and closes with another, and '|' is both` | §3.11 |
 | `'x' is already a bracket, declared at file:line` | §3.11 |
@@ -1323,6 +1372,7 @@ not read, or memory it could not get.
 | `a text rule expands into itself` | 64 deep, §7 |
 | `this rule has too many ways to match` | a text rule's search ran past its budget, §7 |
 | `no fresh name for '{~t}' is free` | 100000 candidates were all taken, §8.1 |
+| `'recall' has nothing remembered under '…'` | a key nobody wrote, §8.5 |
 
 ---
 
@@ -1432,6 +1482,7 @@ Where a term has one home and several mentions, the home is first.
 | Fixity, read off the pattern | 4.1 |
 | `for x in h`, `for i, x in h` | 8.3 |
 | Fresh names, `{~t}`, `fresh(label)` | 8.2, 8.1, 8.3, 3.8 |
+| `forget(key)` | 8.5 |
 | `group(h, n)` | 8.3 |
 | Groups, `[ … ]`, `[ … ]*`, `[ … ]+` | 4.4, 4.2 |
 | Header, where it ends | 2.1, 2.2 |
@@ -1445,6 +1496,7 @@ Where a term has one home and several mentions, the home is first.
 | Kinds of hole | 4.3 |
 | Led rule | 4.1, 5, 6.2 |
 | Level | 5, 3.4, 8.3 |
+| `known(key)` | 8.5 |
 | `level(h)` | 8.3 |
 | Limits | 11 |
 | List, a hole in a repeated group | 4.4, 8.3, 3.8 |
@@ -1458,6 +1510,8 @@ Where a term has one home and several mentions, the home is first.
 | Postfix | 4.1 |
 | Pratt parser | 6.2 |
 | Prefix | 4.1 |
+| `recall(key)` | 8.5 |
+| `remember(key, text)` | 8.5 |
 | `replace(s, from, to)` | 8.3 |
 | `right`, associativity | 5 |
 | `sep` | 4.4 |

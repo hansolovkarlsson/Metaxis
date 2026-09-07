@@ -446,6 +446,8 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { "indent",  2, "a text with every line moved right"       },
     { "fresh",   1, "a name nobody else has"                  },
     { "splice",  1, "where a collection's aggregate goes"      },
+    { "recall",  1, "what was remembered under a key"          },
+    { "known",   1, "whether a key has been remembered"        },
     { NULL, 0, NULL }
 };
 
@@ -453,8 +455,31 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
    collection and has no value. It is not a keyword -- a hole may still be
    called `contribute`, because a name with `(` after it where a statement was
    expected can be nothing but a call, and that is the only place this is
-   looked for. See collect_resolve() for what becomes of what it adds. */
-static int is_stmt_builtin(const char *n) { return !strcmp(n, "contribute"); }
+   looked for. See collect_resolve() for what becomes of what it adds.
+   `remember(key, text)` and `forget(key)` are the store's two statements and
+   are found the same way; see store_put() for what the store is. Each
+   message is one whole literal, and not a phrase spliced into a shared
+   format, because tests/hygiene.sh holds every message REFERENCE §10 quotes
+   to one string literal in this tree; `arity` ends where the count goes. */
+static const struct { const char *name; int args; const char *arity, *value; } STMT[] = {
+    { "contribute", 2,
+      "'contribute' takes 2 -- the collection's name and what to add to it -- and was given ",
+      "'contribute' is a statement -- it adds to a collection on a line of its own and has no value to use here" },
+    { "remember",   2,
+      "'remember' takes 2 -- the key and what to keep under it -- and was given ",
+      "'remember' is a statement -- it writes the store on a line of its own and has no value to use here" },
+    { "forget",     1,
+      "'forget' takes 1 -- the key to drop -- and was given ",
+      "'forget' is a statement -- it drops a key from the store on a line of its own and has no value to use here" },
+    { NULL, 0, NULL, NULL }
+};
+
+static int stmt_builtin(const char *n)
+{
+    for (int i = 0; STMT[i].name; i++) if (!strcmp(STMT[i].name, n)) return i;
+    return -1;
+}
+static int is_stmt_builtin(const char *n) { return stmt_builtin(n) >= 0; }
 
 static int check_expr(Rule *r, const char *where, Expr *e, Scope *sc, char **err)
 {
@@ -746,6 +771,54 @@ static void coll_add(Grammar *g, const char *name, const char *text)
     c->item = v;
 }
 
+/* ------------------------------------------------------------------ the store
+ *
+ * A collection flows upward and is read by nobody until the second pass; the
+ * store is the half of context that flows *down*: a rule writes a key at the
+ * moment it runs and a rule that runs later reads it, in body order, which is
+ * the order text mode scans and the order expression mode reduces. It is
+ * direction.md's `remember`/`recall`, and roadmap item 11's preprocessor is
+ * the customer that named it: `#define` remembers, a later `NAME` recalls.
+ *
+ * Two @use'd files writing one key was the decision, and it went the way
+ * collections went on 2026-09-06: the key is a string the file spells, the
+ * last write in body order wins, and nothing is refused. A write is a body
+ * event and not a header declaration, so `override`, which settles two
+ * declarations, has nothing to attach to; and a redefinition *is* the meaning
+ * for the customer, which is what `#undef` and a second `#define` are. A
+ * declared store, `@store name` with `override` on the second declaration,
+ * was the alternative and closes that door; it can still be added as a check,
+ * where taking it out again could not. The plan that weighed them is in the
+ * journal for 2026-09-07. */
+
+static Slot *store_get(Grammar *g, const char *key)
+{
+    for (int i = 0; i < g->nst; i++)
+        if (!strcmp(g->st[i].key, key)) return &g->st[i];
+    return NULL;
+}
+
+static void store_put(Grammar *g, const char *key, const char *val)
+{
+    Slot *s = store_get(g, key);
+    if (s) { s->val = xstrdup(val); return; }
+    Slot *v = xmalloc(sizeof *v * (size_t)(g->nst + 1));
+    if (g->st) memcpy(v, g->st, sizeof *v * (size_t)g->nst);
+    g->st = v;
+    g->st[g->nst].key = xstrdup(key);
+    g->st[g->nst].val = xstrdup(val);
+    g->nst++;
+}
+
+/* Forgetting a key nobody remembered is not an error: `#undef X` with no
+   `X` defined is legal C, and a template has `known` if it wants to ask. */
+static void store_drop(Grammar *g, const char *key)
+{
+    Slot *s = store_get(g, key);
+    if (!s) return;
+    *s = g->st[--g->nst];
+}
+
 /* A mark is replaced by the aggregate, one contribution per line, and every
    line after the first is given the whitespace the mark had in front of it, so
    a splice inside an indented block stays in the block. A mark alone on its
@@ -873,6 +946,23 @@ static int call(Ev *ev, Expr *e, Val *out)
     }
     if (!strcmp(e->s, "splice")) {
         *out = v_text(coll_get(ev->g, as_text(a[0]))->mark);
+        return 0;
+    }
+    if (!strcmp(e->s, "recall")) {
+        Slot *s = store_get(ev->g, as_text(a[0]));
+        /* An error, not an empty string, for the reason `at` out of range is:
+           a macro that was never defined reading as nothing is the quiet kind
+           of wrong, and `known` is how a template asks first. */
+        if (!s) {
+            ev->err = xfmt("%s:%d: 'recall' has nothing remembered under '%s'",
+                           ev->r->file, ev->r->line, as_text(a[0]));
+            return -1;
+        }
+        *out = v_text(s->val);
+        return 0;
+    }
+    if (!strcmp(e->s, "known")) {
+        *out = v_bool(store_get(ev->g, as_text(a[0])) != NULL);
         return 0;
     }
     if (!strcmp(e->s, "drop")) {
@@ -1011,8 +1101,10 @@ static int run(Ev *ev, Stmt *v, int n)
             if (is_stmt_builtin(s->e->s)) {
                 Val name, text;
                 if (eval(ev, s->e->args[0], &name) < 0) return -1;
-                if (eval(ev, s->e->args[1], &text) < 0) return -1;
-                coll_add(ev->g, as_text(name), as_text(text));
+                if (s->e->nargs > 1 && eval(ev, s->e->args[1], &text) < 0) return -1;
+                if (!strcmp(s->e->s, "contribute"))    coll_add(ev->g, as_text(name), as_text(text));
+                else if (!strcmp(s->e->s, "remember")) store_put(ev->g, as_text(name), as_text(text));
+                else                                   store_drop(ev->g, as_text(name));
                 break;
             }
             Tmpl *t = tmpl_find(ev->g, s->e->s);
@@ -1110,8 +1202,7 @@ static int resolve_expr(Grammar *g, const char *where, Expr *e, char **err)
     if (!e) return 0;
     if (e->kind == E_CALL && !is_builtin(e->s)) {
         if (is_stmt_builtin(e->s))
-            *err = xfmt("%s: '%s' is a statement -- it adds to a collection on a"
-                        " line of its own and has no value to use here", where, e->s);
+            *err = xfmt("%s: %s", where, STMT[stmt_builtin(e->s)].value);
         else if (tmpl_find(g, e->s))
             *err = xfmt("%s: '%s' is a template -- it is called as a statement on a"
                         " line of its own and emits, so it has no value to use here",
@@ -1141,10 +1232,9 @@ static int resolve_block(Grammar *g, const char *where, Stmt *v, int n, char **e
                 return -1;
             }
             if (is_stmt_builtin(v[i].e->s)) {
-                if (v[i].e->nargs != 2) {
-                    *err = xfmt("%s: '%s' takes 2 -- the collection's name and what to"
-                                " add to it -- and was given %d", where, v[i].e->s,
-                                v[i].e->nargs);
+                int sb = stmt_builtin(v[i].e->s);
+                if (v[i].e->nargs != STMT[sb].args) {
+                    *err = xfmt("%s: %s%d", where, STMT[sb].arity, v[i].e->nargs);
                     return -1;
                 }
                 continue;

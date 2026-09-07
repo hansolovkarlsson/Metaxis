@@ -177,6 +177,19 @@ conflict. It answers the include, the declarations and the definition. It does
 not answer `writeln` wanting the type of its argument, which is the store above
 and is still last.
 
+**2026-09-07: the store landed, in the spelling above, and the clause about
+`override` was wrong.** `remember(key, text)` and `recall(key)`, with
+`forget` and `known` beside them (REFERENCE §8.5), written and read in body
+order. Two used files writing one key is **not** refused and wants no
+`override`, for the reason collections found: a write is a body event and
+`override` settles two header declarations, so there is nothing for the word
+to attach to. The key is a string the file spells, the last write wins, and
+the cost to rule locality is the same one a collection's name already
+carries; [COMPLETED.md](COMPLETED.md)'s "The store" has the decision and
+[notation.md](notation.md)'s "What it costs" has the bill. What named it was
+not `writeln` but roadmap item 11, a C preprocessor, the smallest program
+whose whole job is that table.
+
 ## Where it sits beside Phoenix and Futamura
 
 | | shape | what it makes |
@@ -410,6 +423,11 @@ premise kept in letter and spent in meaning. The three stages are done.
 1. **A declared environment.** Falsified if it cannot be made safe across `@use`,
    because rule locality is worth more than any single feature it would buy.
    Still last, and still the one that would change what this tool is.
+   **Taken 2026-09-07, as the store** (REFERENCE §8.5), and the falsifying
+   clause was answered rather than met: it is exactly as safe across `@use`
+   as a collection is, by a key the file spells, and no safer. Whether that
+   is safe enough is what the preprocessor, roadmap 11, is being built to
+   find out.
 
 **And the standing lesson from the three that were taken:** this page was right
 about every shape and wrong about every distance. Structure can be reasoned

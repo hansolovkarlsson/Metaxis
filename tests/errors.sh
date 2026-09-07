@@ -352,6 +352,37 @@ expect "'splice' takes 1 and was given 2" <<'EOF'
 @syntax "f" a => { emit splice("vars", a) }
 EOF
 
+# The store (REFERENCE §8.5). `remember` and `forget` are statements like
+# `contribute`; `recall` and `known` are expressions. Reading a key nobody
+# wrote is an error and not an empty string, for the reason `at` out of range
+# is: a macro never defined reading as nothing would be the quiet kind of wrong.
+expect "'recall' has nothing remembered under 'nope'" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { emit recall("nope") }
+@end
+f 1
+EOF
+
+expect "'remember' is a statement" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { emit remember("k", a) }
+EOF
+
+expect "'remember' takes 2" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { remember(a) }
+EOF
+
+expect "'forget' takes 1 -- the key to drop -- and was given 2" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { forget("k", a) }
+EOF
+
+expect "'known' takes 1 and was given 2" <<'EOF'
+@token number "[0-9]+"
+@syntax "f" a => { emit known("k", a) }
+EOF
+
 expect "'t' is a template" <<'EOF'
 @token number "[0-9]+"
 @template t(x) { emit x }

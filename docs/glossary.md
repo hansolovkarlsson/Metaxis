@@ -178,7 +178,12 @@ names to what is known about them, and building one is what makes a
 compiler front end for a real language a big job. A **context-sensitive**
 language is one that cannot be parsed without it, and C is one. Metaxis has
 no symbol table by decision, and ROADMAP item 1 records the three places the
-Pascal translator hit that wall.
+Pascal translator hit that wall. What it has instead, since 2026-09-07, is
+the **store** (REFERENCE §8.5): a rule may `remember` a text under a key
+when it fires and a rule that runs later may `recall` it, in body order. The
+tool keeps the table and knows nothing about what is in it; the file decides
+what context it needs and builds it as the text is consumed, which is a
+symbol table accumulated by the rules rather than computed by a pass.
 
 ### Hygiene
 

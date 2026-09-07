@@ -10,6 +10,12 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**The store: `remember(key, text)`, `forget(key)`, `recall(key)` and
+`known(key)`.** A rule writes a key when it fires and a rule that runs later
+reads it, in body order; the last write wins, and `recall` of a key nobody
+wrote is an error. The first mechanism by which what a rule emits depends on
+a rule that ran before it. REFERENCE §8.5; five new error cases.
+
 **A text hole is expanded once, after its rule has matched.** A rule nested
 inside the hole used to fire once for every stop the search tried, so a
 `contribute` or a `fresh` in it ran for candidates that were then rejected:

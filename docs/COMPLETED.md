@@ -9,6 +9,78 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## The store: what a rule remembers, a later rule recalls
+
+```
+@syntax "#define " n:name " " b "\n" => { remember("def:" + n, b) }
+@syntax "#undef " n:name "\n"        => { forget("def:" + n) }
+@syntax "use " n:name => { if known("def:" + n) { emit recall("def:" + n) } else { emit "?" + n } }
+```
+
+Over `use X`, `#define X 41`, `use X`, `#define X 42`, `use X`, `#undef X`,
+`use X`, that prints `?X`, `41`, `42`, `?X`: a key read before it is written
+is not yet written, a second write replaces the first, and a forgotten key
+is gone. **This is the half of context that flows down.** A collection
+(below, "Collections") is written by many rules and read by nobody until a
+second pass; the store is written by one rule at the moment it runs and read
+by any rule that runs after it, in body order, which is the order text mode
+scans and the order expression mode reduces. It is the `remember` and
+`recall` that [direction.md](direction.md)'s "Let a file declare what flows
+down" sketched on 2026-09-05, in the spelling it sketched, and roadmap item
+11's C preprocessor is the customer that gave it a name: `#define` remembers,
+a later `NAME` recalls. The tool still knows nothing about macros, types or
+scopes. The file says what context it needs and builds it as the text is
+consumed.
+
+**Four builtins, in the shapes their neighbours had.** `remember(key, text)`
+and `forget(key)` are statements beside `contribute`, found the same way, by
+a name with `(` after it where a statement was expected, so neither is a
+keyword and a hole may bear the name. `recall(key)` and `known(key)` are
+expressions beside `splice`. `recall` of a key nobody wrote is an error,
+`'recall' has nothing remembered under 'key'`, for the reason `at` out of
+range is: a name never defined reading as an empty string would be the quiet
+kind of wrong, and `known` is how a template asks first. `forget` of a key
+nobody wrote is not an error, because `#undef X` with no `X` is legal C.
+Every check `contribute` gets at declaration, arity, a statement where a
+value is wanted and a value where a statement is wanted, the new ones get,
+with their messages in REFERENCE §10.
+
+**The decision, and why it was smaller than the roadmap said.** The roadmap
+called the store the one piece of item 11 that was a decision rather than
+work: two `@use`d files writing one key, which direction.md had said "will
+want the same kind of answer `override` was". It does not, and the reason is
+the same one collections found on 2026-09-06. `override` settles two
+*declarations*, in the header, and a write to the store is a body event,
+made when a rule fires on a line of the source; there is nothing in the
+header for the word to attach to. So the key is a string the file spells,
+as a collection's name is, and the last write in body order wins. For the
+customer that is not a concession but the meaning: `#undef` and a second
+`#define` are replacement. The alternative, a `@store name` declared in the
+header with `override` on its second declaration, would make locality a
+thing the tool enforces; it was declined because it closes a door that can
+still be closed later as a check, where the reverse would break every file
+with a key in it. What the flat store costs is written in
+[notation.md](notation.md)'s "What it costs": a used file and its user can
+interfere through a key neither knew the other spelled, exactly as they can
+through a collection's name, and the defence is the same, a prefix in the
+key.
+
+**What it cost the tool.** One struct, a `Slot` of key and value on the
+grammar; three functions in code.c, get, put and drop, linear over the keys;
+two rows in the builtin table and a table of three statement builtins where
+one name had been compared. The one thing not priced in the plan: the
+statement builtins' messages were first written as one format with a phrase
+spliced in for each, and `tests/hygiene.sh`'s message check refused the
+page, since it holds each quoted message to one string literal in the
+source. The table carries whole messages now and its comment says why.
+
+**Verified at:** `make check` green at 207 `ok` lines with `errors.sh` at
+91 cases, five of them the store's; REFERENCE §8.5 new, §8.3, §10 and the
+index extended; the tutorial's statement table at seven rows. The store's
+first customer with a compiled and run test is the preprocessor, two steps
+on in the plan; until it lands the store's runs are the example above and
+the rehearsals in `scratch/cpp/`.
+
 ## The wrapped line: between a bracket and its match, a newline is whitespace
 
 `f(a,` newline `b)` reads under `@separator "\n"`. **The lexer keeps a bracket

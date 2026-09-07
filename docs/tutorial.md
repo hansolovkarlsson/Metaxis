@@ -600,7 +600,7 @@ is one.
 
 ### 7.2 Everything a code template can say
 
-There are five kinds of statement, and they are the only things that can stand
+There are seven kinds of statement, and they are the only things that can stand
 on a line of their own inside `{ … }`:
 
 | statement | does |
@@ -610,6 +610,8 @@ on a line of their own inside `{ … }`:
 | `for x in h { … }` | Loops over the turns of a repeated hole. `for i, x in h` also binds the position, counting from 0. `sep expr` after the list emits that text between turns. |
 | `name(args)` | Calls a `@template`. It emits into the caller and sees only its own parameters. |
 | `contribute(name, text)` | Adds one line to a named collection, once per distinct text. §13. |
+| `remember(key, text)` | Keeps `text` under `key` for a rule that runs later to `recall(key)`; `known(key)` asks first. REFERENCE §8.5. |
+| `forget(key)` | Drops the key. |
 
 An expression joins text with `+`, compares with `==`, `!=`, `<`, `<=`, `>`,
 `>=`, combines with `and`, `or` and `not`, and does arithmetic with `-`, `*`,

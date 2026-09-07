@@ -187,9 +187,18 @@ typedef struct {
     int    spliced;   /* a mark for it appeared in the output */
 } Coll;
 
+/* The store: what templates *remembered* under a key, read back at expansion
+   time in body order. A key is a string the file spells, as a collection's
+   name is, and the last write wins; `remember` and `forget` write it,
+   `recall` and `known` read it. It is the one mechanism here by which what a
+   rule emits can depend on a rule that ran before it, and code.c says what
+   that costs and why it is shaped as a flat table rather than a declared one. */
+typedef struct { char *key; char *val; } Slot;
+
 typedef struct {
     Class   *cls;   int ncls;
     Coll    *coll;  int ncoll;
+    Slot    *st;    int nst;
     Comment *com;   int ncom;
     Bracket *br;    int nbr;
     char   **punct; int npunct;   /* every rule word, longest first */

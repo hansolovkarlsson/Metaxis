@@ -305,6 +305,16 @@ out and running it, which is how every stage has been pinned. The order above
 is the order to build in, and the store is the only piece that is a decision
 rather than work.
 
+**2026-09-07: the store is built**, as `remember`, `forget`, `recall` and
+`known` (REFERENCE §8.5, [COMPLETED.md](COMPLETED.md)'s "The store"), and
+the decision went to a flat store with the last write winning, for the
+reason collections took. Before it, a rehearsal found that a text hole was
+expanded at every candidate stop the matcher tried, so a `#define` inside an
+arm would have been remembered once per candidate; that is fixed and is
+[POSTMORTEM.md](POSTMORTEM.md) 35. What is left is the preprocessor itself,
+in the order above, and a text-mode rule that may begin with a class hole,
+which a bare `NAME` on a later line is.
+
 ---
 
 ## 5 · Source maps
