@@ -189,6 +189,10 @@ if [ -n "$unguarded" ]; then
 fi
 echo "ok      hygiene.sh: every run of the tool goes through tests/limit.sh"
 
+TMP="${TMPDIR:-/tmp}/mx-hygiene.$$"
+mkdir -p "$TMP" || exit 1
+trap 'rm -rf "$TMP"' EXIT
+
 # --- 2: the roadmap's numbers. What it checks is described at the head of the file.
 present=$(sed -n -E 's/^## ([0-9]+) ·.*/\1/p' docs/ROADMAP.md)
 if [ -z "$present" ]; then
@@ -206,9 +210,24 @@ tracked=$(git ls-files 2>/dev/null) || {
 }
 scanned=$(echo "$tracked" | grep -v -E '^docs/(POSTMORTEM|CHANGELOG)\.md$|^docs/work-journal/')
 
-stale=$(echo "$scanned" | xargs grep -n -I -o -E \
-        'ROADMAP(\.md)?(\]\([^)]*\))?[[:space:]]+[0-9]+' 2>/dev/null |
-    awk -v ok="$ok" '
+# xargs cannot say whether grep failed: it exits 123 for a file with no match
+# and for a broken regex alike. grep's stderr can, and so can an empty result,
+# since the tree cites the roadmap from several pages. Both read as a failure
+# of the check, not a pass -- the limit guard's rule, for the same reason.
+cited=$(echo "$scanned" | xargs grep -n -I -o -E \
+        'ROADMAP(\.md)?(\]\([^)]*\))?[[:space:]]+[0-9]+' 2> "$TMP/grep.err")
+if [ -s "$TMP/grep.err" ]; then
+    echo "FAILED  hygiene.sh: the citation scan did not run -- grep complained."
+    echo "        Its own failure must not read as a pass."
+    sed 's/^/            /' "$TMP/grep.err"
+    exit 1
+fi
+if [ -z "$cited" ]; then
+    echo "FAILED  hygiene.sh: the citation scan found no 'ROADMAP.md N' anywhere,"
+    echo "        which cannot be right; an empty scan must not read as a pass."
+    exit 1
+fi
+stale=$(echo "$cited" | awk -v ok="$ok" '
         { match($0, /[0-9]+$/); n = substr($0, RSTART)
           if (index(ok, " " n " ") == 0) print }')
 
@@ -221,7 +240,17 @@ if [ -n "$stale" ]; then
 fi
 echo "ok      hygiene.sh: every roadmap citation in the tree resolves to an item"
 
-lost=$(git show HEAD:docs/ROADMAP.md 2>/dev/null |
+headpage=$(git show HEAD:docs/ROADMAP.md 2>/dev/null) || {
+    echo "FAILED  hygiene.sh: git show HEAD:docs/ROADMAP.md did not answer, so the"
+    echo "        lost-item check has nothing to compare against."
+    exit 1
+}
+if ! echo "$headpage" | grep -q -E '^## [0-9]+ ·'; then
+    echo "FAILED  hygiene.sh: docs/ROADMAP.md at HEAD has no '## N ·' headings,"
+    echo "        so the lost-item check would pass on nothing."
+    exit 1
+fi
+lost=$(echo "$headpage" |
     awk -v ok="$ok" -v settled=" $SETTLED " '
         /^## [0-9]+ ·/ { n = $2
           if (index(ok, " " n " ") == 0 && index(settled, " " n " ") == 0) print }')
@@ -361,9 +390,6 @@ if [ -n "$unmatched" ]; then
 fi
 echo "ok      hygiene.sh: every message the errors page quotes is one the source prints ($nmsg)"
 
-TMP="${TMPDIR:-/tmp}/mx-hygiene.$$"
-mkdir -p "$TMP" || exit 1
-trap 'rm -rf "$TMP"' EXIT
 
 # Where it stands. Two lines right, one wrong, and the wrong one is not an error.
 HALF='swap: 2 1
