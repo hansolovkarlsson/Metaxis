@@ -12,6 +12,85 @@ Newest first.
 
 ---
 
+## 34 · A citation scan that read a shell redirect as a citation, silent while the number was live
+
+**Issue.** When roadmap item 2 was retired on 2026-09-07 the citation check
+in `tests/hygiene.sh` failed on `tests/hygiene.sh:267`, which reads
+`git show HEAD:docs/ROADMAP.md 2>/dev/null`. The regex saw `ROADMAP.md 2` and
+resolved it, correctly, against item 2 for as long as item 2 was on the page.
+
+**Root cause.** The scan reads every tracked file that is not a dated
+account, scripts included, and its pattern is a filename, whitespace and
+digits. A redirect after that filename is that pattern. Nothing about the
+match said it was prose, and nothing could: the check resolves by number, and
+a number that resolves is indistinguishable from a citation that means it.
+
+**What found it.** The check itself, on the first commit that retired the
+number it happened to match. Not the audit, not a reading of the script, and
+not the two days on which the line was in the tree and the number was live.
+
+**Solution.** The path is quoted on that line, `"HEAD:docs/ROADMAP.md"`, so
+the filename is followed by a quote and the pattern does not match; a comment
+beside it says why the quotes are there.
+
+**Learnings.** **A check that resolves by number cannot see a coincidence
+until the number goes away, so the day a number retires is the day to read
+what the scan matched.** The retirement is the one event that turns a
+coincidental match into a failure, which is also the one event that makes it
+cheap to find. Entry 20's second case, a number reused and resolving to the
+wrong item, is the same blindness seen from the other side. A scan over
+source files matches syntax it did not mean, and the only defence that costs
+nothing is to look at the full list of what it matched once, when it is
+written; this one had 200 matches and nobody read them.
+
+---
+
+## 33 · A check that recognised a message by matching it whole could not see a stale one
+
+**Issue.** The first draft of the check that holds messages quoted outside
+§10 to the source, roadmap item 13, took a backticked span as a message when
+one of its fixed pieces stood whole in a source literal, and then verified the
+span by the same rule. It passed on all 45 spans it recognised. It could not
+fail: a message with one word changed no longer had its piece in any literal,
+so it was no longer recognised, and a span that is not recognised is not
+checked. The check was a tautology with a count on the end.
+
+**Root cause.** Recognition and verification were the same predicate. A
+check of the form *every X is Y* needs a way to know an X that is not Y, and
+if X is defined by Y there is none. The draft before it had the mirror
+mistake, cutting the source's literals at their placeholders and looking for
+those pieces on the page, which missed a message the page shortens with an
+ellipsis, because the source's piece runs past where the page stops. Two
+drafts, each reading the fixed text from the wrong side or with the wrong
+strictness, and each green.
+
+**What found it.** Asking what the check would print for a page with one word
+wrong, before planting one. The plant then confirmed it: `matches nothing`
+changed to `matches none` was reported by nothing.
+
+**Solution.** Recognition is looser than verification by design: two words of
+letters in a row, from one of the span's fixed pieces, in any source literal.
+A message with one word gone stale is still recognised by the words beside it
+and then fails the whole-span rule. The cost is stated in the check's note:
+a message rewritten past recognition escapes, and a code span two of whose
+words are in a literal by chance is held to a rule it did not sign up for.
+The loosened rule promptly recognised every page quoting the directive
+`@separator "\n" indent`, because a hint in the source spells it, and the
+quoted string not counting as a word of letters is what keeps that out.
+
+**Learnings.** **When a check recognises the things it checks by the same
+test it checks them with, it cannot fail, and the way to see that is to ask
+what it prints for one wrong instance before running it on the tree.**
+Entry 23 and entry 32 are about a check whose machinery breaks; this is a
+check whose machinery is sound and whose logic cannot reach a failure, which
+no broken copy would show. The plant is the only proof that reaches it, and
+the plant has to be the smallest change that should fail, one word, not a
+message deleted. Where recognition must be inferred, make it looser than the
+rule, name the two costs of the looseness, and check the list of what it
+recognised by hand once.
+
+---
+
 ## 32 · Two pipelines that passed when their machinery failed, in the file that says so
 
 **Issue.** The roadmap check in `tests/hygiene.sh`, added on 2026-09-06 and
