@@ -214,6 +214,8 @@ typedef struct {
     char *mode_file; int mode_line; /* where @mode was declared, if it was */
     int   nfiles;                 /* @use depth guard               */
     char **seen; int nseen;       /* @use reads a file once         */
+    const char *body_file;        /* the file being expanded: `read(path)`
+                                     resolves beside it, as @use does  */
 } Grammar;
 
 Grammar *grammar_new(void);

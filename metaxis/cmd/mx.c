@@ -107,6 +107,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    g->body_file = in;
     char *out = NULL;
     if (g->mode == MODE_TEXT) {
         out = expand_text(g, src, body, in, &err);

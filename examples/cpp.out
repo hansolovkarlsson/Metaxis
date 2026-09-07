@@ -1,4 +1,9 @@
 #include <stdio.h>
+/* cpp.h -- included by the body of examples/cpp.mx with #include "cpp.h".
+   Its text goes through the same rules it was included into, so the macro
+   it defines is known to the lines after the include, and the macro's use
+   inside the function below is expanded before the function is emitted. */
+static int helper(int x) { return x + 100; }
 
 
 int main(void)
@@ -13,5 +18,6 @@ int main(void)
     printf("%d %d\n", 5, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     printf("%d %d %d %d\n", ((10) * 2), ((1) + ( ((2) * 2))), 7, (((3) * 2) + 3));
     printf("%d %s\n", 2, "nested");   /* 2 nested: the arms taken, the ones not taken never defining anything */
+    printf("%d\n", helper((((1) * 2) + 1)));  /* 103: the function and the constant it adds come from the included file */
     return 0;
 }

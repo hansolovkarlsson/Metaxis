@@ -1077,6 +1077,7 @@ cannot leave one uncomputed. See its header for what that rules out.
 | `recall(key)` | what a `remember` kept under `key`; an error if nothing did, §8.5 |
 | `known(key)` | whether anything is remembered under `key`, §8.5 |
 | `expand(text)` | `text` run through this file's rules in text mode, one level deeper than the rule that is running, so the 64 cap of §7 applies. Text mode only: under expression mode it is refused at the seal, `'expand' runs a text through this file's rules in text mode, and this file is in expression mode`. What asked for it is a macro's body expanded again after substitution, `examples/cpp.mx` |
+| `read(path)` | the text of the file at `path`, taken beside the file being expanded unless it is absolute, exactly as `@use` takes its path (§3.5). Not expanded; hand it to `expand` for that. One that cannot be opened is `'read' cannot open '…'`, naming the path tried. **The one builtin whose answer depends on something outside the `.mx` file**, which [notation.md](notation.md)'s "What it costs" records; `#include "file"` in `examples/cpp.mx` is what asked |
 
 Everything in a code template is checked at the `@syntax` that wrote it: a name
 that is neither a hole nor a loop variable, a builtin nobody has, the wrong
@@ -1398,6 +1399,7 @@ not read, or memory it could not get.
 | `this rule has too many ways to match` | a text rule's search ran past its budget, §7 |
 | `no fresh name for '{~t}' is free` | 100000 candidates were all taken, §8.1 |
 | `'recall' has nothing remembered under '…'` | a key nobody wrote, §8.5 |
+| `'read' cannot open '…'` | the path tried, beside the file being expanded, §8.3 |
 
 ---
 
@@ -1536,6 +1538,7 @@ Where a term has one home and several mentions, the home is first.
 | Postfix | 4.1 |
 | Pratt parser | 6.2 |
 | Prefix | 4.1 |
+| `read(path)` | 8.3 |
 | `recall(key)` | 8.5 |
 | `remember(key, text)` | 8.5 |
 | `replace(s, from, to)` | 8.3 |

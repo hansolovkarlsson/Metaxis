@@ -379,6 +379,20 @@ tool still knowing nothing about types, scopes or macros. The day a
 `.mx` file cannot say which of its rules wrote a key is the day this wants
 a declaration, and that sentence is written down so that it can be checked.
 
+**`read(path)` makes the output depend on a file the `.mx` did not
+declare.** Until 2026-09-07 a `.mx` file and its `@use`d files were the
+whole input: the same file gave the same output on any machine. `read`
+(REFERENCE §8.3) ends that for a file that calls it, since the text it
+gives is whatever stands beside the source when it runs, and nothing in the
+header says so. It is bought for `#include "file"`, which cannot be a
+preprocessor without it, and it is kept as small as the thing it buys: a
+path beside the source or absolute, no search path and no environment
+variable, the same rule `@use` has, and the text unexpanded until a template
+hands it to `expand`. What it does not buy is a way to write a file, or to
+read one whose name the header does not spell in a string; a rule that
+computes the path from the body can, and the file that does that has given
+up saying what it reads.
+
 **Output parenthesisation is the author's problem, in a string template.**
 Metaxis knows the input grammar because the file declared it, and a string
 template can splice and nothing else. So `examples/pascal.mx` writes

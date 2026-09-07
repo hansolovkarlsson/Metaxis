@@ -43,7 +43,8 @@ inc=$(grep -c '^#include <stdio.h>$' "$TMP/out.c")
 lim=$(idents LIMIT)
 gone=$(( $(idents TOTAL) + $(idents GREETING) + $(idents A) + $(idents B) \
        + $(idents DOUBLE) + $(idents ADD) + $(idents SEVEN) + $(idents TWICE) \
-       + $(idents DEBUG) + $(idents LEVEL) + $(idents MODE) + $(idents NOTDEFINED) ))
+       + $(idents DEBUG) + $(idents LEVEL) + $(idents MODE) + $(idents NOTDEFINED) \
+       + $(idents FROM_HEADER) ))
 step=$(idents STEP)
 self=$(idents SELF)
 if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] || [ "$step" != 4 ] || [ "$self" != 2 ]; then
@@ -64,9 +65,11 @@ if ! "$CC" -std=c11 -o "$TMP/a" "$TMP/out.c" 2> "$TMP/cc.err"; then
 fi
 got=$("$TMP/a")
 
-# The same body, preprocessed by the compiler itself.
+# The same body, preprocessed by the compiler itself. The body includes
+# "cpp.h", which stands beside examples/cpp.mx, so the compiler is told where
+# to look; the preprocessed C above has already read it in and needs nothing.
 awk 'f { print } /^@end/ { f = 1 }' "$SRC" > "$TMP/prog.c"
-if ! "$CC" -std=c11 -o "$TMP/b" "$TMP/prog.c" 2> "$TMP/cc.err"; then
+if ! "$CC" -std=c11 -I"$(dirname "$SRC")" -o "$TMP/b" "$TMP/prog.c" 2> "$TMP/cc.err"; then
     echo "FAILED  cpp.sh: the body of $SRC does not compile on its own"
     cat "$TMP/cc.err"
     exit 1
@@ -81,7 +84,8 @@ LIMIT is not a macro inside a string
 70
 5 4
 20 5 7 9
-2 nested'
+2 nested
+103'
 
 if [ "$got" != "$want" ]; then
     echo "FAILED  cpp.sh: the preprocessed program and the compiler's own disagree"
@@ -96,7 +100,7 @@ if [ "$got" != "$expected" ]; then
     exit 1
 fi
 
-echo "ok      cpp.sh: object-like and function-like macros and nested conditionals, and cc's own preprocessor agrees"
-echo "            no directive left but the include, LIMIT kept inside its string,"
-echo "            and both programs print the same seven lines"
+echo "ok      cpp.sh: macros, nested conditionals and an included file, and cc's own preprocessor agrees"
+echo "            no directive left but the system include, LIMIT kept inside its string,"
+echo "            and both programs print the same eight lines"
 exit 0

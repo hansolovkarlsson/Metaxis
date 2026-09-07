@@ -10,6 +10,14 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`read(path)`: the text of a file beside the source.** The path is taken
+beside the file being expanded unless absolute, as `@use` takes its path;
+one that cannot be opened is `'read' cannot open '…'`. The first builtin
+whose answer depends on something outside the `.mx` file, which
+notation.md's "What it costs" now records. `examples/cpp.mx` reads
+`#include "cpp.h"` with it, the header's text going through the same rules;
+eight lines from both programs.
+
 **`examples/cpp.mx` reads `#ifdef`, `#ifndef`, `#else` and `#endif`,
 nested.** Each arm is a `raw` hole and the arm taken is handed to `expand`,
 so a `#define` inside the arm not taken never fires; a conditional nested

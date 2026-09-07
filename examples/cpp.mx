@@ -28,7 +28,8 @@
 ; `#define CALL(f) f(1)`, is not rescanned as a call, where cpp would expand
 ; `F(1)`. A conditional's word ends its line, so `#ifdef X` reads and
 ; `#ifdef X /* why */` does not; there is no `#if` over an expression and
-; no `#elif`. There is no `#include "file"` and no `#` or `##` yet; each is
+; no `#elif`. An included file is read once per include and is not searched
+; for on any path but beside this file. There is no `#` or `##` yet; each is
 ; a later step and each is a rule, not a change to the tool.
 ; `#include <stdio.h>` is not a directive this file knows, so it goes
 ; through whole, which is right: the output is C for a compiler that has a
@@ -71,6 +72,13 @@
 @syntax "#define " n:name " " b:raw "\n" => { remember("def:" + n, b) }
 @syntax "#define " n:name "\n"           => { remember("def:" + n, "") }
 @syntax "#undef " n:name "\n"        => { forget("def:" + n); forget("fn:" + n) }
+
+; `#include "file"` is the file's text, found beside this one, run through
+; these rules in its turn: a `#define` in it is known to the lines after the
+; include, and a macro used in it is expanded before its text is emitted.
+; The string class takes the quoted name whole; `drop` takes the quotes off.
+; `#include <stdio.h>` has no rule and goes through for the C compiler.
+@syntax "#include " f:string "\n" => { emit expand(read(drop(f, 1, 1))) }
 
 ; Conditional inclusion. Each arm is a `raw` hole, so a `#define` inside the
 ; arm not taken never fires; the arm taken is handed to `expand`, and a
@@ -137,6 +145,7 @@
 
 @end
 #include <stdio.h>
+#include "cpp.h"
 
 #define LIMIT 10
 #define STEP 3
@@ -179,5 +188,6 @@ int main(void)
     printf("%d %d\n", A, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     printf("%d %d %d %d\n", DOUBLE(LIMIT), ADD(1, DOUBLE(2)), SEVEN(), TWICE(3));
     printf("%d %s\n", LEVEL, MODE);   /* 2 nested: the arms taken, the ones not taken never defining anything */
+    printf("%d\n", helper(TWICE(1)));  /* 103: the function and the constant it adds come from the included file */
     return 0;
 }

@@ -449,6 +449,7 @@ static const struct { const char *name; int args; const char *what; } BUILTIN[] 
     { "recall",  1, "what was remembered under a key"          },
     { "known",   1, "whether a key has been remembered"        },
     { "expand",  1, "a text run through this file's rules in text mode" },
+    { "read",    1, "the text of a file, found beside the source"  },
     { NULL, 0, NULL }
 };
 
@@ -970,6 +971,26 @@ static int call(Ev *ev, Expr *e, Val *out)
         char *err = NULL;
         char *t = text_reenter(ev->g, as_text(a[0]), &err);
         if (!t) { ev->err = err ? err : xstrdup("a text rule expands into itself"); return -1; }
+        *out = v_text(t);
+        return 0;
+    }
+    /* `read(path)`: the text of a file, the path taken beside the file being
+       expanded unless it is absolute, exactly as `@use` takes its path beside
+       the file that used it. It is the first builtin whose answer depends on
+       something outside the `.mx` file, and notation.md's "What it costs"
+       says so; `#include "file"` in examples/cpp.mx is what asked. */
+    if (!strcmp(e->s, "read")) {
+        const char *path = as_text(a[0]);
+        const char *from = ev->g->body_file;
+        const char *slash = from ? strrchr(from, '/') : NULL;
+        char *full = path[0] == '/' || !slash ? xstrdup(path)
+                   : xfmt("%.*s/%s", (int)(slash - from), from, path);
+        char *err = NULL;
+        char *t = read_file(full, &err);
+        if (!t) {
+            ev->err = xfmt("%s:%d: 'read' cannot open '%s'", ev->r->file, ev->r->line, full);
+            return -1;
+        }
         *out = v_text(t);
         return 0;
     }
