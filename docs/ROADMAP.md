@@ -315,11 +315,13 @@ arm would have been remembered once per candidate; that is fixed and is
 [POSTMORTEM.md](POSTMORTEM.md) 35. A text-mode rule may begin with a class
 hole, which a bare `NAME` on a later line is, and `examples/cpp.mx` with
 `tests/cpp.sh` reads object-like macros and holds the result to the C
-compiler's own preprocessor: the first two bullets above, with the body
-expanded at definition rather than at use. What is left is the rest of the
-list, in order: use-time expansion through a template that re-enters text
-mode, function-like macros, a hole bound to its source unexpanded, the
-conditionals, `#include "file"`, and the two operators.
+compiler's own preprocessor. By the end of the day it read object-like and
+function-like macros with cpp's order of expansion, through `expand(text)`
+(REFERENCE §8.3) and a `raw` hole kind (§4.3), and the four conditionals
+nested, through two brackets that share a close (§3.11): the first four
+bullets above. What is left is `#include "file"`, which is the `read(path)`
+builtin and the first time the output depends on a file outside the `.mx`,
+and the two operators `#` and `##`.
 
 ---
 
