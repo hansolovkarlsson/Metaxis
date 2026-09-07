@@ -42,9 +42,9 @@
 #
 # The second thing a page can claim, since 2026-09-06: that a fenced block *is*
 # a file. A line reading `docs/tutorial/01-first.mx`: on its own -- the
-# regex is site/build.py's, which renders that line as the caption of the
-# block under it -- followed by a fence, possibly after blank lines, says the
-# block is that file. Twenty-five of those stood on three pages the day this
+# regex is read out of site/build.py, which renders that line as the caption
+# of the block under it, so the two cannot drift -- followed by a fence,
+# possibly after blank lines, says the block is that file. Twenty-five of those stood on three pages the day this
 # was written, and nothing compared a block to its file: the transcript under
 # it runs the file on disk, so a block that drifted would sit above a
 # transcript true of a file the reader was not looking at, and stay green.
@@ -115,7 +115,9 @@ compare() {
         FILENAME == want { w[++nw] = strip($0); next }
                          { g[++ng] = strip($0) }
         END {
-            j = 1; elide = 0
+            j = 1; elide = 0; real = 0
+            for (k = 1; k <= nw; k++) if (w[k] != "…" && w[k] != "...") real++
+            if (real == 0) { print "the " wn " is only an ellipsis, which would match anything"; exit 1 }
             for (k = 1; k <= nw; k++) {
                 if (w[k] == "…" || w[k] == "...") { elide = 1; continue }
                 if (elide) {
@@ -161,7 +163,17 @@ while [ "$i" -le "$n" ]; do
 done
 
 # Every labelled fence, against the file it names. One pair per block:
-# N.path holds `file:line<TAB>path`, N.fence the block's lines.
+# N.path holds `file:line<TAB>path`, N.fence the block's lines. The label
+# regex is site/build.py's LABEL, read out of that file so the site and the
+# check agree on what a caption is; through the environment, not -v, so awk
+# leaves its backslashes alone.
+LABEL=$(sed -n "s/^LABEL = r'\(.*\)'.*/\1/p" site/build.py)
+if [ -z "$LABEL" ]; then
+    echo "FAILED  docs.sh: could not read LABEL out of site/build.py, so the"
+    echo "        quoted-file check has no regex; it must not read as a pass."
+    exit 1
+fi
+export LABEL
 m=$(awk -v tmp="$TMP" '
     FNR == 1  { fence = 0; label = "" }
     /^```/    {
@@ -174,7 +186,7 @@ m=$(awk -v tmp="$TMP" '
         label = ""; next
     }
     fence     { if (open) print > (tmp "/" m ".fence"); next }
-    /^[ \t]*`[A-Za-z0-9_.\/-]+\.mx`(, whole)?:[ \t]*$/ {
+    $0 ~ ("^[ \t]*`" ENVIRON["LABEL"] "`(, whole)?:[ \t]*$") {
         label = $0; sub(/^[ \t]*`/, "", label); sub(/`.*$/, "", label)
         where = FILENAME ":" FNR; next
     }

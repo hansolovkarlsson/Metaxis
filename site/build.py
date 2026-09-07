@@ -14,6 +14,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'site', 'out')
 GH = 'https://github.com/hansolovkarlsson/Metaxis'
 
+# A line reading `docs/tutorial/01-first.mx`: on its own captions the fenced
+# block under it. tests/docs.sh reads this regex out of this file, so that the
+# block the site captions is the block the suite compares to the file, and
+# the two cannot drift: keep it on one line, in a dialect awk reads too.
+LABEL = r'[A-Za-z0-9_./-]+\.mx'
+
 PAGES = [  # (output name, nav title, source)
     ('index',     'Introduction', 'site/index.md'),
     ('tutorial',  'Tutorial',     'docs/tutorial.md'),
@@ -138,6 +144,11 @@ def render_md(src):
             while j < len(lines) and not lines[j].startswith('```'): buf.append(lines[j]); j += 1
             out.append(render_code('\n'.join(buf) + '\n', pending_label, lang)); pending_label = None
             i = j + 1; continue
+        m = re.match(r'`(' + LABEL + r')`(?:, whole)?:$', l.strip())
+        if m: flush(); pending_label = m.group(1); i += 1; continue
+        # A caption reaches only the fence directly under it, blank lines
+        # between allowed, which is tests/docs.sh's rule as well.
+        if l.strip() and not l.startswith('```'): pending_label = None
         if l.startswith('# '):
             flush(); title = l[2:]; i += 1; continue
         m = re.match(r'^(#{2,4}) (.*)', l)
@@ -181,6 +192,17 @@ def render_md(src):
                 elif mm and items:
                     if not items[-1][2]: items[-1][1] = mm.group(2) != '-'
                     items[-1][2].append(mm.group(3)); i += 1
+                elif lines[i].strip() == '':
+                    # A blank line ends the list unless the next non-blank line
+                    # is another item of it: the same kind at the base indent,
+                    # or a sub-item. Until 2026-09-07 it always ended it, and
+                    # a numbered list with a blank line between its items was
+                    # rendered as one <ol> per item, each numbered 1.
+                    k = i
+                    while k < len(lines) and lines[k].strip() == '': k += 1
+                    nm = re.match(r'^(\s*)(-|\d+\.) (.*)', lines[k]) if k < len(lines) else None
+                    if nm and (len(nm.group(1)) > base or (nm.group(2) != '-') == ordered): i = k
+                    else: break
                 elif lines[i].startswith('  ') and items:
                     if items[-1][2]: items[-1][2][-1] += ' ' + lines[i].strip()
                     else: items[-1][0] += ' ' + lines[i].strip()
@@ -200,8 +222,6 @@ def render_md(src):
             t = ' '.join(buf).strip().strip('*').strip()
             out.append('<p class="note">' + inline(t) + '</p>'); continue
         if l.strip() == '': flush(); i += 1; continue
-        m = re.match(r'`([\w./-]+\.mx)`(?:, whole)?:$', l.strip())
-        if m: flush(); pending_label = m.group(1); i += 1; continue
         para.append(l.strip()); i += 1
     flush()
     return title, ''.join(out), toc

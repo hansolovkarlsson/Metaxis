@@ -10,6 +10,12 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**A numbered list with blank lines between its items is one list.** The
+seven properties on the languages page were seven lists, each numbered 1;
+they are 1 to 7. And a caption line reaches its block by one rule on the
+site and in `tests/docs.sh`, which now reads the caption regex out of
+`site/build.py` rather than keeping a copy.
+
 **The site's front page is under the same check as the documents.**
 `tests/docs.sh` scans `site/index.md` as it does `README.md` and `docs/`,
 so the one transcript written for the site is run; the site workflow had
