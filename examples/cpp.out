@@ -19,5 +19,7 @@ int main(void)
     printf("%d %d %d %d\n", ((10) * 2), ((1) + ( ((2) * 2))), 7, (((3) * 2) + 3));
     printf("%d %s\n", 2, "nested");   /* 2 nested: the arms taken, the ones not taken never defining anything */
     printf("%d\n", helper((((1) * 2) + 1)));  /* 103: the function and the constant it adds come from the included file */
+    int value = 5;
+    printf("%d %s %d\n", value, "hello world", 10);  /* pasted, quoted, and pasted then expanded */
     return 0;
 }

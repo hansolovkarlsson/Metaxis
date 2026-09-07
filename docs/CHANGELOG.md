@@ -10,6 +10,12 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`examples/cpp.mx` reads `#x` and `a ## b`.** Stringizing quotes the
+argument bound to the name; pasting joins the two sides and rescans the
+result, so `GLUE(LIM, IT)` is `LIMIT` and then 10. Three rules, nothing in
+the tool; nine lines from both programs, and everything roadmap item 11
+listed is read.
+
 **`read(path)`: the text of a file beside the source.** The path is taken
 beside the file being expanded unless absolute, as `@use` takes its path;
 one that cannot be opened is `'read' cannot open '…'`. The first builtin

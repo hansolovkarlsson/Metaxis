@@ -29,8 +29,12 @@
 ; `F(1)`. A conditional's word ends its line, so `#ifdef X` reads and
 ; `#ifdef X /* why */` does not; there is no `#if` over an expression and
 ; no `#elif`. An included file is read once per include and is not searched
-; for on any path but beside this file. There is no `#` or `##` yet; each is
-; a later step and each is a rule, not a change to the tool.
+; for on any path but beside this file. `#x` quotes the argument after it
+; has been expanded, where cpp quotes it as written, so `STR(LIMIT)` is
+; `"10"` here and `"LIMIT"` there; and an argument keeps the whitespace it
+; was written with, so `#x` of ` hello` has the leading space. Everything
+; the item listed is read; what the tool had to grow for it is in
+; docs/COMPLETED.md, and each thing above is a rule, not a change to it.
 ; `#include <stdio.h>` is not a directive this file knows, so it goes
 ; through whole, which is right: the output is C for a compiler that has a
 ; preprocessor of its own.
@@ -107,6 +111,22 @@
 ; deeper and are gone before the outer body's next `x`. That is cpp's
 ; order, arguments first and the body after. The `busy:` key is the same
 ; guard the object-like rule has.
+; The two operators, meaningful inside a function-like body. `#x` is the
+; argument bound to `x`, quoted; a `#` before anything else, `#include
+; <stdio.h>` say, goes through as it was, since every directive's own word
+; is longer and was tried first. `a ## b` pastes the two sides and rescans
+; the result, so `GLUE(LIM, IT)` is `LIMIT` and then 10; each side is run
+; through the rules to resolve it as an argument, and its spaces dropped,
+; since what pasting makes is one token. Declared before the call and the
+; identifier rules, which would otherwise take the left side first.
+@syntax "#" x:name => {
+    if known("depth") and known("arg:" + recall("depth") + ":" + x) {
+        emit "\"" + recall("arg:" + recall("depth") + ":" + x) + "\""
+    } else { emit "#" + x }
+}
+@syntax x:name " ## " y:name => { emit expand(replace(expand(x), " ", "") + replace(expand(y), " ", "")) }
+@syntax x:name "##" y:name   => { emit expand(replace(expand(x), " ", "") + replace(expand(y), " ", "")) }
+
 @syntax n:name "(" [ a ]* sep "," ")" => {
     if known("fn:" + n) and not known("busy:" + n) {
         if known("depth") { remember("depth", num(recall("depth")) + 1) } else { remember("depth", 1) }
@@ -158,6 +178,8 @@
 #define ADD(a, b) ((a) + (b))
 #define SEVEN() 7
 #define TWICE(x) (DOUBLE(x) + x)
+#define STR(x) #x
+#define GLUE(a, b) a ## b
 #define DEBUG
 #ifdef DEBUG
 #define LEVEL 2
@@ -189,5 +211,7 @@ int main(void)
     printf("%d %d %d %d\n", DOUBLE(LIMIT), ADD(1, DOUBLE(2)), SEVEN(), TWICE(3));
     printf("%d %s\n", LEVEL, MODE);   /* 2 nested: the arms taken, the ones not taken never defining anything */
     printf("%d\n", helper(TWICE(1)));  /* 103: the function and the constant it adds come from the included file */
+    int value = 5;
+    printf("%d %s %d\n", GLUE(val, ue), STR(hello world), GLUE(LIM, IT));  /* pasted, quoted, and pasted then expanded */
     return 0;
 }

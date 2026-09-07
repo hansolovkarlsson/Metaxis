@@ -44,7 +44,7 @@ lim=$(idents LIMIT)
 gone=$(( $(idents TOTAL) + $(idents GREETING) + $(idents A) + $(idents B) \
        + $(idents DOUBLE) + $(idents ADD) + $(idents SEVEN) + $(idents TWICE) \
        + $(idents DEBUG) + $(idents LEVEL) + $(idents MODE) + $(idents NOTDEFINED) \
-       + $(idents FROM_HEADER) ))
+       + $(idents FROM_HEADER) + $(idents STR) + $(idents GLUE) ))
 step=$(idents STEP)
 self=$(idents SELF)
 if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] || [ "$step" != 4 ] || [ "$self" != 2 ]; then
@@ -85,7 +85,8 @@ LIMIT is not a macro inside a string
 5 4
 20 5 7 9
 2 nested
-103'
+103
+5 hello world 10'
 
 if [ "$got" != "$want" ]; then
     echo "FAILED  cpp.sh: the preprocessed program and the compiler's own disagree"
@@ -100,7 +101,7 @@ if [ "$got" != "$expected" ]; then
     exit 1
 fi
 
-echo "ok      cpp.sh: macros, nested conditionals and an included file, and cc's own preprocessor agrees"
+echo "ok      cpp.sh: macros, conditionals, an include, # and ##, and cc's own preprocessor agrees"
 echo "            no directive left but the system include, LIMIT kept inside its string,"
-echo "            and both programs print the same eight lines"
+echo "            and both programs print the same nine lines"
 exit 0
