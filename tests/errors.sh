@@ -677,6 +677,33 @@ expect "this rule emits nothing for 'tight', and has no untagged template" <<'EO
 n; m
 EOF
 
+# `refuse` is the statement whose whole job is to fail, and the message is the
+# file's own (REFERENCE.md 8.3). Its two static messages are the ones every
+# statement here has; the third case is the refusal itself, which is what the
+# other two are guarding.
+
+expect "'refuse' is a statement -- it stops the run on a line of its own and has no value to use here" <<'EOF'
+@mode text
+@syntax "x" => { emit refuse("no") }
+@end
+x
+EOF
+
+expect "'refuse' takes 1 -- what to say when the rule fires -- and was given 2" <<'EOF'
+@mode text
+@syntax "x" => { refuse("a", "b") }
+@end
+x
+EOF
+
+expect "this file will not read 'goto'" <<'EOF'
+@mode text
+@syntax "goto" => { refuse("this file will not read 'goto'") }
+@end
+int a;
+goto fail;
+EOF
+
 # ------------------------------------------------------- the command line.
 #
 # `mx file.mx` and `mx -u rules.mx -i input` are the two forms of REFERENCE.md

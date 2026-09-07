@@ -473,6 +473,9 @@ static const struct { const char *name; int args; const char *arity, *value; } S
     { "forget",     1,
       "'forget' takes 1 -- the key to drop -- and was given ",
       "'forget' is a statement -- it drops a key from the store on a line of its own and has no value to use here" },
+    { "refuse",     1,
+      "'refuse' takes 1 -- what to say when the rule fires -- and was given ",
+      "'refuse' is a statement -- it stops the run on a line of its own and has no value to use here" },
     { NULL, 0, NULL, NULL }
 };
 
@@ -1131,6 +1134,18 @@ static int run(Ev *ev, Stmt *v, int n)
                 Val name, text;
                 if (eval(ev, s->e->args[0], &name) < 0) return -1;
                 if (s->e->nargs > 1 && eval(ev, s->e->args[1], &text) < 0) return -1;
+                /* `refuse(text)` is the one statement whose whole job is to
+                   fail. Text mode copies through whatever no rule matched, so
+                   a construct a file must *not* handle silently can only be
+                   caught by a rule that matches it and then says so; without
+                   this the choice is a wrong answer or a rule that emits
+                   something and hopes. The wording is the file's, at the
+                   rule's own line, exactly as `read` reports there: the tool
+                   has no opinion about what the file could not read. */
+                if (!strcmp(s->e->s, "refuse")) {
+                    ev->err = xfmt("%s:%d: %s", ev->r->file, ev->r->line, as_text(name));
+                    return -1;
+                }
                 if (!strcmp(s->e->s, "contribute"))    coll_add(ev->g, as_text(name), as_text(text));
                 else if (!strcmp(s->e->s, "remember")) store_put(ev->g, as_text(name), as_text(text));
                 else                                   store_drop(ev->g, as_text(name));

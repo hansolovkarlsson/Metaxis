@@ -158,8 +158,30 @@ case "$msg" in
         exit 1 ;;
 esac
 
+# `#elif` is refused, and this is the one thing these rules refuse rather than
+# pass through. It stands inside a conditional they do read, so the arm holding
+# it is taken or dropped whole: before 2026-09-07 the file below expanded to
+# `int before;` and `int after;` with `int a;` gone, no message and status 0,
+# where cc keeps `int a;`. That is a wrong answer and not an unfinished one,
+# which is why it became a refusal. Both arms are checked, and so is a `#elif`
+# standing outside any conditional.
+printf '#define A 1\nint before;\n#ifdef B\nint b;\n#elif defined(A)\nint a;\n#endif\nint after;\n' > "$TMP/elif.c"
+printf 'int a;\n#elif whatever\n' > "$TMP/stray.c"
+for f in elif stray; do
+    msg=$(sh tests/limit.sh "$LIMIT" "$MX" -u lib/cpp.mx -i "$TMP/$f.c" 2>&1)
+    rc=$?
+    case "$rc:$msg" in
+        1:*"'#elif' is not a directive these rules read"*) ;;
+        *)  echo "FAILED  cpp.sh: $f.c was not refused"
+            echo "        status: $rc"
+            echo "        got:    $msg"
+            exit 1 ;;
+    esac
+done
+
 echo "ok      cpp.sh: macros, conditionals, an include, # and ##, and cc's own preprocessor agrees"
 echo "            no directive left but the system include, LIMIT kept inside its string,"
 echo "            and both programs print the same nine lines"
-echo "            and mx -u lib/cpp.mx -i prog.c gives the same bytes, compiles and prints them too"
+echo "            and mx -u lib/cpp.mx -i prog.c gives the same bytes, compiles and prints them too,"
+echo "            with #elif refused in an arm and outside one rather than dropped in silence"
 exit 0

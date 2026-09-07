@@ -10,6 +10,19 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`refuse(text)`: a rule can stop the run and say why.** A statement, like
+`contribute` and `remember`; the message is the file's own text at the line
+of the rule that refused, and the status is 1. It exists because in text mode
+having no rule for a thing is how a file says *pass this through*, so it was
+not also available as a way to say *I must not touch this* (REFERENCE §8.3).
+
+**`lib/cpp.mx` refuses `#elif` instead of dropping it.** It stands inside a
+conditional the rules do read, so an arm holding one was taken or dropped
+whole: `#ifdef B` / `#elif` / `#endif` with `B` undefined lost the `#elif`
+arm with no message and status 0. Everything else the rules do not read still
+passes through for the C compiler behind them. `tests/cpp.sh` pins both the
+arm case and a `#elif` standing outside any conditional.
+
 **`mx -u rules.mx -i input`: the rules and the body as two files.** `-u` reads
 a file of directives exactly as `@use` does and may be given more than once;
 `-i` is the body, whole, under its own name, so a message about it names that

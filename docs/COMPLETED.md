@@ -9,6 +9,52 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## `refuse(text)`: the way out of a text-mode rule that is not `emit`
+
+What a file that refuses says, on a C source with a `#elif` in it, wrapped
+here and on one line there:
+
+```
+mx: lib/cpp.mx:131: '#elif' is not a directive these rules read, and it
+stands inside a conditional they do -- an arm holding one would be taken or
+dropped whole. Write it as an '#ifdef' nested in the '#else'.
+```
+
+A statement, like `contribute` and `remember`, that stops the run and says
+the file's own sentence at the line of the rule that refused, status 1. The
+tool has no opinion about what the file could not read, so none of the
+wording is the tool's. [REFERENCE.md](REFERENCE.md) §8.3.
+
+**What asked for it, and why nothing had before.** Text mode is an island
+grammar: a rule fires where it matches and everything else is copied through.
+That is the property stage 5 was built on and it is why `lib/cpp.mx` can
+leave `#include <stdio.h>` and `#if` alone, since a C compiler with a
+preprocessor of its own stands behind it and reads them. **Having no rule for
+a thing is how a file says pass this through**, so it is not also available
+as a way to say *I must not touch this*. Until now the only spellings for the
+second were a wrong answer or a rule that emits something and hopes.
+
+`#elif` is the case that showed the difference. It stands **inside** a
+conditional these rules do read, and an arm is a `raw` hole running to its
+`#endif`, so `#ifdef B` / `#elif` / `#endif` with `B` undefined dropped the
+`#elif` arm along with the rest: `int a;` gone, no message, status 0, where
+`cc -E` keeps it. Everything else the preprocessor does not read degrades
+visibly. This one degraded silently, which is the failure this tree refuses
+everywhere else, and it was found by asking whether "stage 6 is done" meant
+"nothing is open" (it did not).
+
+**What it cost:** one row in `STMT[]` and five lines in `run()`. The two
+static messages are the ones every statement here already has, wrong arity
+and used as a value, and `tests/errors.sh` pins all three.
+
+`lib/cpp.mx` refuses in two places, because a dropped arm is by design never
+scanned and a rule inside it could never fire. A `@template no_elif(a)` reads
+each arm for a `#elif` at the start of a line **before** either is taken, and
+a plain rule catches one standing outside any conditional. Both are pinned in
+`tests/cpp.sh`, and `#elif` inside a string still passes, since a line start
+is what is looked for. Verified at `make check` green, 226 `ok` lines, 106
+error cases.
+
 ## `-u` and `-i`: the grammar a file is read with, named from outside it
 
 ```

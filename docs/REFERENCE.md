@@ -504,7 +504,7 @@ template kept the hole last.
   already a bracket, declared at file:line`. **Two brackets may share a
   close**, `#ifdef` and `#ifndef` both closed by `#endif`, since a close
   balances whichever open stands behind it (since 2026-09-07;
-  `examples/cpp.mx` is the customer). An empty word is `an empty word matches
+  `lib/cpp.mx` is the customer). An empty word is `an empty word matches
   nothing`.
 - **In expression mode the lexer reads it** (§6.1): each side is a word, and
   between an opener and its match a newline is whitespace, whatever the
@@ -1028,6 +1028,26 @@ outside the strings and the foreign text it emits lives inside them.
 **Its own words are `emit`, `if`, `else`, `for`, `in`, `sep`, `not`, `and` and
 `or`.** A hole may not be one of them.
 
+**`refuse(text)` is the way out that is not `emit`.** It is a statement, like
+`contribute` (§8.4) and `remember` (§8.5), and it stops the run: the message
+is `file:line: ` and then the file's own `text`, at the line of the rule that
+refused, and the status is 1. The tool has no opinion about what the file
+could not read, so the wording is entirely the file's.
+
+It exists because of what **text mode** is. A rule fires where it matches and
+everything else is copied through (§7), so a construct a file must *not*
+handle silently cannot be caught by having no rule for it: having no rule is
+exactly how a file says *pass this through*. Without `refuse` the only
+choices are a wrong answer or a rule that emits something and hopes.
+`lib/cpp.mx` is the customer: everything it does not read passes through for
+the C compiler standing behind it, except `#elif`, which stands *inside* a
+conditional it does read and would otherwise be dropped along with the arm
+holding it, silently and with status 0.
+
+Using it where a value is wanted is `'refuse' is a statement -- it stops the
+run on a line of its own and has no value to use here`, which is the mistake
+every statement here has.
+
 **`for i, x in h`** binds the position as well as the turn: the first name is
 the index, counting from 0, the way Go and Python's `enumerate` read it. With
 one name there is no index. It exists because **two holes in one repeated group
@@ -1083,7 +1103,7 @@ cannot leave one uncomputed. See its header for what that rules out.
 | `splice(name)` | where the aggregate of the collection `name` goes, §8.4 |
 | `recall(key)` | what a `remember` kept under `key`; an error if nothing did, §8.5 |
 | `known(key)` | whether anything is remembered under `key`, §8.5 |
-| `expand(text)` | `text` run through this file's rules in text mode, one level deeper than the rule that is running, so the 64 cap of §7 applies. Text mode only: under expression mode it is refused at the seal, `'expand' runs a text through this file's rules in text mode, and this file is in expression mode`. What asked for it is a macro's body expanded again after substitution, `examples/cpp.mx` |
+| `expand(text)` | `text` run through this file's rules in text mode, one level deeper than the rule that is running, so the 64 cap of §7 applies. Text mode only: under expression mode it is refused at the seal, `'expand' runs a text through this file's rules in text mode, and this file is in expression mode`. What asked for it is a macro's body expanded again after substitution, `lib/cpp.mx` |
 | `read(path)` | the text of the file at `path`, taken beside the file being expanded unless it is absolute, exactly as `@use` takes its path (§3.5). Not expanded; hand it to `expand` for that. One that cannot be opened is `'read' cannot open '…'`, naming the path tried. **The one builtin whose answer depends on something outside the `.mx` file**, which [notation.md](notation.md)'s "What it costs" records; `#include "file"` in `examples/cpp.mx` is what asked |
 
 Everything in a code template is checked at the `@syntax` that wrote it: a name
@@ -1411,6 +1431,8 @@ not read, or memory it could not get.
 | `'y' is not one of this template's parameters` | §3.8: a template cannot see the caller's holes |
 | `'level' is a builtin and gives a value -- put it in an 'emit'…` | §3.8 |
 | `'t' is a template -- it is called as a statement…` | §3.8 |
+| `'refuse' is a statement -- it stops the run on a line of its own and has no value to use here` | §8.3 |
+| `'refuse' takes 1 -- what to say when the rule fires -- and was given 2` | §8.3 |
 | `the template 't' is already declared at f:n` | §3.10 |
 | `'override', but no template 't' was declared before it` | §3.10 |
 | `expected a name after '@template'` · `expected '(' after a template's name` · `expected a parameter name` · `a template's body is a block` | §3.8 |
@@ -1462,6 +1484,7 @@ not read, or memory it could not get.
 | `no fresh name for '{~t}' is free` | 100000 candidates were all taken, §8.1 |
 | `'recall' has nothing remembered under '…'` | a key nobody wrote, §8.5 |
 | `'read' cannot open '…'` | the path tried, beside the file being expanded, §8.3 |
+| *whatever the file wrote* | `refuse(text)` fired: the message is `text`, at the rule's line, §8.3 |
 
 ### On the command line
 

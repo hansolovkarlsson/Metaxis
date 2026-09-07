@@ -34,8 +34,12 @@
 ; An argument that forms a call with the text after it, `CALL(F)` for
 ; `#define CALL(f) f(1)`, is not rescanned as a call, where cpp would expand
 ; `F(1)`. A conditional's word ends its line, so `#ifdef X` reads and
-; `#ifdef X /* why */` does not; there is no `#if` over an expression and
-; no `#elif`. An included file is read once per include and is not searched
+; `#ifdef X /* why */` does not; there is no `#if` over an expression. There
+; is no `#elif` either, and that one is **refused** rather than passed
+; through, for the reason written above the rule that refuses it: everything
+; else these rules do not read is still C for the compiler behind them, and a
+; `#elif` is not, because it stands inside a conditional they do read.
+; An included file is read once per include and is not searched
 ; for on any path but beside the file being expanded, which under `-i` is
 ; the input and not this one. `#x` quotes the argument after it
 ; has been expanded, where cpp quotes it as written, so `STR(LIMIT)` is
@@ -91,6 +95,33 @@
 ; `#include <stdio.h>` has no rule and goes through for the C compiler.
 @syntax "#include " f:string "\n" => { emit expand(read(drop(f, 1, 1))) }
 
+; `#elif` is refused rather than passed through, and it is the only thing
+; here that is. Everything else these rules do not read goes through whole,
+; which is safe because a C compiler with a preprocessor stands behind us and
+; reads it: `#if`, `#  define`, `#include <stdio.h>`. `#elif` cannot, because
+; it stands *inside* a conditional this file does read. An arm is a `raw`
+; hole running to its `#endif`, so `#ifdef B` ... `#elif` ... `#endif` with
+; `B` undefined drops the `#elif` arm along with the rest, and the output is
+; wrong with no message and status 0 -- which is the quiet kind of wrong the
+; whole tree is built to refuse. So the arms are read for one before either
+; is taken, and a rule catches one standing anywhere else. `refuse` is the
+; statement that says so, REFERENCE §8.3.
+;
+; The check is `#elif` at the start of a line, since a directive is a line
+; with a word at the front; the arm is given a newline in front so that an
+; arm beginning with one is seen too. A `#elif` inside a string is not a
+; line start and passes, and one written after a newline inside a string
+; would be refused, which is a refusal and not a wrong answer.
+@template no_elif(a) {
+    if replace("\n" + a, "\n#elif", "") != "\n" + a {
+        refuse("'#elif' is not a directive these rules read, and it stands inside a conditional they do -- an arm holding one would be taken or dropped whole. Write it as an '#ifdef' nested in the '#else'.")
+    }
+}
+
+@syntax "#elif" => {
+    refuse("'#elif' is not a directive these rules read. Write it as an '#ifdef' nested in the '#else'.")
+}
+
 ; Conditional inclusion. Each arm is a `raw` hole, so a `#define` inside the
 ; arm not taken never fires; the arm taken is handed to `expand`, and a
 ; conditional nested inside it fires then, in its turn. The variant with an
@@ -99,13 +130,17 @@
 ; and the next is tried. `defined` in the C sense is `known` under either
 ; key, since a function-like macro is defined too.
 @syntax "#ifdef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
-    => { if known("def:" + n) or known("fn:" + n) { emit expand(t) } else { emit expand(f) } }
+    => { no_elif(t); no_elif(f)
+         if known("def:" + n) or known("fn:" + n) { emit expand(t) } else { emit expand(f) } }
 @syntax "#ifdef " n:name "\n" t:raw "#endif\n"
-    => { if known("def:" + n) or known("fn:" + n) { emit expand(t) } }
+    => { no_elif(t)
+         if known("def:" + n) or known("fn:" + n) { emit expand(t) } }
 @syntax "#ifndef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
-    => { if known("def:" + n) or known("fn:" + n) { emit expand(f) } else { emit expand(t) } }
+    => { no_elif(t); no_elif(f)
+         if known("def:" + n) or known("fn:" + n) { emit expand(f) } else { emit expand(t) } }
 @syntax "#ifndef " n:name "\n" t:raw "#endif\n"
-    => { if not (known("def:" + n) or known("fn:" + n)) { emit expand(t) } }
+    => { no_elif(t)
+         if not (known("def:" + n) or known("fn:" + n)) { emit expand(t) } }
 
 ; A call. Every call in the file fires this, and one that is not a macro is
 ; written back as it was. One that is binds each argument to its parameter's

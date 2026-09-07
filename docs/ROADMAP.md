@@ -94,8 +94,8 @@ text mode did not know, measured on that file rather than predicted, and they
 were built the same day: [COMPLETED.md](COMPLETED.md)'s "The island rule,
 finished" and "Text mode moves by tokens".
 
-Stage 6 landed on 2026-09-07 as `examples/cpp.mx`, `examples/cpp.h` and
-`tests/cpp.sh`: **a C preprocessor**, which is C in and C out over a
+Stage 6 landed on 2026-09-07 as `lib/cpp.mx`, `examples/cpp.mx`,
+`examples/cpp.h` and `tests/cpp.sh`: **a C preprocessor**, which is C in and C out over a
 directive that changes what the lines after it mean. It was picked by the
 rule below, the translator before the mechanic: the store had been last on
 [direction.md](direction.md)'s list for a year of pages because it is the
