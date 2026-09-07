@@ -237,10 +237,19 @@ expect "a bracket opens with one word and closes with another" <<'EOF'
 @bracket "|" "|"
 EOF
 
-expect "is already a bracket" <<'EOF'
+# An open is declared once, and a word is never an open of one bracket and a
+# close of another. Two brackets sharing a close is allowed since 2026-09-07,
+# `#ifdef` and `#ifndef` both closed by `#endif`, and is not a case here.
+expect "'(' is already a bracket" <<'EOF'
 @mode text
 @bracket "(" ")"
-@bracket "[" ")"
+@bracket "(" "]"
+EOF
+
+expect "')' is already a bracket" <<'EOF'
+@mode text
+@bracket "(" ")"
+@bracket ")" "]"
 EOF
 
 # An empty word, in a pattern or as a side of a bracket, would match at every

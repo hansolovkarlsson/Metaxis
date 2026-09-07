@@ -492,9 +492,13 @@ template kept the hole last.
 - A bracket is matched whole, as a rule's word is (§7): one standing inside a
   string or a comment the file declared as a class is never seen.
 - **The two sides must differ**: `a bracket opens with one word and closes
-  with another, and '|' is both`. A word that is already a side of a declared
-  bracket is `'x' is already a bracket, declared at file:line`; an empty word
-  is `an empty word matches nothing`.
+  with another, and '|' is both`. An open is declared once, and a word is
+  never an open of one bracket and a close of another: either is `'x' is
+  already a bracket, declared at file:line`. **Two brackets may share a
+  close**, `#ifdef` and `#ifndef` both closed by `#endif`, since a close
+  balances whichever open stands behind it (since 2026-09-07;
+  `examples/cpp.mx` is the customer). An empty word is `an empty word matches
+  nothing`.
 - **In expression mode the lexer reads it** (§6.1): each side is a word, and
   between an opener and its match a newline is whitespace, whatever the
   separator is, and the indent or dedent the next line's column would have

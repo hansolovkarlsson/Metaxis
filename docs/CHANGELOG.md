@@ -10,6 +10,17 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`examples/cpp.mx` reads `#ifdef`, `#ifndef`, `#else` and `#endif`,
+nested.** Each arm is a `raw` hole and the arm taken is handed to `expand`,
+so a `#define` inside the arm not taken never fires; a conditional nested
+in the arm taken fires in its turn. Also `#define NAME` with no body. Seven
+lines from both programs.
+
+**Two brackets may share a close.** `@bracket "#ifdef" "#endif"` beside
+`@bracket "#ifndef" "#endif"` is accepted, since a close balances whichever
+open stands behind it; an open is still declared once, and a word is never
+an open of one bracket and a close of another.
+
 **A `raw` hole kind: source text, not expanded.** Text mode only; it matches
 as a `text` hole does and the template gets it as written, to hand to
 `expand` or to leave. `examples/cpp.mx` keeps a macro's body raw and

@@ -7,13 +7,14 @@
 ; exactly what a rule could not do before 2026-09-07 -- a rule saw its own
 ; pattern and nothing else -- and what `remember` and `recall` are for.
 ;
-; Five rules. `#define NAME body` remembers the body under the name and
+; The rules. `#define NAME body` remembers the body under the name and
 ; emits nothing, so the line goes; `#define NAME(a, b) body` remembers a
 ; body and its parameters; `#undef NAME` forgets; a rule on every call binds
 ; a macro's arguments to its parameters through the store and expands the
-; body; and a rule led by a class hole, `x:name`, fires on every identifier
+; body; a rule led by a class hole, `x:name`, fires on every identifier
 ; in the file and emits an argument, a macro's body, or the identifier
-; itself, in that order of preference. The four
+; itself, in that order of preference; and `#ifdef`, `#ifndef`, `#else`
+; and `#endif` take one arm and drop the other unread. The four
 ; classes are C's, as in lib/island.mx, so that a macro name inside a string,
 ; a character literal or a comment is a token the scan passes over and never
 ; a name the third rule sees; the three brackets keep a hole over `(a, b)`
@@ -25,8 +26,10 @@
 ; function-like macro's parameters are written `(a, b)` with that one space.
 ; An argument that forms a call with the text after it, `CALL(F)` for
 ; `#define CALL(f) f(1)`, is not rescanned as a call, where cpp would expand
-; `F(1)`. There is no `#ifdef`, no `#include "file"`, no `#` or `##` yet;
-; each is a later step and each is a rule, not a change to the tool.
+; `F(1)`. A conditional's word ends its line, so `#ifdef X` reads and
+; `#ifdef X /* why */` does not; there is no `#if` over an expression and
+; no `#elif`. There is no `#include "file"` and no `#` or `##` yet; each is
+; a later step and each is a rule, not a change to the tool.
 ; `#include <stdio.h>` is not a directive this file knows, so it goes
 ; through whole, which is right: the output is C for a compiler that has a
 ; preprocessor of its own.
@@ -48,6 +51,13 @@
 @bracket "[" "]"
 @bracket "{" "}"
 
+; The conditionals nest, so an arm has to run to its own `#endif` and not
+; the first one it meets, which is what a declared bracket gives a hole.
+; Two opens share the close, since a close balances whichever open stands
+; behind it.
+@bracket "#ifdef"  "#endif"
+@bracket "#ifndef" "#endif"
+
 ; A function-like macro remembers its body under `fn:` and each parameter
 ; under its position. Declared before the object-like rule, which shares
 ; its first word: `#define F(x)` has `(` where the other wants a space.
@@ -59,7 +69,24 @@
     for i, q in p { remember("param:" + n + ":" + i, q) }
 }
 @syntax "#define " n:name " " b:raw "\n" => { remember("def:" + n, b) }
+@syntax "#define " n:name "\n"           => { remember("def:" + n, "") }
 @syntax "#undef " n:name "\n"        => { forget("def:" + n); forget("fn:" + n) }
+
+; Conditional inclusion. Each arm is a `raw` hole, so a `#define` inside the
+; arm not taken never fires; the arm taken is handed to `expand`, and a
+; conditional nested inside it fires then, in its turn. The variant with an
+; `#else` is declared first: for a conditional without one, its `t` reaches
+; the rule's own `#endif`, which a hole may not span, so that variant fails
+; and the next is tried. `defined` in the C sense is `known` under either
+; key, since a function-like macro is defined too.
+@syntax "#ifdef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
+    => { if known("def:" + n) or known("fn:" + n) { emit expand(t) } else { emit expand(f) } }
+@syntax "#ifdef " n:name "\n" t:raw "#endif\n"
+    => { if known("def:" + n) or known("fn:" + n) { emit expand(t) } }
+@syntax "#ifndef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
+    => { if known("def:" + n) or known("fn:" + n) { emit expand(f) } else { emit expand(t) } }
+@syntax "#ifndef " n:name "\n" t:raw "#endif\n"
+    => { if not (known("def:" + n) or known("fn:" + n)) { emit expand(t) } }
 
 ; A call. Every call in the file fires this, and one that is not a macro is
 ; written back as it was. One that is binds each argument to its parameter's
@@ -122,6 +149,22 @@
 #define ADD(a, b) ((a) + (b))
 #define SEVEN() 7
 #define TWICE(x) (DOUBLE(x) + x)
+#define DEBUG
+#ifdef DEBUG
+#define LEVEL 2
+#else
+#define LEVEL 0
+#endif
+#ifndef DEBUG
+#define LEVEL 9
+#endif
+#ifdef NOTDEFINED
+#define LEVEL 8
+#else
+#ifdef DEBUG
+#define MODE "nested"
+#endif
+#endif
 
 int main(void)
 {
@@ -135,5 +178,6 @@ int main(void)
     int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
     printf("%d %d\n", A, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     printf("%d %d %d %d\n", DOUBLE(LIMIT), ADD(1, DOUBLE(2)), SEVEN(), TWICE(3));
+    printf("%d %s\n", LEVEL, MODE);   /* 2 nested: the arms taken, the ones not taken never defining anything */
     return 0;
 }

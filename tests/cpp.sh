@@ -42,14 +42,15 @@ dirs=$(grep -c '^#' "$TMP/out.c")
 inc=$(grep -c '^#include <stdio.h>$' "$TMP/out.c")
 lim=$(idents LIMIT)
 gone=$(( $(idents TOTAL) + $(idents GREETING) + $(idents A) + $(idents B) \
-       + $(idents DOUBLE) + $(idents ADD) + $(idents SEVEN) + $(idents TWICE) ))
+       + $(idents DOUBLE) + $(idents ADD) + $(idents SEVEN) + $(idents TWICE) \
+       + $(idents DEBUG) + $(idents LEVEL) + $(idents MODE) + $(idents NOTDEFINED) ))
 step=$(idents STEP)
 self=$(idents SELF)
 if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] || [ "$step" != 4 ] || [ "$self" != 2 ]; then
     echo "FAILED  cpp.sh: the rules did not do what they do to examples/cpp.mx's body"
     echo "        directives left: $dirs (want 1, the include: $inc)"
     echo "        LIMIT as an identifier: $lim (want 1, inside the string)"
-    echo "        TOTAL, GREETING, A, B and the four function-like names left: $gone (want 0)"
+    echo "        TOTAL, GREETING, A, B, the four function-like names and the four conditional ones left: $gone (want 0)"
     echo "        STEP left: $step (want 4: the undefined variable, its use, the comment, and TOTAL's body read after the undef)"
     echo "        SELF left: $self (want 2: the variable and its use, the macro having stopped at itself)"
     exit 1
@@ -79,7 +80,8 @@ LIMIT is not a macro inside a string
 17
 70
 5 4
-20 5 7 9'
+20 5 7 9
+2 nested'
 
 if [ "$got" != "$want" ]; then
     echo "FAILED  cpp.sh: the preprocessed program and the compiler's own disagree"
@@ -94,7 +96,7 @@ if [ "$got" != "$expected" ]; then
     exit 1
 fi
 
-echo "ok      cpp.sh: seven object-like and four function-like macros, and cc's own preprocessor agrees"
+echo "ok      cpp.sh: object-like and function-like macros and nested conditionals, and cc's own preprocessor agrees"
 echo "            no directive left but the include, LIMIT kept inside its string,"
-echo "            and both programs print the same six lines"
+echo "            and both programs print the same seven lines"
 exit 0

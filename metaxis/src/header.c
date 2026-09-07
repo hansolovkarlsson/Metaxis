@@ -695,10 +695,14 @@ static int directive(Grammar *g, D *d, const char *file, int line,
                          " and '%s' is both", open));
             goto fail;
         }
+        /* An open is declared once and a word is never both an open and a
+           close; two brackets may share a close, since a close balances
+           whichever open stands behind it. `#ifdef` and `#ifndef` both closed
+           by `#endif` is what asked, on 2026-09-07. */
         for (int i = 0; i < g->nbr; i++) {
             const char *dup = NULL;
             if (!strcmp(g->br[i].open, open) || !strcmp(g->br[i].close, open)) dup = open;
-            if (!strcmp(g->br[i].open, close) || !strcmp(g->br[i].close, close)) dup = close;
+            if (!strcmp(g->br[i].open, close)) dup = close;
             if (dup) {
                 derr(d, xfmt("'%s' is already a bracket, declared at %s:%d",
                              dup, g->br[i].file, g->br[i].line));

@@ -12,5 +12,6 @@ int main(void)
     int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
     printf("%d %d\n", 5, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     printf("%d %d %d %d\n", ((10) * 2), ((1) + ( ((2) * 2))), 7, (((3) * 2) + 3));
+    printf("%d %s\n", 2, "nested");   /* 2 nested: the arms taken, the ones not taken never defining anything */
     return 0;
 }
