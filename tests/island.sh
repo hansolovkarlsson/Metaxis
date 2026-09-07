@@ -35,16 +35,23 @@ if ! sh tests/limit.sh "$LIMIT" "$MX" "$TMP/in.mx" > "$TMP/mx.c" 2> "$TMP/err"; 
     exit 1
 fi
 
-# What the rewrite did, counted. Six calls become complain(), the definition
+# What the rewrite did, counted. Nine calls become complain(), eight of them
+# passing `err` and the ninth passing `why`, which is the one in badline() --
+# counted separately because it is the evidence that the rule matches the
+# *shape* of the call and not the name of the variable in it. The definition
 # appears once (it is the only remaining fprintf of that shape), and the one
-# call with a different format string is left alone.
+# call with a different format string is left alone. Eight was six until
+# 2026-09-07, when `-u` and `-i` gave the front end two more files to fail to
+# open and one more command line to refuse.
 calls=$(grep -c 'complain(err)' "$TMP/mx.c")
+why=$(grep -c 'complain(why)' "$TMP/mx.c")
 defs=$(grep -c 'static void complain(const char \*e)' "$TMP/mx.c")
 left=$(grep -c 'fprintf(stderr, "mx: %s\\n", err)' "$TMP/mx.c")
 other=$(grep -c 'fprintf(stderr, "mx: cannot write %s\\n", outpath)' "$TMP/mx.c")
-if [ "$calls" != 6 ] || [ "$defs" != 1 ] || [ "$left" != 0 ] || [ "$other" != 1 ]; then
+if [ "$calls" != 8 ] || [ "$why" != 1 ] || [ "$defs" != 1 ] || [ "$left" != 0 ] || [ "$other" != 1 ]; then
     echo "FAILED  island.sh: the rewrite did not do what it does to today's mx.c"
-    echo "        complain(err) calls: $calls (want 6)   definition: $defs (want 1)"
+    echo "        complain(err) calls: $calls (want 8)   complain(why): $why (want 1)"
+    echo "        definition: $defs (want 1)"
     echo "        old calls left: $left (want 0)   the other fprintf: $other (want 1)"
     echo "        If metaxis/cmd/mx.c changed, update these; if it did not,"
     echo "        text mode changed and this is the first thing that noticed."
@@ -117,7 +124,7 @@ if [ "$msg" != "mx: cannot open examples/no-such-file.mx" ]; then
 fi
 
 echo "ok      island.sh: mx.c rewritten by its own tool compiles, runs, and says the same"
-echo "            6 calls became complain(), 1 left alone, definition inserted,"
+echo "            9 calls became complain(), 1 left alone, definition inserted,"
 echo "            out renamed 10 times and kept in outpath, a string and a comment,"
 echo "            and the one !( rewritten with its nested call whole"
 exit 0

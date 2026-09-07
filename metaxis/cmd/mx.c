@@ -1,4 +1,5 @@
-/* mx.c -- mx [-o out] [-b backend] [-t] [-g] file.mx */
+/* mx.c -- mx [-o out] [-b backend] [-t] [-g] file.mx
+                  or  mx -u rules.mx -i input [same flags] */
 #include "mx.h"
 
 #include <stdio.h>
@@ -8,10 +9,22 @@
 static void usage(void)
 {
     fputs("usage: mx [-o output] [-b backend] [-t] [-g] file.mx\n"
+          "       mx -u rules.mx [...] -i input [-o output] [-b backend] [-t] [-g]\n"
+          "       -u   a file of directives, read as '@use' reads one; repeatable\n"
+          "       -i   the file to read with them, named as itself in every message\n"
           "       -b   which 'as <name>' template each rule emits from\n"
           "       -t   trace the parse to stderr, and count what it tried\n"
           "       -g   print the grammar the header declared, and stop\n", stderr);
     exit(2);
+}
+
+/* A command line the tool could not read exits 2, as a file it could not read
+   exits 1 (REFERENCE.md 10). It says what is wrong before the shape, because
+   the shape alone does not distinguish the two forms from a mixture of them. */
+static void badline(const char *why)
+{
+    fprintf(stderr, "mx: %s\n", why);
+    usage();
 }
 
 /* A space goes *between* elements and never after the last one. This used to
@@ -64,30 +77,67 @@ static void dump(Grammar *g)
 
 int main(int argc, char **argv)
 {
-    const char *in = NULL, *outpath = NULL, *backend = NULL;
-    int grammar_only = 0, trace = 0;
+    const char *in = NULL, *outpath = NULL, *backend = NULL, *inputpath = NULL;
+    const char **rules = xmalloc((size_t)argc * sizeof *rules);
+    int nrules = 0, grammar_only = 0, trace = 0;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-o")) { if (++i >= argc) usage(); outpath = argv[i]; }
         else if (!strcmp(argv[i], "-b")) { if (++i >= argc) usage(); backend = argv[i]; }
+        else if (!strcmp(argv[i], "-u")) { if (++i >= argc) usage(); rules[nrules++] = argv[i]; }
+        else if (!strcmp(argv[i], "-i")) { if (++i >= argc) usage(); inputpath = argv[i]; }
         else if (!strcmp(argv[i], "-t")) trace = 1;
         else if (!strcmp(argv[i], "-g")) grammar_only = 1;
         else if (argv[i][0] == '-' && argv[i][1]) usage();
         else if (!in) in = argv[i];
         else usage();
     }
-    if (!in) usage();
+
+    /* The two forms, and they do not mix. A `.mx` file is a header and a body
+       in one place, which is the premise; `-u` and `-i` are the same two
+       things named separately, for a file that is not written for any grammar
+       and cannot be asked to carry one. Adding `-u` to a file that has a
+       header would make position decide which rules come first, and adding
+       `-i` to one that has a body would leave a body unread -- both of them
+       the quiet kind of wrong this tool refuses everywhere else (§3.10). */
+    if (in && (nrules || inputpath))
+        badline("a file on its own carries its rules and its body, so it takes no -u and no -i");
+    if (!in && !nrules && !inputpath) usage();
+    if (nrules && !inputpath && !grammar_only)
+        badline("-u gives the rules and -i the file to read with them, and there is no -i here"
+                " -- only -g reads a grammar on its own");
+    if (inputpath && !nrules)
+        badline("-i gives the file to read and -u the rules to read it with, and there is no -u here");
 
     char *err = NULL;
-    char *src = read_file(in, &err);
-    if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }
-
     Grammar *g = grammar_new();
+
+    /* Where the header comes from, and where the body does. They are one file
+       in the first form and two in the second, and nothing below this point
+       knows which: the expander has always taken a buffer, an offset into it
+       and a name to put in its messages, and a body of its own is that buffer
+       at offset 0 under its own name. That is why the messages a split run
+       gives name the input file at the input file's own line. */
+    char *src = NULL, *bsrc = NULL;
+    const char *bfile = NULL;
     size_t body = 0;
-    if (header_read(g, src, in, &body, &err) < 0) {
-        fprintf(stderr, "mx: %s\n", err);
-        return 1;
+
+    if (in) {
+        src = read_file(in, &err);
+        if (!src) { fprintf(stderr, "mx: %s\n", err); return 1; }
+        if (header_read(g, src, in, &body, &err) < 0) {
+            fprintf(stderr, "mx: %s\n", err);
+            return 1;
+        }
+        bsrc = src; bfile = in;
+    } else {
+        for (int i = 0; i < nrules; i++)
+            if (header_use(g, rules[i], &err) < 0) {
+                fprintf(stderr, "mx: %s\n", err);
+                return 1;
+            }
     }
+
     if (grammar_seal(g, &err) < 0) {
         fprintf(stderr, "mx: %s\n", err);
         return 1;
@@ -107,14 +157,22 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    g->body_file = in;
+    /* Read after `-g` has had its chance to stop, so that inspecting a grammar
+       never depends on the file it would be pointed at. */
+    if (inputpath) {
+        bsrc = read_file(inputpath, &err);
+        if (!bsrc) { fprintf(stderr, "mx: %s\n", err); return 1; }
+        bfile = inputpath;
+    }
+
+    g->body_file = bfile;
     char *out = NULL;
     if (g->mode == MODE_TEXT) {
-        out = expand_text(g, src, body, in, &err);
+        out = expand_text(g, bsrc, body, bfile, &err);
     } else {
         expand_trace(trace);
         Toks tk;
-        if (lex(g, src, body, in, &tk, &err) < 0) {
+        if (lex(g, bsrc, body, bfile, &tk, &err) < 0) {
             fprintf(stderr, "mx: %s\n", err);
             return 1;
         }

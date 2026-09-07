@@ -48,6 +48,33 @@ expect() {
     esac
 }
 
+# The other kind of wrong: not a file the tool could not read but a command
+# line it could not read, which exits 2 rather than 1 (REFERENCE.md 10). It
+# takes no file on stdin, so it has its own helper; the arguments are given
+# whole and the status is checked, because 2 and 1 mean different things here
+# and a refusal that exited 1 would look like a file being refused.
+argv() {
+    want="$1"; shift
+    n=$((n + 1))
+    got=$(sh tests/limit.sh "$LIMIT" "$MX" "$@" 2>&1)
+    rc=$?
+    if [ $rc -ne 2 ]; then
+        echo "FAILED  errors.sh case $n: wanted status 2, got $rc"
+        echo "        args:   $*"
+        echo "        got:    $got"
+        fail=1
+        return
+    fi
+    case "$got" in
+        *"$want"*) echo "ok      errors.sh case $n: $want" ;;
+        *) echo "FAILED  errors.sh case $n"
+           echo "        args:   $*"
+           echo "        wanted: $want"
+           echo "        got:    $got"
+           fail=1 ;;
+    esac
+}
+
 expect "no directive called '@infix'" <<'EOF'
 @infix "+" 60 add
 EOF
@@ -649,6 +676,37 @@ expect "this rule emits nothing for 'tight', and has no untagged template" <<'EO
 @end
 n; m
 EOF
+
+# ------------------------------------------------------- the command line.
+#
+# `mx file.mx` and `mx -u rules.mx -i input` are the two forms of REFERENCE.md
+# 9 and they do not mix, because each mixture has a quiet reading the tool
+# declines: a `-u` beside a file with a header would let position decide whose
+# rules come first, and an `-i` beside a file with a body would leave a body
+# unread. Neither is an error the file can contain, so neither can be a case
+# for `expect` above.
+
+argv "a file on its own carries its rules and its body" -u lib/arith.mx examples/first.mx
+argv "a file on its own carries its rules and its body" -i examples/first.mx examples/first.mx
+argv "there is no -i here" -u lib/arith.mx
+argv "there is no -u here" -i examples/first.mx
+
+# A body of its own is read at its own name and its own line, which is the
+# whole reason the split form exists: under `mx joined.mx` the same mistake is
+# reported at the header's length plus two. The file below is written where
+# the case number cannot collide with another.
+n=$((n + 1))
+b="$TMP/body$n.txt"
+printf '1 + 2 * 3\n1 + \n' > "$b"
+got=$(sh tests/limit.sh "$LIMIT" "$MX" -u lib/arith.mx -i "$b" 2>&1)
+if [ "$got" != "mx: $b:2: no rule reads '1' here" ]; then
+    echo "FAILED  errors.sh case $n: a -i body is not reported at its own name and line"
+    echo "        wanted: mx: $b:2: no rule reads '1' here"
+    echo "        got:    $got"
+    fail=1
+else
+    echo "ok      errors.sh case $n: a -i body is reported at its own name and line"
+fi
 
 if [ $fail -eq 0 ]; then
     echo "ok      errors.sh: $n cases"

@@ -10,6 +10,20 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`mx -u rules.mx -i input`: the rules and the body as two files.** `-u` reads
+a file of directives exactly as `@use` does and may be given more than once;
+`-i` is the body, whole, under its own name, so a message about it names that
+file at that file's own line and an input line beginning with `@` is a body
+line. `read(path)` resolves beside the input and `@use` beside the rules. The
+two forms do not mix and each mixture is refused with its own message, all
+three status 2 (REFERENCE §9.1, §10). `mx -g -u rules.mx` inspects a grammar
+with nothing to point it at.
+
+**`examples/cpp.mx` split.** The preprocessor's rules are `lib/cpp.mx` now and
+the example is a body that `@use`s them, the shape `lib/island.mx` already
+had. Its output is unchanged; `tests/cpp.sh` runs the same body both ways and
+requires the same bytes.
+
 **`examples/cpp.mx` reads `#x` and `a ## b`.** Stringizing quotes the
 argument bound to the name; pasting joins the two sides and rescans the
 result, so `GLUE(LIM, IT)` is `LIMIT` and then 10. Three rules, nothing in

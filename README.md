@@ -98,7 +98,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [python.mx](examples/python.mx) | Python in, C out: stage 3, and a block that is an **indentation**. `@separator "\n" indent` gives the lexer a stack of columns and a `block` hole reads what it emits: the one delimiter in the notation that is not a string, because an indent is not text anybody wrote. Its body is real Python, and `tests/python.sh` runs it under `python3` as well as compiling the C, so the two answers can be compared |
 | [basic.mx](examples/basic.mx) | BASIC in, C out: stage 4, and a source that **declares nothing**. A line number is the left operand of its statement, `FOR` and `NEXT` are two statements the way BASIC means them, and the type of a variable is the sigil on its name. The declarations C wants first are the aggregate of every line below, and the LET and FOR that meet a name `contribute` its declaration to a collection that leads the output; `tests/basic.sh` compiles the result with nothing supplied but `main` |
 | [island.mx](examples/island.mx) | stage 5: **C in, C out, over a file not written for it.** The rules in [lib/island.mx](lib/island.mx) turn one `fprintf` shape into a call and insert its definition, and leave everything else alone; `tests/island.sh` points them at `metaxis/cmd/mx.c` itself, compiles what comes out against the tool's own objects, and runs it. A third rule renames a variable and leaves `outpath`, a string and a comment alone, because the file declares C's tokens as classes and the scan moves by them; a fourth puts text after a hole over a nested call, which is right because the file declares C's brackets. Text mode was an island grammar all along |
-| [cpp.mx](examples/cpp.mx) | stage 6: **a C preprocessor in text mode**, over a small program and the header [cpp.h](examples/cpp.h) it includes. `#define` remembers a body under a name, `#undef` forgets it, a rule on every call binds a macro's arguments to its parameters through the store, a rule led by a class hole fires on every identifier and emits an argument, a body rescanned, or the identifier itself, and `#ifdef` takes one arm as a `raw` hole and drops the other unread. It is the first customer of the store, REFERENCE §8.5, the one mechanism by which a rule's output depends on a rule that ran before it; `tests/cpp.sh` compiles what comes out and compares it with the C compiler's own preprocessor on the same body. The file's note says what it declares rather than reads |
+| [cpp.mx](examples/cpp.mx) | stage 6: **a C preprocessor in text mode**, over a small program and the header [cpp.h](examples/cpp.h) it includes. The rules are in [lib/cpp.mx](lib/cpp.mx), so `mx -u lib/cpp.mx -i prog.c` points them at any C file, and `tests/cpp.sh` runs this body both ways and requires the same bytes. `#define` remembers a body under a name, `#undef` forgets it, a rule on every call binds a macro's arguments to its parameters through the store, a rule led by a class hole fires on every identifier and emits an argument, a body rescanned, or the identifier itself, and `#ifdef` takes one arm as a `raw` hole and drops the other unread. It is the first customer of the store, REFERENCE §8.5, the one mechanism by which a rule's output depends on a rule that ran before it; `tests/cpp.sh` compiles what comes out and compares it with the C compiler's own preprocessor on the same body. The file's note says what it declares rather than reads |
 | [poem.mx](examples/poem.mx) | `@mode text`: prose in, HTML out |
 | [reserved.mx](examples/reserved.mx) | every character Metaxis writes a directive with, declared as an operator by a directive: `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` |
 | [use.mx](examples/use.mx) | `@use`, taking its arithmetic from [lib/arith.mx](lib/arith.mx) and keeping its own comment and separator, a diamond through [lib/vector.mx](lib/vector.mx), and an `override` of one of arith's rules |
@@ -137,6 +137,28 @@ a string, and a string never starts with a brace. The language is Metaxis's
 own, so it lives outside the strings and the foreign text it emits lives inside
 them, which is the same rule the pattern side follows.
 
+## Two ways in
+
+A `.mx` file is a header and a body in one place, and that is the premise: a
+file declares the grammar it is then read with, so it cannot be read wrong by
+being handed to the wrong tool.
+
+For the input that is **not written for any grammar and cannot be asked to
+carry one**, the same two things are named separately:
+
+```
+mx -u lib/cpp.mx -i myprog.c -o myprog.i
+```
+
+`-u` reads a file of directives, exactly as `@use` does, and may be given more
+than once; `-i` is the body, whole, under its own name. A message about it
+names `myprog.c` at `myprog.c`'s own line, an input line that begins with `@`
+is a body line and means it, and `read(path)` resolves beside the input while
+`@use` resolves beside the rules. The rules become an artifact that can be
+reused and versioned on its own, which is what makes a `.mx` file a stage in
+somebody else's toolchain. [docs/REFERENCE.md](docs/REFERENCE.md) § 9.1 says
+what the two forms are and why a mixture of them is refused.
+
 ## What it costs
 
 The costs are in [docs/notation.md](docs/notation.md) and are demonstrated
@@ -173,7 +195,8 @@ metaxis/src/header.c   the fixed half: directives, and nothing a file can reach
 metaxis/src/lex.c      the lexer the header wrote
 metaxis/src/expand.c   Pratt with backtracking, templates, and text mode
 metaxis/src/code.c     the second kind of template, parsed and run
-metaxis/cmd/mx.c       mx [-o out] [-b backend] [-t] [-g] file.mx
+metaxis/cmd/mx.c       mx [-o out] [-b backend] [-t] [-g] file.mx, and the
+                       split form, mx -u rules.mx -i input
 lib/                     files meant to be @use'd
 examples/                .mx beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong

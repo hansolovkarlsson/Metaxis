@@ -295,6 +295,9 @@ make record     # re-record those .out files; read the diff before committing it
 bin/mx examples/clike.mx          # to stdout
 bin/mx -o out.sol examples/clike.mx
 bin/mx -g examples/pascal.mx      # the grammar the header declared, and stop
+
+bin/mx -u lib/cpp.mx -i prog.c    # the rules from one file, the body from
+                                  # another that declares nothing (§9.1)
 ```
 
 C11 and `make`, plus POSIX `<regex.h>` for `@token`, which is in libc and is
@@ -392,6 +395,27 @@ hands it to `expand`. What it does not buy is a way to write a file, or to
 read one whose name the header does not spell in a string; a rule that
 computes the path from the body can, and the file that does that has given
 up saying what it reads.
+
+**`mx -u` lets the command line decide how a file is read.** The premise on
+the first page is that a file declares its own grammar in its header, and the
+strongest thing that buys is that a `.mx` file cannot be read wrong by being
+handed to the wrong tool: the answer travels with the question. `@use` had
+already conceded half of that, since the rules may live elsewhere, but the
+file still named them. `-u` and `-i` (REFERENCE §9.1) move the naming out to
+the command line, where **the input has no say at all in how it is read**, and
+`mx -u the-wrong-rules.mx -i prog.c` is a mistake nothing in either file can
+catch.
+
+That is a real loss and it is bought deliberately, because the alternative was
+worse. The input a toolchain has is a `.c` that a C compiler also reads, or a
+file under somebody else's version control, or the output of the stage before
+it, and none of them can be asked to carry a Metaxis header: the choice was not
+between two ways of naming a grammar but between the split form and nothing.
+What keeps the loss small is that the two forms do not mix, so no file ever has
+*part* of its grammar from outside. Either a file carries its own header, or it
+carries none and the command line carries all of it; a mixture is refused
+(§9.1) for the same reason `override` exists, that position is not allowed to
+answer a question the author should.
 
 **Output parenthesisation is the author's problem, in a string template.**
 Metaxis knows the input grammar because the file declared it, and a string

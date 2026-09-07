@@ -33,12 +33,13 @@ where one names a file it is lifted from that file.
 | 3.3 | `@separator` | 8.4 | Collections |
 | 3.4 | `@syntax` | 8.5 | The store |
 | 3.5 | `@use` | 9 | The command line |
-| 3.6 | `@mode` | 10 | Errors |
-| 3.7 | `@end` | 11 | Limits |
-| 3.8 | `@template` | 12 | Differences from Proto |
-| 3.9 | `@fragment` | | |
-| 3.10 | `override` | | Index, at the end of the page |
+| 3.6 | `@mode` | 9.1 | The two forms |
+| 3.7 | `@end` | 9.2 | The flags |
+| 3.8 | `@template` | 10 | Errors |
+| 3.9 | `@fragment` | 11 | Limits |
+| 3.10 | `override` | 12 | Differences from Proto |
 | 3.11 | `@bracket` | | |
+| | | | Index, at the end of the page |
 | 4 | Patterns | | |
 | 4.1 | What shape a pattern is | | |
 | 4.2 | What a pattern may not be | | |
@@ -322,6 +323,12 @@ belong to the file being written and not to the arithmetic in it.
 
 Two used files that declare one thing are refused, and a file says which it
 meant. §3.10.
+
+**`mx -u path` is this directive written on the command line** and differs in
+one way only: a path in a file is taken beside that file, and a path on the
+command line has none to stand beside, so it is taken beside the working
+directory. Everything above holds for it unchanged, the read-once identity
+included, so several `-u` compose the way several `@use` do. §9.1.
 
 ### 3.6 `@mode expression [override]` · `@mode text [override]`
 
@@ -1210,15 +1217,70 @@ line of its own and has no value to use here`.
 
 ```
 mx [-o output] [-b backend] [-t] [-g] file.mx
+mx -u rules.mx [-u rules.mx] -i input [-o output] [-b backend] [-t] [-g]
 ```
 
 | | |
 | --- | --- |
 | *(no flag)* | the expansion, to standard output |
 | `-o path` | the expansion, to `path` |
+| `-u path` | read `path`'s directives, exactly as `@use "path"` reads a file's (§3.5). May be given more than once |
+| `-i path` | the body is the whole of `path`, and `path` is what every message about it names |
 | `-b name` | each rule emits from its `as name` template, falling back to its untagged one (§3.4) |
 | `-t` | trace the parse to **standard error**, and count what it tried |
 | `-g` | the grammar the header declared, then stop |
+
+### 9.1 The two forms
+
+**A `.mx` file is a header and a body in one place**, which is §2 and the
+premise of the whole notation: a file declares the grammar it is then read
+with, so it can never be read wrong by being handed to the wrong tool.
+
+`-u` and `-i` are those same two things named separately. They exist for the
+input that is **not written for any grammar and cannot be asked to carry
+one**: a `.c` that a C compiler also has to read, a file under somebody
+else's version control, the output of the stage before this one in a
+pipeline. The rules become an artifact that can be reused and versioned on
+their own, and the input keeps its own name and its own line numbering:
+
+```
+mx -u lib/cpp.mx -i myprog.c -o myprog.i
+```
+
+**Three things follow from the body being a file of its own, and they are
+the reason the flags exist rather than a `cat` of the two.**
+
+- **A message about the body names the body's file, at the body's own line.**
+  Concatenated, the same mistake is reported at the header's length plus its
+  line, in a file the author never wrote. `tests/errors.sh` pins this.
+- **There is no header in that buffer to escape.** §2.2's boundary is not
+  looked for at all, so an input whose first line begins with `@` is a body
+  line and means it, with no `@end` to write and nowhere to write it.
+- **Each path is taken beside the file that means it.** `@use` inside a
+  rules file resolves beside that rules file, and `read(path)` (§8.3)
+  resolves beside the input, which is what `#include "file"` wants.
+
+**The two forms do not mix**, and a mixture is refused rather than resolved:
+
+| | |
+| --- | --- |
+| `mx -u rules.mx file.mx` | `a file on its own carries its rules and its body, so it takes no -u and no -i` |
+| `mx -i input file.mx` | the same message |
+| `mx -u rules.mx` | `-u gives the rules and -i the file to read with them, and there is no -i here -- only -g reads a grammar on its own` |
+| `mx -i input` | `-i gives the file to read and -u the rules to read it with, and there is no -u here` |
+
+The first two are refused because each mixture has a quiet reading. A `-u`
+beside a file that has a header of its own would let **position** decide
+whose rules are declared first, in a tool where declaration order settles
+which of two rules fires; an `-i` beside a file that has a body of its own
+would leave a body **unread**, in silence. Neither is a question this tool
+answers by position (§3.10).
+
+`mx -g -u rules.mx` is the one form that wants no `-i`: it prints what the
+rules declare and stops, so a grammar can be inspected before there is
+anything to point it at. The input is not even opened.
+
+### 9.2 The flags
 
 `-b` naming something no rule emits is refused rather than ignored, and the
 message lists what the file does emit. **A file whose every template is tagged
@@ -1400,6 +1462,18 @@ not read, or memory it could not get.
 | `no fresh name for '{~t}' is free` | 100000 candidates were all taken, §8.1 |
 | `'recall' has nothing remembered under '…'` | a key nobody wrote, §8.5 |
 | `'read' cannot open '…'` | the path tried, beside the file being expanded, §8.3 |
+
+### On the command line
+
+These three exit **2** rather than 1, and print the usage after the message:
+they are not a file being refused but a command line the tool could not read.
+§9.1 says why each mixture is refused rather than resolved.
+
+| message | means |
+| --- | --- |
+| `a file on its own carries its rules and its body, so it takes no -u and no -i` | the two forms of §9 mixed |
+| `-u gives the rules and -i the file to read with them, and there is no -i here -- only -g reads a grammar on its own` | `-u` with nothing to point it at |
+| `-i gives the file to read and -u the rules to read it with, and there is no -u here` | `-i` with no rules to read it with |
 
 ---
 

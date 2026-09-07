@@ -1007,6 +1007,17 @@ static int use_file(Grammar *g, const char *path, const char *from, char **err)
     return 0;
 }
 
+/* `mx -u path` is `@use "path"` written on the command line, and this is the
+   whole of the difference: a path in a file is taken beside that file, and a
+   path on the command line has no file to stand beside, so it is taken beside
+   the working directory. Everything else `@use` fixes holds unchanged -- read
+   once by resolved path, so several `-u` compose without colliding; nested no
+   more than 64 deep; and the file holds directives and nothing else. §9. */
+int header_use(Grammar *g, const char *path, char **err)
+{
+    return use_file(g, path, "./", err);
+}
+
 /* --------------------------------------------------------------------- seal */
 
 static int cmp_len(const void *a, const void *b)

@@ -1,167 +1,25 @@
-; cpp.mx -- a C preprocessor, in text mode. Stage 6, the first cut.
+; cpp.mx -- the rules in lib/cpp.mx, over a C program that uses them.
+; Stage 6: C in, C out, over a directive that changes what the lines after
+; it mean. The rules and what they do not do are in that file; this one is
+; the body they were written for, and it is ordinary C with ordinary
+; preprocessor directives in it, so the C compiler reads it too and
+; tests/cpp.sh uses that as the oracle.
 ;
-; C in, C out, and the mechanic it drives is the store (REFERENCE §8.5).
-; A preprocessor is the smallest real program whose entire job is a symbol
-; table: `#define` puts a name in it and every later line is read against
-; it, in order, so a macro defined below its use is not expanded. That is
-; exactly what a rule could not do before 2026-09-07 -- a rule saw its own
-; pattern and nothing else -- and what `remember` and `recall` are for.
+; The body is here rather than in a `.c` beside it because every example in
+; this tree is one file that is run and recorded, and because a body under
+; a header is the first of REFERENCE §9's two forms. The second form is the
+; same rules over a file that carries no header at all, and tests/cpp.sh
+; runs the body below both ways and requires the same bytes:
 ;
-; The rules. `#define NAME body` remembers the body under the name and
-; emits nothing, so the line goes; `#define NAME(a, b) body` remembers a
-; body and its parameters; `#undef NAME` forgets; a rule on every call binds
-; a macro's arguments to its parameters through the store and expands the
-; body; a rule led by a class hole, `x:name`, fires on every identifier
-; in the file and emits an argument, a macro's body, or the identifier
-; itself, in that order of preference; and `#ifdef`, `#ifndef`, `#else`
-; and `#endif` take one arm and drop the other unread. The four
-; classes are C's, as in lib/island.mx, so that a macro name inside a string,
-; a character literal or a comment is a token the scan passes over and never
-; a name the third rule sees; the three brackets keep a hole over `(a, b)`
-; whole.
+;     mx examples/cpp.mx
+;     mx -u lib/cpp.mx -i <this body, extracted>
 ;
-; What this file does not do, said plainly. A directive wants
-; exactly one space after its word and before its body, because text mode
-; matches a word byte for byte; `#  define` and a tab do not read, and a
-; function-like macro's parameters are written `(a, b)` with that one space.
-; An argument that forms a call with the text after it, `CALL(F)` for
-; `#define CALL(f) f(1)`, is not rescanned as a call, where cpp would expand
-; `F(1)`. A conditional's word ends its line, so `#ifdef X` reads and
-; `#ifdef X /* why */` does not; there is no `#if` over an expression and
-; no `#elif`. An included file is read once per include and is not searched
-; for on any path but beside this file. `#x` quotes the argument after it
-; has been expanded, where cpp quotes it as written, so `STR(LIMIT)` is
-; `"10"` here and `"LIMIT"` there; and an argument keeps the whitespace it
-; was written with, so `#x` of ` hello` has the leading space. Everything
-; the item listed is read; what the tool had to grow for it is in
-; docs/COMPLETED.md, and each thing above is a rule, not a change to it.
-; `#include <stdio.h>` is not a directive this file knows, so it goes
-; through whole, which is right: the output is C for a compiler that has a
-; preprocessor of its own.
-;
-; tests/cpp.sh runs the body below through this file and compiles what comes
-; out, and runs the same body through the C compiler directly, whose own
-; preprocessor is the oracle: the two programs must print the same three
-; lines, and the first must contain no `#define`, no `#undef` and no macro
-; name outside the one string that mentions one.
+; `#include "cpp.h"` names a file beside the one being expanded, so it
+; resolves beside this file here and beside the extracted body there. That
+; is the one thing the two forms do differently, and it is `read(path)`
+; doing what §3.5 says rather than an exception to it.
 
-@mode text
-
-@token name    "[A-Za-z_][A-Za-z0-9_]*"
-@token string  "\"([^\"\\\\]|\\\\.)*\""
-@token char    "'([^'\\\\]|\\\\.)*'"
-@token comment "/\\*([^*]|\\*+[^*/])*\\*+/"
-
-@bracket "(" ")"
-@bracket "[" "]"
-@bracket "{" "}"
-
-; The conditionals nest, so an arm has to run to its own `#endif` and not
-; the first one it meets, which is what a declared bracket gives a hole.
-; Two opens share the close, since a close balances whichever open stands
-; behind it.
-@bracket "#ifdef"  "#endif"
-@bracket "#ifndef" "#endif"
-
-; A function-like macro remembers its body under `fn:` and each parameter
-; under its position. Declared before the object-like rule, which shares
-; its first word: `#define F(x)` has `(` where the other wants a space.
-; The body is a `raw` hole, kept as written and expanded at each use by the
-; rules below, which is cpp's order: `#define TOTAL (LIMIT * STEP)` names
-; whatever `STEP` means where `TOTAL` is used, not where it was defined.
-@syntax "#define " n:name "(" [ p:name ]* sep ", " ")" " " b:raw "\n" => {
-    remember("fn:" + n, b)
-    for i, q in p { remember("param:" + n + ":" + i, q) }
-}
-@syntax "#define " n:name " " b:raw "\n" => { remember("def:" + n, b) }
-@syntax "#define " n:name "\n"           => { remember("def:" + n, "") }
-@syntax "#undef " n:name "\n"        => { forget("def:" + n); forget("fn:" + n) }
-
-; `#include "file"` is the file's text, found beside this one, run through
-; these rules in its turn: a `#define` in it is known to the lines after the
-; include, and a macro used in it is expanded before its text is emitted.
-; The string class takes the quoted name whole; `drop` takes the quotes off.
-; `#include <stdio.h>` has no rule and goes through for the C compiler.
-@syntax "#include " f:string "\n" => { emit expand(read(drop(f, 1, 1))) }
-
-; Conditional inclusion. Each arm is a `raw` hole, so a `#define` inside the
-; arm not taken never fires; the arm taken is handed to `expand`, and a
-; conditional nested inside it fires then, in its turn. The variant with an
-; `#else` is declared first: for a conditional without one, its `t` reaches
-; the rule's own `#endif`, which a hole may not span, so that variant fails
-; and the next is tried. `defined` in the C sense is `known` under either
-; key, since a function-like macro is defined too.
-@syntax "#ifdef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
-    => { if known("def:" + n) or known("fn:" + n) { emit expand(t) } else { emit expand(f) } }
-@syntax "#ifdef " n:name "\n" t:raw "#endif\n"
-    => { if known("def:" + n) or known("fn:" + n) { emit expand(t) } }
-@syntax "#ifndef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
-    => { if known("def:" + n) or known("fn:" + n) { emit expand(f) } else { emit expand(t) } }
-@syntax "#ifndef " n:name "\n" t:raw "#endif\n"
-    => { if not (known("def:" + n) or known("fn:" + n)) { emit expand(t) } }
-
-; A call. Every call in the file fires this, and one that is not a macro is
-; written back as it was. One that is binds each argument to its parameter's
-; name and expands the body, and the binding *is* the store: the identifier
-; rule below looks a name up as an argument before it looks it up as a
-; macro. The bindings are keyed by a depth the file counts, because a body
-; may call another macro whose parameter has the same name, `TWICE(x)`
-; calling `DOUBLE(x)` below: the inner call's arguments are expanded before
-; its template runs, at the outer depth, and its own bindings live one
-; deeper and are gone before the outer body's next `x`. That is cpp's
-; order, arguments first and the body after. The `busy:` key is the same
-; guard the object-like rule has.
-; The two operators, meaningful inside a function-like body. `#x` is the
-; argument bound to `x`, quoted; a `#` before anything else, `#include
-; <stdio.h>` say, goes through as it was, since every directive's own word
-; is longer and was tried first. `a ## b` pastes the two sides and rescans
-; the result, so `GLUE(LIM, IT)` is `LIMIT` and then 10; each side is run
-; through the rules to resolve it as an argument, and its spaces dropped,
-; since what pasting makes is one token. Declared before the call and the
-; identifier rules, which would otherwise take the left side first.
-@syntax "#" x:name => {
-    if known("depth") and known("arg:" + recall("depth") + ":" + x) {
-        emit "\"" + recall("arg:" + recall("depth") + ":" + x) + "\""
-    } else { emit "#" + x }
-}
-@syntax x:name " ## " y:name => { emit expand(replace(expand(x), " ", "") + replace(expand(y), " ", "")) }
-@syntax x:name "##" y:name   => { emit expand(replace(expand(x), " ", "") + replace(expand(y), " ", "")) }
-
-@syntax n:name "(" [ a ]* sep "," ")" => {
-    if known("fn:" + n) and not known("busy:" + n) {
-        if known("depth") { remember("depth", num(recall("depth")) + 1) } else { remember("depth", 1) }
-        for i, v in a { remember("arg:" + recall("depth") + ":" + recall("param:" + n + ":" + i), v) }
-        remember("busy:" + n, "1")
-        emit expand(recall("fn:" + n))
-        forget("busy:" + n)
-        for i, v in a { forget("arg:" + recall("depth") + ":" + recall("param:" + n + ":" + i)) }
-        remember("depth", num(recall("depth")) - 1)
-    } else {
-        emit expand(n) + "("
-        for v in a sep "," { emit v }
-        emit ")"
-    }
-}
-
-; A name that is a macro is replaced by its body run through these rules
-; again, which is cpp's rescan: `#define A B` then `#define B 5` gives `A`
-; the value 5, because `B` is looked up when `A` is used and not when it was
-; defined. cpp's rule for a body that names its own macro is that the name
-; is not expanded again while it is being expanded, which is what stops
-; `#define SELF SELF`; here that is a `busy:` key remembered for the
-; duration and forgotten after. Without it the depth cap would stop it
-; instead, at 64, with an error.
-@syntax x:name => {
-    if known("depth") and known("arg:" + recall("depth") + ":" + x) {
-        emit recall("arg:" + recall("depth") + ":" + x)
-    } else {
-        if known("def:" + x) and not known("busy:" + x) {
-            remember("busy:" + x, "1")
-            emit expand(recall("def:" + x))
-            forget("busy:" + x)
-        } else { emit x }
-    }
-}
+@use "../lib/cpp.mx"
 
 @end
 #include <stdio.h>

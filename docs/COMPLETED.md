@@ -9,6 +9,78 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## `-u` and `-i`: the grammar a file is read with, named from outside it
+
+```
+$ mx -u lib/cpp.mx -i examples/cpp.h | tail -1
+static int helper(int x) { return x + 100; }
+```
+
+`examples/cpp.h` is a C header with a `#define` in it and no Metaxis header of
+any kind, not one line of it about a grammar; `lib/cpp.mx` is stage 6's rules
+with no body. Neither file names the other, and the macro is gone from the
+output with its value in place of its name. The two forms
+of [REFERENCE.md](REFERENCE.md) §9 are now `mx file.mx`, a header and a body
+in one place, and this one, the same two things named separately. `-u` reads a
+file of directives exactly as `@use` does and may be given more than once;
+`-i` is the body, whole.
+
+**What asked for it.** Stage 6 made the tool a preprocessor, and a
+preprocessor is a stage in somebody else's toolchain rather than a thing run
+on its own. Its input is a `.c` that a C compiler also has to read, or a file
+under somebody else's version control, or the output of the stage before it,
+and none of those can be asked to carry a Metaxis header. The choice was not
+between two ways of naming a grammar; it was between the split form and
+nothing.
+
+**What it cost the tool: four lines of C and one function.** The seam was
+already there. `header_read` fills a `Grammar` and hands back a byte offset;
+`lex` and `expand_text` have always taken a buffer, an offset into it and a
+name to put in their messages, and neither ever required the buffer holding
+the header to be the buffer holding the body. `Grammar` already carried
+`body_file` as a field separate from the file the header came from, because
+`read(path)` had to resolve beside the program. The new function is
+`header_use`, which is `use_file` with the working directory standing in for
+the file a path would otherwise be taken beside, since there is none.
+
+**What the split buys that a `cat` of the two files does not**, each measured
+rather than argued:
+
+- **A message about the body names the body's file at the body's own line.**
+  Concatenated, a mistake on line 2 of a 21-line-header run is reported at
+  line 23 of a temporary file the author never wrote. `tests/errors.sh` pins
+  the split form's version of that message exactly.
+- **There is no header in that buffer to escape.** §2.2's boundary is not
+  looked for at all, so an input whose first line begins with `@` is a body
+  line, with no `@end` to write and nowhere to write it.
+- **Each path is taken beside the file that means it.** `@use` inside the
+  rules file resolves beside the rules; `read(path)` resolves beside the
+  input, which is what `#include "file"` wants. Concatenated, both resolve
+  beside the temporary file, and an extracted header cannot even find its own
+  `@use`.
+
+**The two forms do not mix**, and each mixture is refused rather than
+resolved, because each has a quiet reading: a `-u` beside a file with a
+header of its own would let position decide whose rules are declared first,
+in a tool where declaration order settles which of two rules fires, and an
+`-i` beside a file with a body of its own would leave a body unread in
+silence. Neither is a question this tool answers by position (§3.10). The
+three messages are in §10, all of them status 2.
+
+**What it cost the premise** is written down rather than argued away, in
+[notation.md](notation.md)'s "What it costs": under `-u` the input has no say
+at all in how it is read, and `mx -u the-wrong-rules.mx -i prog.c` is a
+mistake nothing in either file can catch. What keeps the loss bounded is that
+the forms do not mix, so no file ever has *part* of its grammar from outside.
+
+`examples/cpp.mx` was split to make it usable: the rules moved to
+`lib/cpp.mx` and the example became a body that `@use`s them, which is the
+shape `lib/island.mx` and `examples/island.mx` already had. `tests/cpp.sh`
+now runs that body **both ways and requires the same bytes**, compiles the
+split form's output and runs it to the same nine lines, and pins the path
+base by asking for an include that is not there. Verified at `make check`
+green, 223 `ok` lines, 103 error cases.
+
 ## A C preprocessor: the customer that named the store, and what it cost
 
 ```

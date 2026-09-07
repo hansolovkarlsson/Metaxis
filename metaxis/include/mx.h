@@ -234,6 +234,11 @@ int      frag_index(Grammar *g, const char *name);
 int header_read(Grammar *g, const char *src, const char *file,
                 size_t *body, char **err);
 
+/* `mx -u path`: exactly what `@use "path"` does, with the working directory
+   standing in for the file the path would otherwise be taken beside, since
+   there is no such file. Returns 0, or -1 with *err set. §9. */
+int header_use(Grammar *g, const char *path, char **err);
+
 /* ------------------------------------------------------------------ tokens */
 
 /* T_INDENT and T_DEDENT are the two tokens no file spells. Every other token

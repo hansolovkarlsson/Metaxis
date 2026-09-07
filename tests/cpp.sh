@@ -2,14 +2,22 @@
 # cpp.sh -- stage 6: C in, C out, and the oracle is the C compiler's own
 # preprocessor.
 #
-# examples/cpp.mx is a preprocessor written as three text-mode rules over the
-# store (REFERENCE §8.5). This runs its body through it and compiles what comes
-# out, then hands the same body to the C compiler directly, whose preprocessor
-# reads the same directives, and the two programs must print the same lines.
-# That comparison is the point: a wrong expansion that still compiles is caught
-# by the compiler disagreeing, the way tests/python.sh catches a translation
-# that is wrong the same way on both sides of an operator by running the
-# Python too.
+# lib/cpp.mx is a preprocessor written as text-mode rules over the store
+# (REFERENCE §8.5), and examples/cpp.mx is a C program that @uses them. This
+# runs that body through it and compiles what comes out, then hands the same
+# body to the C compiler directly, whose preprocessor reads the same
+# directives, and the two programs must print the same lines. That comparison
+# is the point: a wrong expansion that still compiles is caught by the compiler
+# disagreeing, the way tests/python.sh catches a translation that is wrong the
+# same way on both sides of an operator by running the Python too.
+#
+# Since 2026-09-07 it also runs the body the *second* way REFERENCE §9 allows,
+# `mx -u lib/cpp.mx -i prog.c`, where the rules and the file they are pointed
+# at are two files and the input carries no header at all. The two runs must
+# give the same bytes. That is the whole claim of the split form: the grammar
+# a file is read with may come from outside it without changing what it reads
+# to, so a `.mx` file can be a stage in a toolchain over sources that say
+# nothing about any grammar.
 #
 # It is not enough on its own, because the compiler behind us has a
 # preprocessor: a `#define` the rules left in place would be expanded by cc and
@@ -101,7 +109,57 @@ if [ "$got" != "$expected" ]; then
     exit 1
 fi
 
+# The second form: the same rules over the same body, given as two files.
+# $TMP/prog.c above is exactly the body of $SRC with the header gone, so this
+# is the identical text read with the identical rules, and it must expand to
+# the identical bytes. cpp.h is copied next to it because `read(path)` resolves
+# beside the file being expanded (REFERENCE §8.3), which under -i is the input
+# and not the rules. That is the one thing the two forms do differently, and
+# the reason the copy is here rather than a search path of some kind.
+cp "$(dirname "$SRC")/cpp.h" "$TMP/cpp.h"
+if ! sh tests/limit.sh "$LIMIT" "$MX" -u lib/cpp.mx -i "$TMP/prog.c" > "$TMP/split.c" 2> "$TMP/err"; then
+    echo "FAILED  cpp.sh: mx -u lib/cpp.mx -i prog.c did not expand"
+    cat "$TMP/err"
+    exit 1
+fi
+if ! diff -u "$TMP/out.c" "$TMP/split.c" > "$TMP/diff"; then
+    echo "FAILED  cpp.sh: the two forms of the same run disagree"
+    echo "        left: mx $SRC     right: mx -u lib/cpp.mx -i prog.c"
+    cat "$TMP/diff"
+    exit 1
+fi
+
+# And it is C, not merely the same text: compiled and run, it prints the same.
+if ! "$CC" -std=c11 -o "$TMP/c" "$TMP/split.c" 2> "$TMP/cc.err"; then
+    echo "FAILED  cpp.sh: the C from the split form does not compile"
+    cat "$TMP/cc.err"
+    exit 1
+fi
+split=$("$TMP/c")
+if [ "$split" != "$expected" ]; then
+    echo "FAILED  cpp.sh: the program from the split form prints something else"
+    echo "        got:      $(echo "$split"   | tr '\n' '/')"
+    echo "        expected: $(echo "$expected" | tr '\n' '/')"
+    exit 1
+fi
+
+# And the path base, stated as a failure so it names what it tried. `read` in
+# the `#include` rule looks beside the file being expanded, which under -i is
+# the input; a run whose rules live in lib/ and whose input lives in $TMP must
+# look for the header in $TMP. That is the one thing the two forms do
+# differently and it is the thing a toolchain would be bitten by, so it is
+# pinned rather than described.
+printf 'int a = 1;\n#include "no-such-header.h"\nint b = 2;\n' > "$TMP/bad.c"
+msg=$(sh tests/limit.sh "$LIMIT" "$MX" -u lib/cpp.mx -i "$TMP/bad.c" 2>&1)
+case "$msg" in
+    *"$TMP/no-such-header.h"*) ;;
+    *)  echo "FAILED  cpp.sh: 'read' under -i did not look beside the input file"
+        echo "        got: $msg"
+        exit 1 ;;
+esac
+
 echo "ok      cpp.sh: macros, conditionals, an include, # and ##, and cc's own preprocessor agrees"
 echo "            no directive left but the system include, LIMIT kept inside its string,"
 echo "            and both programs print the same nine lines"
+echo "            and mx -u lib/cpp.mx -i prog.c gives the same bytes, compiles and prints them too"
 exit 0
