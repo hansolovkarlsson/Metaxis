@@ -757,11 +757,15 @@ char *collect_resolve(Grammar *g, const char *out)
     if (!g->ncoll) return (char *)out;
     Buf b = {0};
     for (const char *p = out; *p; ) {
+        /* The longest mark that matches. A mark is a fresh name, so it is in
+           no source and no template, but `splice__1` is a prefix of
+           `splice__10`, and the first match would read the tenth collection's
+           mark as the first's. Found by the audit of 2026-09-06. */
         Coll *c = NULL;
         size_t ml = 0;
-        for (int i = 0; i < g->ncoll && !c; i++) {
+        for (int i = 0; i < g->ncoll; i++) {
             size_t l = strlen(g->coll[i].mark);
-            if (!strncmp(p, g->coll[i].mark, l)) { c = &g->coll[i]; ml = l; }
+            if (l > ml && !strncmp(p, g->coll[i].mark, l)) { c = &g->coll[i]; ml = l; }
         }
         if (!c) { buf_ch(&b, *p++); continue; }
         c->spliced = 1;

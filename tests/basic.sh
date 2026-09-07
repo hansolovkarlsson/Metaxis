@@ -88,6 +88,34 @@ if [ "$got" != "$WANT" ]; then
     exit 1
 fi
 
+# Ten collections, and the tenth's mark is not the first's. A mark is a fresh
+# name, `splice__N`, and `splice__1` is a prefix of `splice__10`; until
+# 2026-09-07 the pass took the first mark that matched, so a template with ten
+# collections spliced the first's text over the head of the tenth's mark and
+# copied the rest of it through. Nothing in examples/ has ten, which is why
+# the audit found it and the suite had not. The file below contributes to the
+# tenth only, and the output must be the contribution, whole, where the tenth
+# was spliced.
+cat > "$TMP/ten.mx" <<'EOF2'
+@token name "[a-z][a-z0-9]*"
+@separator ";" => "\n"
+@syntax "p" => { emit splice("c1") + splice("c2") + splice("c3") + splice("c4") + splice("c5") + splice("c6") + splice("c7") + splice("c8") + splice("c9") + "|" + splice("c10") + "|" }
+@syntax "add" x:name => { contribute("c10", x); emit "" }
+@end
+p; add foo
+EOF2
+got=$(sh tests/limit.sh "$LIMIT" "$MX" "$TMP/ten.mx" 2> "$TMP/err") || {
+    echo "FAILED  basic.sh: the ten-collection file did not expand"; cat "$TMP/err"; exit 1; }
+if [ "$got" != "|foo|" ]; then
+    echo "FAILED  basic.sh: the tenth collection was not spliced where its mark was."
+    echo "        wanted: |foo|"
+    echo "        got:    $(echo "$got" | tr '\n' '/')"
+    echo "        collect_resolve() must take the longest mark that matches; a"
+    echo "        shorter one is a prefix of it."
+    exit 1
+fi
+
 echo "ok      basic.sh: the C compiles, runs, and computes 39 4 40"
 echo "            T, I, N and A\$ declared by the LET and FOR that met them"
+echo "            and ten collections splice each where its own mark was"
 exit 0

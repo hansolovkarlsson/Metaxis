@@ -8,6 +8,15 @@ the reasoning behind any of it, belongs in [the journal](work-journal/) instead.
 Metaxis has not been released, so there are no version numbers yet. Entries
 are grouped by the day the work happened, newest first.
 
+## 2026-09-07
+
+**A tenth collection is spliced where its own mark was.** A splice mark is
+`splice__N`, and `splice__1` is a prefix of `splice__10`: the second pass
+took the first mark that matched, so a template with ten or more collections
+put the first's text at the head of the tenth's mark and copied the rest of
+the mark through. It now takes the longest mark that matches. Found by the
+audit; `tests/basic.sh` pins it.
+
 ## 2026-09-06
 
 **A block that quotes a file is checked against the file.** `make check`
