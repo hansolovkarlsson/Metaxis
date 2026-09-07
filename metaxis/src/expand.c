@@ -610,7 +610,7 @@ static int text_cur_depth;
    rules, one level deeper than the rule it is in, so the 64 cap catches a
    body that expands into itself exactly as it catches a hole that does. It is
    the one builtin that puts the scanner back on the stack from inside a
-   template, and roadmap item 11's preprocessor is what asked: a macro's body
+   template, and the C preprocessor in examples/cpp.mx asked for it: a body
    is expanded again after substitution, and a `#include`d file's text has to
    go through the rules it was included into. */
 char *text_reenter(Grammar *g, const char *s, char **err)

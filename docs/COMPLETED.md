@@ -9,6 +9,83 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## A C preprocessor: the customer that named the store, and what it cost
+
+```
+$ mx examples/cpp.mx | tail -3
+    printf("%d %s %d\n", value, "hello world", 10);  /* pasted, quoted, and pasted then expanded */
+    return 0;
+}
+```
+
+`examples/cpp.mx` is C in and C out in text mode, and it reads object-like
+and function-like macros, `#undef`, rescanning with cpp's rule for a macro
+that names itself, `#ifdef`, `#ifndef`, `#else` and `#endif` nested,
+`#include "file"`, and `#` and `##`. That is the whole list roadmap item 11
+wrote down on 2026-09-06, and the item retires here. `tests/cpp.sh`
+compiles what comes out and runs it, and **runs the same body through the C
+compiler's own preprocessor and compares**: the oracle is cpp itself, so an
+expansion that is wrong but still compiles is caught, which is
+`tests/python.sh`'s method pointed at a language whose interpreter is a
+preprocessor. Both programs print the same nine lines.
+
+**Why a preprocessor was the customer.** [direction.md](direction.md)'s
+table of everything that had failed for lack of context wanted a symbol
+table, and items 1 and 3 both stop at one without being reason enough to
+build it. A preprocessor is the smallest real program whose *entire* job is
+that table, with no types and no scopes to argue about, so it is the
+cheapest place to find out what a store costs rule locality. It named the
+store, and the store is the entry below.
+
+**What the tool grew, in the order the preprocessor asked.** Each is small
+and each has its own line in [CHANGELOG.md](CHANGELOG.md):
+
+- **A text hole is expanded once, after its rule has matched.** Not asked
+  for: found by rehearsing the item, and a live defect in collections since
+  the day they landed ([POSTMORTEM.md](POSTMORTEM.md) 35).
+- **The store**, `remember`, `forget`, `recall` and `known`, REFERENCE §8.5.
+  The entry below.
+- **A text-mode rule may begin with a class hole**, which a bare macro name
+  on a later line is.
+- **`expand(text)`**, §8.3: a template runs a text through the file's own
+  rules. cpp's rescan, and the only way a substitution can be read again.
+- **A `raw` hole kind**, §4.3: source text the template gets as written.
+  A macro body kept for use-time expansion, and the arm of an `#ifdef` not
+  taken, which must not fire.
+- **`read(path)`**, §8.3, for `#include "file"`. The first builtin whose
+  answer depends on something outside the `.mx` file, and
+  [notation.md](notation.md)'s "What it costs" says so.
+- **A turn of a repeated group that takes nothing is not a turn**, in text
+  mode. `SEVEN()` found it: a text hole may be empty, so `[ a ]*` over `()`
+  had read as one turn and `count(a)` said 1.
+- **Two brackets may share a close**, §3.11. `#ifdef` and `#ifndef` are
+  both closed by `#endif`, and a close balances whichever open stands
+  behind it.
+
+**What is a rule and not a mechanic, which is the point.** Everything C's
+preprocessor *means* is written in the `.mx` file. A macro that must not
+expand while it is expanding is a `busy:` key remembered before the rescan
+and forgotten after. Parameter substitution is not a `replace` over the
+body, which the item had guessed at and which could not have been
+whole-token: an argument is `remember`ed under its parameter's name and the
+identifier rule looks a name up as an argument before it looks it up as a
+macro, at a depth the file counts so that a nested call's parameters do not
+reach the outer body. `defined` is `known` under either key. The tool knows
+nothing about macros, and the store is the whole of what it lent.
+
+**What it declares rather than reads**, in the file's own closing note: one
+space after a directive word and around a parameter list, since text mode
+matches a word byte for byte; an argument that forms a call with the text
+after it, which cpp rescans; a comment on a conditional's line; `#if` over
+a constant expression, and `#elif`; and `#x` quoting its argument after
+expansion where cpp quotes it as written. Each is named, and each is a wall
+the file can state rather than one it hides.
+
+**Verified at:** `make check` green at 217 `ok` lines with `errors.sh` at
+98 cases; `tests/cpp.sh` compiling and running the output and agreeing with
+the C compiler's own preprocessor on nine lines; `examples/cpp.mx`, `examples/cpp.h` and
+`examples/cpp.out` in the tree. Stage 6 in [ROADMAP.md](ROADMAP.md)'s table.
+
 ## The store: what a rule remembers, a later rule recalls
 
 ```
@@ -46,8 +123,8 @@ value is wanted and a value where a statement is wanted, the new ones get,
 with their messages in REFERENCE §10.
 
 **The decision, and why it was smaller than the roadmap said.** The roadmap
-called the store the one piece of item 11 that was a decision rather than
-work: two `@use`d files writing one key, which direction.md had said "will
+called the store the one piece of the preprocessor that was a decision rather
+than work: two `@use`d files writing one key, which direction.md had said "will
 want the same kind of answer `override` was". It does not, and the reason is
 the same one collections found on 2026-09-06. `override` settles two
 *declarations*, in the header, and a write to the store is a body event,

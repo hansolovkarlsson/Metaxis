@@ -12,6 +12,60 @@ Newest first.
 
 ---
 
+## 36 · A plan rehearsed before it was written, which was complete for the steps it rehearsed and for no others
+
+**Issue.** The C preprocessor was planned by [15](#15--a-prediction-that-held-in-every-part-and-the-one-measurement-that-is-why)'s
+method, deliberately this time: four files were run against the tool before
+a word of the plan was written, and the plan then laid out ten steps and
+said what each would cost. Every step's *shape* held, including the one the
+page called a decision. But four things the tool had to grow were not on the
+list at all:
+
+- a turn of a repeated group that takes nothing had been counted as a turn,
+  which a macro with no arguments met;
+- two brackets could not share a close, which nested conditionals need;
+- the statement builtins' messages had to be whole string literals, because
+  the message check holds each quoted message to one;
+- and the decision the plan called its only decision took a paragraph, since
+  collections had already answered it.
+
+**Root cause.** The four rehearsals covered the first four steps and nothing
+after them. They asked whether a `#define` line reads, how a word matches,
+where a nested template runs, and whether a class may lead a rule, and every
+one of those questions belonged to steps 0 to 3. Steps 5 and 7 were reasoned
+about from the code instead, and both are where the omissions are: `SEVEN()`
+found the empty turn on the day step 5 was built, and a nested `#ifdef`
+rehearsed on the morning of step 7 found the shared close. The plan was as
+complete as its rehearsals reached and no further, and it read as complete
+throughout because the prose does not change tone where the evidence stops.
+
+**Solution.** Nothing to fix in the tree: each of the four was found and
+built in the step that met it, and the suite grew a check or a case for
+three of them. What changes is the method, below.
+
+**Learnings.** **A rehearsal produces the list for the step it rehearses,
+not for the item.** [15](#15--a-prediction-that-held-in-every-part-and-the-one-measurement-that-is-why)
+says reading predicts structure and running produces the list; this is the
+sharper version, learned by applying 15 correctly and still finding four
+things late. Rehearsing an item once, at the start, buys the accuracy only
+for the steps the rehearsal touched.
+
+**So rehearse per step, at the head of the step, not per item.** It costs
+minutes and it is the same minutes either way: the nested `#ifdef` file
+written on the morning of step 7 found the bracket refusal before a line of
+that step was written, and the empty turn was found by the example itself
+because step 5 had no rehearsal at all. The difference between those two is
+the whole of this entry.
+
+**And a plan should say where its evidence stops.** This one did not. Its
+first section reported four things that had been *run*; its ten steps were
+written in the same voice, and nothing in it marked the line between what
+had been observed and what had been reasoned. A future plan in this tree
+marks that line, so that a step with no rehearsal behind it is visibly a
+step with no rehearsal behind it.
+
+---
+
 ## 35 · A side effect that ran once per candidate the search rejected, hidden by deduplication
 
 **Issue.** Text mode's matcher tries a hole at every stop in turn and lets

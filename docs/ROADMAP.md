@@ -16,7 +16,7 @@ and not by how much is known. The last entry is the best worked out and the
 least asked for, which is why it is last. **A number is for life**: an item
 that lands keeps its number in [COMPLETED.md](COMPLETED.md)'s prose and the
 number is not used again, so a citation stays right for as long as the item
-is open. Retired so far: 2, 4, 7, 9, 10, 12 and 13. That sentence is read by
+is open. Retired so far: 2, 4, 7, 9, 10, 11, 12 and 13. That sentence is read by
 `tests/hygiene.sh`, which refuses a heading that reuses a number on it and a
 heading that leaves the page without joining it, so it keeps this shape. 9
 never reached a commit as a heading, which is how it came to be used twice on
@@ -39,7 +39,7 @@ on introducing new mechanics and test them out properly.*
 | **3 · done** | Python | C | a language whose blocks are indentation |
 | **4 · done** | BASIC | C | a source that declares nothing: the head of the output is determined by its body |
 | **5 · done** | C | C | a real file, not one written to fit: the tool rewriting its own front end |
-| **6 · begun 2026-09-07** | C | C | a directive that changes what the lines after it mean: the store, and a preprocessor as its customer (item 11) |
+| **6 · done** | C | C | a directive that changes what the lines after it mean: the store, and a preprocessor as its customer |
 
 Stage 2 landed on 2026-09-05 as `examples/asm.mx` and `tests/asm.sh`. **The
 output side generalises**, which was the question: a rule's value became *the
@@ -89,8 +89,24 @@ the tool's own front end and a file written for no grammar, turns six error
 calls into `complain(err)` and inserts the definition; the test compiles the
 result against the tree's own objects, runs it, and it is the same tool. What
 it cost: one error, for a led rule in text mode, which was accepted and silently
-never fired until the rehearsal wrote one. What it owes is 7 below: the three
-things text mode does not know, measured on that file rather than predicted.
+never fired until the rehearsal wrote one. What it owed was the three things
+text mode did not know, measured on that file rather than predicted, and they
+were built the same day: [COMPLETED.md](COMPLETED.md)'s "The island rule,
+finished" and "Text mode moves by tokens".
+
+Stage 6 landed on 2026-09-07 as `examples/cpp.mx`, `examples/cpp.h` and
+`tests/cpp.sh`: **a C preprocessor**, which is C in and C out over a
+directive that changes what the lines after it mean. It was picked by the
+rule below, the translator before the mechanic: the store had been last on
+[direction.md](direction.md)'s list for a year of pages because it is the
+one change that compromises rule locality, and a preprocessor is the
+smallest program whose whole job is the table it keeps. What it cost is
+eight small things and no large one, listed in
+[COMPLETED.md](COMPLETED.md)'s "A C preprocessor"; what it settled is that
+two used files writing one key wants no `override`, which that page and
+[notation.md](notation.md)'s "What it costs" record. Its test holds the
+output to the C compiler's own preprocessor, so the oracle for a stage
+whose input and output are one language is that language's own tool.
 
 **The staging exists to say where the *pressure* comes from**: one translator
 at a time, taken far enough to be compiled and run, so that no feature is built
@@ -235,93 +251,6 @@ is obviously right:
 
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing: one instance is a fact and two are a pattern.
-
-## 11 · A C preprocessor, and the store the internal language would need
-
-**Hans, 2026-09-06:** *something I'd like to put on the roadmap is to create a
-C-preprocessor, which most likely will require some expansion on the internal
-language in Metaxis.*
-
-A preprocessor is C→C, line-directed, with everything that is not a directive
-passed through, which is text mode's shape exactly: the file declares C's
-identifiers, strings and comments as classes so that a `#define` inside a
-string is never seen, and a rule fires on each directive. What the rules
-would then have to do is the list of what the tool cannot do today, in the
-order a preprocessor meets it:
-
-- **`#define NAME body`, and `NAME` on a later line.** A rule sees its own
-  pattern and nothing else (property 1 on [languages.md](languages.md), and
-  the whole of [direction.md](direction.md)'s table). A collection is
-  write-only and filled in after the whole body, so it cannot say what `NAME`
-  meant *at the line where it appears*, and order is the point: a macro
-  defined below its use is not expanded. This is the store
-  [direction.md](direction.md)'s "The likely shape" sketches as `remember`
-  and `recall`, written and read at expansion time in body order, and this
-  is its first customer with a name. That page also says why it is built
-  last: it is the one change that compromises rule locality, and two `@use`d
-  files writing one key is the problem `override` answered for words.
-- **`#define F(x) body`.** A rule declared by the body. Every rule today comes
-  from the header, so either the internal language can declare a rule at
-  expansion time, or the store holds the parameter list and body and one
-  fixed rule, `n:name "(" [ a ]* sep "," ")"`, substitutes by hand with
-  `replace` over whole tokens. The second needs no new mechanic beyond the
-  store and is where to start.
-- **Rescanning.** Expanded text is expanded again until nothing changes. Text
-  mode already expands a hole's text in its turn, 64 deep (REFERENCE §7), so
-  this comes free where the substitution is emitted through a hole, and the
-  depth cap is the recursion guard `#define X X` needs.
-- **`#if`, `#ifdef`, `#else`, `#endif`.** Conditional inclusion is a rule with
-  a `stmts` or `text` hole per arm and a code template that emits one of them,
-  which the code template can do today; `defined(X)` is a read of the store,
-  and the constant expression is what `examples/calc.mx` already evaluates.
-  What it cannot do is skip a *directive* inside the arm not taken, since the
-  arm's text is expanded in its turn, so an arm's `#define` would still fire.
-  That wants the arm's text passed through unexpanded, which is a class hole
-  today and would need to be a text hole that is not expanded.
-- **`#include`.** A file's text into a hole. Nothing in a template reads a
-  file; `@use` reads directives and nothing else. A builtin `read(path)` is
-  the smallest shape and the first time the output depends on something
-  outside the `.mx` file, which `notation.md`'s "What it costs" would have to
-  say.
-- **`#` and `##`.** Stringizing is `"\"" + x + "\""`; pasting is `a + b` and
-  a rescan. Both exist.
-
-**What breaks today without it.** Nothing in the tree: no example wants a
-preprocessor, and the C the stages read has none. What it would buy is the
-customer that items 1 and 3 lack: both stop at a wall wanting a symbol table,
-and neither is a strong enough reason to build one. A preprocessor is the
-smallest real program whose *entire* job is that table, with no types and no
-scopes to argue about, so it is the cleanest place to find out what the store
-costs rule locality before Pascal's `writeln` asks the same question with
-types attached. If it is taken it is stage 6 in the table above: C in, C out,
-and the mechanic it drives is the store.
-
-**What would have to be true for it to land.** The store first, as
-[direction.md](direction.md) shapes it: `remember(key, text)` a statement
-beside `contribute`, `recall(key)` an expression, both in body order, and a
-decision about two used files writing one key. Then a text-mode file,
-`examples/cpp.mx`, that reads object-like and function-like macros, `#ifdef`
-and `#include` over a small C source, with `tests/cpp.sh` compiling what comes
-out and running it, which is how every stage has been pinned. The order above
-is the order to build in, and the store is the only piece that is a decision
-rather than work.
-
-**2026-09-07: the store is built**, as `remember`, `forget`, `recall` and
-`known` (REFERENCE §8.5, [COMPLETED.md](COMPLETED.md)'s "The store"), and
-the decision went to a flat store with the last write winning, for the
-reason collections took. Before it, a rehearsal found that a text hole was
-expanded at every candidate stop the matcher tried, so a `#define` inside an
-arm would have been remembered once per candidate; that is fixed and is
-[POSTMORTEM.md](POSTMORTEM.md) 35. A text-mode rule may begin with a class
-hole, which a bare `NAME` on a later line is, and `examples/cpp.mx` with
-`tests/cpp.sh` reads object-like macros and holds the result to the C
-compiler's own preprocessor. By the end of the day it read object-like and
-function-like macros with cpp's order of expansion, through `expand(text)`
-(REFERENCE §8.3) and a `raw` hole kind (§4.3), and the four conditionals
-nested, through two brackets that share a close (§3.11): the first four
-bullets above. What is left is `#include "file"`, which is the `read(path)`
-builtin and the first time the output depends on a file outside the `.mx`,
-and the two operators `#` and `##`.
 
 ---
 

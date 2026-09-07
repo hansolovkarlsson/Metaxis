@@ -779,8 +779,8 @@ static void coll_add(Grammar *g, const char *name, const char *text)
  * store is the half of context that flows *down*: a rule writes a key at the
  * moment it runs and a rule that runs later reads it, in body order, which is
  * the order text mode scans and the order expression mode reduces. It is
- * direction.md's `remember`/`recall`, and roadmap item 11's preprocessor is
- * the customer that named it: `#define` remembers, a later `NAME` recalls.
+ * direction.md's `remember`/`recall`, and the C preprocessor in
+ * examples/cpp.mx is the customer that named it: `#define` remembers, a later `NAME` recalls.
  *
  * Two @use'd files writing one key was the decision, and it went the way
  * collections went on 2026-09-06: the key is a string the file spells, the

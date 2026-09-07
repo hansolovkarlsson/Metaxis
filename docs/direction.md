@@ -147,6 +147,22 @@ template and brings termination with it, so it is a larger idea than this was,
 and it is deliberately not on [ROADMAP.md](ROADMAP.md): nothing has asked, and
 this page has already been wrong once about how near it was.
 
+**2026-09-07: both halves were built for text mode, and the paragraph above
+is right about expression mode and was wrong about the size.** The `raw`
+kind (REFERENCE §4.3) binds the source of a hole rather than its expansion,
+and `expand(text)` (§8.3) re-enters the grammar from inside a template.
+Together they are deferral, and the C preprocessor asked for them by name: a
+macro body has to be kept as written and run at each use. In text mode they
+cost about seventy lines, because the scanner is re-entrant already and the
+depth cap it uses for a nested hole is the termination argument, whole. In
+**expression mode** neither exists and the paragraph's reasoning stands
+undisturbed: re-entering *there* means the Pratt parser on the stack, a
+binding power to enter at, and a hole that could be run at a precedence its
+own rule never chose. The lesson is about the sentence rather than the
+feature: "a larger idea" was a claim about a mechanism, and a mechanism is
+only large in a mode. Where a wish falls, ask which of the two readers it
+would re-enter before costing it.
+
 ### 2 · Let a file declare what flows down
 
 The second half is context, and the shape that fits this tool is not a symbol
@@ -187,8 +203,9 @@ to attach to. The key is a string the file spells, the last write wins, and
 the cost to rule locality is the same one a collection's name already
 carries; [COMPLETED.md](COMPLETED.md)'s "The store" has the decision and
 [notation.md](notation.md)'s "What it costs" has the bill. What named it was
-not `writeln` but roadmap item 11, a C preprocessor, the smallest program
-whose whole job is that table.
+not `writeln` but a C preprocessor, the smallest program whose whole job is
+that table, built the same day: [COMPLETED.md](COMPLETED.md)'s "A C
+preprocessor".
 
 ## Where it sits beside Phoenix and Futamura
 
@@ -426,8 +443,10 @@ premise kept in letter and spent in meaning. The three stages are done.
    **Taken 2026-09-07, as the store** (REFERENCE §8.5), and the falsifying
    clause was answered rather than met: it is exactly as safe across `@use`
    as a collection is, by a key the file spells, and no safer. Whether that
-   is safe enough is what the preprocessor, roadmap 11, is being built to
-   find out.
+   is safe enough was what the preprocessor tested the same day, and it held
+   for one file: it keeps its own locality in the keys it spells, `def:`,
+   `fn:`, `arg:` and `busy:`, and nothing in the tool had to enforce it.
+   Two files that spell one key are still nothing but a convention apart.
 
 **And the standing lesson from the three that were taken:** this page was right
 about every shape and wrong about every distance. Structure can be reasoned

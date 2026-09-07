@@ -180,7 +180,7 @@
 # Two `!` inside `[ ]`, each contributing a fresh name, put six lines in the
 # collection. Every example in the tree hid it, because a collection keeps one
 # copy of each distinct text and no example contributed a fresh name. It was
-# found by rehearsing roadmap item 11, whose store would have run a `#define`
+# found by rehearsing the C preprocessor, whose store would have run a `#define`
 # once per candidate. The check is here because it is a hygiene defect in the
 # literal sense: a template's side effects belong to the match it made and to
 # no other, and the fresh counter is the one place the leak is visible from
