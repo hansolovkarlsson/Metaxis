@@ -9,6 +9,77 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## The errors page against the source: hygiene's fourth tree check
+
+```
+$ mx docs/tutorial/01-undeclared.mx
+mx: docs/tutorial/01-undeclared.mx:4: nothing here is anything this file declared: '* 3
+'
+```
+
+Every message that [REFERENCE.md](REFERENCE.md) §10 quotes in backticks is
+now matched against the string literals of `metaxis/`, by `tests/hygiene.sh`.
+[POSTMORTEM.md](POSTMORTEM.md) 24 named the check when twenty-five messages
+were found typeset with an em dash the tool never prints, and said the page
+was the one place in the reference that stated what the tool prints without
+running it.
+
+**A message is fixed text around placeholders**, and the check knows four
+shapes of them: a quoted span opened at the start or after a space, an
+ellipsis, `f:n` or `file:line`, and a run of digits. The fixed pieces must
+stand in one literal, in order; a quoted span must be in that literal
+verbatim unless the literal has a `%` where a value goes. Adjacent literals
+are joined as the compiler joins them. It runs under `LC_ALL=C` so that both
+awks read bytes. What it cannot see is a word the source chooses at run
+time, so the `at` message and `cannot open` end on the page with an
+ellipsis.
+
+**Its first run found three cells wrong**, all confirmed against the line
+that prints them: `cannot open path` takes the path, the `at` message
+assembles its verb, and four `trailing text after` spellings were one
+literal with the directive's name filled in, printed by six directives where
+the page listed four. It was proved on the defect before it was trusted: an
+em dash put back into one cell fails it by name.
+
+Verified at 16 examples, 85 error cases and nine check scripts: 171 `ok`
+lines, the transcript above among them, 110 messages matched, green under
+the Mac's awk and under GNU awk on the Linux runner.
+
+## The languages page's verdicts, run by the suite
+
+```
+$ mx docs/languages/lisp.mx
+mx: docs/languages/lisp.mx:6: a repeated group that ends in a greedy hole and begins with a hole needs a 'sep' to know where one turn stops
+```
+
+[languages.md](languages.md) said which languages the tool reads and rested
+every verdict on a stated property, and [POSTMORTEM.md](POSTMORTEM.md) 25
+said the files that decided those verdicts had been thrown away the same
+hour. They are back: thirteen files in `docs/languages/`, one per verdict the
+page said it had run. The four consequences of property 2 (`case.mx`,
+`nest.mx`, `tail.mx`, `xml-text.mx`), both sides of property 3 (`lisp.mx`,
+`atoms.mx`), both sides of property 4 (`toml.mx`, `toml-wrapped.mx`), and
+the SQL, JSON, CSS, XML and Lua rows. The page closes with a section, *Run,
+not reasoned*, that quotes each file and its transcript, and every row or
+property a file decided names it. `tests/docs.sh` runs all thirteen, so a
+change that moves a verdict turns the page red rather than stale.
+
+**One verdict was wrong as written and is sharpened.** The XML row said a
+class for character data swallows the tag name. In a bare tag it does not:
+`<p>some words</p>` reads, because the name class and the character class
+tie on `p` and the earlier declaration wins. The first attribute makes the
+character class the longer match, which is the wall the row meant. The row
+says both now, and [REFERENCE.md](REFERENCE.md) §6.1 gained the rule the
+lexer had and the page did not state: **two classes that match the same
+length are settled by declaration order.**
+
+**Two probes pair their lists with a code template**, `json.mx` and
+`css.mx`, because a string template cannot; that is the reference's own
+limitation, §8.3, and not the page's.
+
+Verified at 16 examples, 85 error cases and nine check scripts: 168 `ok`
+lines where there were 155, thirteen transcripts the difference.
+
 ## The island rule, finished: `@bracket`, and a hole that stops at depth zero
 
 ```

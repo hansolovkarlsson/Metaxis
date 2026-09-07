@@ -12,6 +12,115 @@ Newest first.
 
 ---
 
+## 29 · A roadmap number used twice, because the retired set was read off the page that retires them
+
+**Issue.** An audit on 2026-09-06 proposed a roadmap item and it was added as
+item 9. The roadmap's headings read 1, 2, 3, 5, 6, 8, so 4 and 7 were taken
+as the retired numbers and 9 as the next free one. [COMPLETED.md](COMPLETED.md)'s
+prose-rule entry says, in one sentence, that the prose rule *was roadmap
+item 9 for an afternoon*: written, settled and moved the same day. The
+number had been used.
+
+**Root cause.** Two. The retired set was read off the roadmap's own
+headings, where a retired number is by definition absent, so the page that
+enforces the rule cannot show what the rule protects. And the earlier 9 had
+lived only in a working tree: no commit ever carried its heading, so `git
+log` on the roadmap never saw a `## 9`, and the hygiene check for a lost
+item, which compares HEAD's headings to the tree's, had nothing to compare.
+The check's own header says a reused number *resolves to the wrong item, and
+no check by number can see that*, and this is that sentence met.
+
+**What found it.** The close-out, reading the ledger's entry for the prose
+rule to copy its shape for a new entry. Not the suite: every citation
+resolved, because the number now resolved to something.
+
+**Solution.** The item is 10. The roadmap's opening note now lists the
+retired numbers, 4, 7 and 9, as a fact the page carries rather than one
+derived from its gaps.
+
+**Learnings.** **A rule about what must never come back needs a list of what
+went, kept where the rule is stated.** The roadmap's gaps are not that list:
+a number retired the same afternoon leaves no gap in any commit. What would
+catch the next one is one more line in the hygiene check: every `## N ·`
+heading on the roadmap has an N that is not in the note's retired list, and
+every number that was ever a heading at HEAD and is not one now is in that
+list. The second half makes the list maintain itself. Entry 20 was the same
+lesson for a citation; this is the same lesson for the number itself.
+
+---
+
+## 28 · A verdict true of the input that decided it, and written as if true of the language
+
+**Issue.** [languages.md](languages.md)'s XML row said that a class
+declared for character data is the longest match after `<` as well, where
+it swallows the tag name. The row was written from a run on the morning of
+2026-09-06, which is the rule the page set itself. On the afternoon the probe
+kept beside the page read `<p>some words</p>` cleanly.
+
+**Root cause.** The morning's run had a tag with an attribute, `<doc id="1">`,
+and the sentence written from it dropped the condition. In a bare tag the
+name class and the character class both match one token, `p`, and the tie
+between two classes goes to whichever was declared first, by a strict
+comparison in the lexer's `class_at`. The reference stated the tie between a
+class and a word and said nothing about a tie between two classes, so nothing
+on the page could have said it either. An attribute makes the character
+class the longer match, and that is the wall the row meant.
+
+**What found it.** The probe, and only because it was smaller than the run
+that decided the row: six lines, no attribute. A run proves its input, and a
+sentence generalised from one input is a prediction about the others.
+
+**Solution.** The row says both cases. The probe carries the attribute and
+its comment says why the bare tag reads. §6.1 of the reference states the
+tie rule, naming the probe as where it showed.
+
+**Learnings.** **A verdict decided by one run is true of that run's input,
+and the page should carry the input.** Entry 25 was verdicts reasoned from
+the documents and refuted by a run; this is a verdict from a run, wrong in
+the direction the run could not see. The same fix serves both: the file
+beside the page, so that the next reader can vary it. And the lexer had a
+rule the reference did not state, found by a probe that hit it, which is
+the case for probing what is documented as well as what is not.
+
+---
+
+## 27 · The check entry 24 named, built, and what it found
+
+**Issue.** Entry 24 ended by naming the check that would catch the next
+typeset message: every backticked message on the errors page is a substring
+of a string literal in the source. Built as named it would have failed on
+most of the page, because the page writes `'x'` where the source prints
+`'%s'`, `f:n` where it prints `%s:%d`, and `9` where it prints `%d`. Built
+with those placeholders known, its first run named six cells of 113.
+
+**Root cause.** Two of the six were the check's own blind spot: the `at`
+message chooses `is` or `are` at run time, and `cannot open` takes the path
+with no quotes around it. The other four were one finding. The page listed
+`trailing text after @token`, `@separator`, `@mode` and `@fragment` as four
+messages; the source has one literal, `trailing text after %s`, and six
+directives print it. `@bracket` and `@template` were not on the page's list.
+Entry 24's mechanism was a message typeset; this one is a message
+paraphrased, four instances written out as four messages and the list left
+short.
+
+**What found it.** The check, on its first run, which is the prediction in
+entry 24 held. It was proved on the defect before its answer was believed:
+an em dash put back into one cell fails it by name.
+
+**Solution.** The two blind-spot cells end with an ellipsis where the run
+time word goes. The four spellings are one cell, and the means column names
+all six directives.
+
+**Learnings.** **A check named in prose is a design, and the first run is
+where the design meets the page.** The check as named was wrong about
+placeholders and the page was wrong about instances, and neither was visible
+until one ran against the other. What remains unchecked is what the check's
+scope leaves out: the reference quotes messages in §3 as well as §10, and
+entry 24 counted the completed ledger and the changelog among the places the
+dash had reached. Those are still copies compared to nothing.
+
+---
+
 ## 26 · A count that read 9 under one grep and 10 under the other
 
 **Issue.** `tests/island.sh` gained a rename on 2026-09-06 and pinned what it

@@ -13,7 +13,12 @@ asked for does not have to be put on this page to be written down.*
 **Stages** below says which translator the work is being driven by, and the
 items are ordered by that first and by how much is wanted after, not by size
 and not by how much is known. The last entry is the best worked out and the
-least asked for, which is why it is last.
+least asked for, which is why it is last. **A number is for life**: an item
+that lands keeps its number in [COMPLETED.md](COMPLETED.md)'s prose and the
+number is not used again, so a citation stays right for as long as the item
+is open. Retired so far: 4, 7 and 9, and 9 never reached a commit as a
+heading, which is how it came to be used twice on 2026-09-06
+([POSTMORTEM.md](POSTMORTEM.md) 29).
 
 ---
 
@@ -199,7 +204,9 @@ and this one does not.
 came from listed three obstacles to reading Python and this was a fourth, found
 by running the thing rather than by reading it, which is why it is here and not
 in a comment somewhere. `examples/python.mx` says so in its own closing note and
-avoids wrapped calls; nothing in the suite would otherwise mention it.
+avoids wrapped calls. Since 2026-09-06 the suite mentions it once:
+`docs/languages/toml-wrapped.mx` pins the refusal with a transcript
+`tests/docs.sh` runs, and is the file that reads whole when this lands.
 
 It wants a second piece of lexer state beside the indent stack, a bracket
 depth, and **that is the interesting part**: the lexer cannot know what a
@@ -270,7 +277,7 @@ is obviously right:
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing: one instance is a fact and two are a pattern.
 
-## 9 · The pages' copies of files, compared to the files
+## 10 · The pages' copies of files, compared to the files
 
 Three pages quote files whole. A line reading `` `docs/tutorial/01-first.mx`: ``
 labels the fenced block under it as that file, the site renders the label as

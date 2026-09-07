@@ -10,6 +10,25 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**The errors page is checked against the source.** `make check` now prints
+`ok      hygiene.sh: every message the errors page quotes is one the source
+prints`, and three cells of [REFERENCE.md](REFERENCE.md) §10 changed on its
+first run: `cannot open path` is `cannot open …`, the `at` message ends in
+an ellipsis where the tool chooses `is` or `are`, and `trailing text after
+…` is one message printed by six directives, `@bracket` and `@template`
+among them, where the page had listed four.
+
+**The languages page shows its evidence.** [languages.md](languages.md)
+closes with *Run, not reasoned*: thirteen files under `docs/languages/`,
+each quoted with the transcript `make check` runs. The XML row is sharpened:
+a character-data class ties with the tag name in a bare tag and the earlier
+declaration wins, so `<p>` alone reads, and the first attribute is the wall.
+[REFERENCE.md](REFERENCE.md) §6.1 says that tie rule now: two classes that
+match the same length are settled by declaration order.
+
+**Three links inside [POSTMORTEM.md](POSTMORTEM.md) resolve on GitHub**,
+spelled as the full slugs of the headings they point at.
+
 **`@bracket "(" ")"`, and a text-mode hole that stops only where brackets
 balance.** A new directive declares two words that nest. A text hole now
 stops only where the declared brackets are balanced from where it began, and
