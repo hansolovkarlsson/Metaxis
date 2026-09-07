@@ -10,6 +10,17 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`examples/cpp.mx` reads function-like macros.** `#define F(a, b) body`
+and `F(x, g(y))`, arguments taken whole under the brackets, bound to their
+parameters through the store at a depth the file counts, and the body
+rescanned; a nested call's own parameters live one deeper. Nothing in the
+tool changed for it but one property of text mode below.
+
+**In text mode a turn of a repeated group that takes nothing is not a
+turn.** A text hole may be empty, so `[ a ]*` over `()` used to read as one
+turn of an empty `a` and `count(a)` said 1 for a call with no arguments. It
+says 0 now. No recorded output moved.
+
 **`expand(text)`: a template runs a text through this file's rules.** Text
 mode only, one level deeper than the rule that is running, under the same
 64 cap; refused at the seal under expression mode. `examples/cpp.mx` uses

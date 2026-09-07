@@ -10,5 +10,6 @@ int main(void)
     printf("%d\n", STEP + 10);
     int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
     printf("%d %d\n", 5, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
+    printf("%d %d %d %d\n", ((10) * 2), ((1) + ( ((2) * 2))), 7, (((3) * 2) + 3));
     return 0;
 }

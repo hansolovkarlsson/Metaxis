@@ -845,7 +845,10 @@ else is copied through unchanged.
   bounded by a budget (`this rule has too many ways to match`).
 - **Groups work**, `[ … ]`, `[ … ]*` and `[ … ]+` with `sep` and `join`, exactly
   as in expression mode (§4.4). A hole inside a repeated group is a list, which
-  a code template can loop over.
+  a code template can loop over. **A turn that takes nothing is not a turn**:
+  a text hole may be empty, so `[ a ]*` over `()` is no turn of `a` and
+  `count(a)` is 0, not one turn of an empty `a`. Since 2026-09-07;
+  `examples/cpp.mx`'s `SEVEN()` is what asked.
 - **The longest leading word that matches wins.** Declaration order breaks a tie
   between two of the same length and decides nothing else: `examples/poem.mx`
   declares `-`, `--` and `---` in that order and `---` still wins.

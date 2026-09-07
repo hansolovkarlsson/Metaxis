@@ -7,10 +7,13 @@
 ; exactly what a rule could not do before 2026-09-07 -- a rule saw its own
 ; pattern and nothing else -- and what `remember` and `recall` are for.
 ;
-; Three rules. `#define NAME body` remembers the body under the name and
-; emits nothing, so the line goes; `#undef NAME` forgets it; and a rule led
-; by a class hole, `x:name`, fires on every identifier in the file and emits
-; either what is remembered under it or the identifier itself. The four
+; Five rules. `#define NAME body` remembers the body under the name and
+; emits nothing, so the line goes; `#define NAME(a, b) body` remembers a
+; body and its parameters; `#undef NAME` forgets; a rule on every call binds
+; a macro's arguments to its parameters through the store and expands the
+; body; and a rule led by a class hole, `x:name`, fires on every identifier
+; in the file and emits an argument, a macro's body, or the identifier
+; itself, in that order of preference. The four
 ; classes are C's, as in lib/island.mx, so that a macro name inside a string,
 ; a character literal or a comment is a token the scan passes over and never
 ; a name the third rule sees; the three brackets keep a hole over `(a, b)`
@@ -23,10 +26,13 @@
 ; redefined between the definition and a use, which this file does not do;
 ; the plan for the item makes it use-time in a later step. A directive wants
 ; exactly one space after its word and before its body, because text mode
-; matches a word byte for byte; `#  define` and a tab do not read. There are
-; no function-like macros, no `#ifdef`, no `#include "file"`, no `#` or
-; `##` yet; each is a later step and each is a rule, not a change to the
-; tool. `#include <stdio.h>` is not a directive this file knows, so it goes
+; matches a word byte for byte; `#  define` and a tab do not read, and a
+; function-like macro's parameters are written `(a, b)` with that one space.
+; An argument that forms a call with the text after it, `CALL(F)` for
+; `#define CALL(f) f(1)`, is not rescanned as a call, where cpp would expand
+; `F(1)`. There is no `#ifdef`, no `#include "file"`, no `#` or `##` yet;
+; each is a later step and each is a rule, not a change to the tool.
+; `#include <stdio.h>` is not a directive this file knows, so it goes
 ; through whole, which is right: the output is C for a compiler that has a
 ; preprocessor of its own.
 ;
@@ -47,8 +53,42 @@
 @bracket "[" "]"
 @bracket "{" "}"
 
+; A function-like macro remembers its body under `fn:` and each parameter
+; under its position. Declared before the object-like rule, which shares
+; its first word: `#define F(x)` has `(` where the other wants a space.
+@syntax "#define " n:name "(" [ p:name ]* sep ", " ")" " " b "\n" => {
+    remember("fn:" + n, b)
+    for i, q in p { remember("param:" + n + ":" + i, q) }
+}
 @syntax "#define " n:name " " b "\n" => { remember("def:" + n, b) }
-@syntax "#undef " n:name "\n"        => { forget("def:" + n) }
+@syntax "#undef " n:name "\n"        => { forget("def:" + n); forget("fn:" + n) }
+
+; A call. Every call in the file fires this, and one that is not a macro is
+; written back as it was. One that is binds each argument to its parameter's
+; name and expands the body, and the binding *is* the store: the identifier
+; rule below looks a name up as an argument before it looks it up as a
+; macro. The bindings are keyed by a depth the file counts, because a body
+; may call another macro whose parameter has the same name, `TWICE(x)`
+; calling `DOUBLE(x)` below: the inner call's arguments are expanded before
+; its template runs, at the outer depth, and its own bindings live one
+; deeper and are gone before the outer body's next `x`. That is cpp's
+; order, arguments first and the body after. The `busy:` key is the same
+; guard the object-like rule has.
+@syntax n:name "(" [ a ]* sep "," ")" => {
+    if known("fn:" + n) and not known("busy:" + n) {
+        if known("depth") { remember("depth", num(recall("depth")) + 1) } else { remember("depth", 1) }
+        for i, v in a { remember("arg:" + recall("depth") + ":" + recall("param:" + n + ":" + i), v) }
+        remember("busy:" + n, "1")
+        emit expand(recall("fn:" + n))
+        forget("busy:" + n)
+        for i, v in a { forget("arg:" + recall("depth") + ":" + recall("param:" + n + ":" + i)) }
+        remember("depth", num(recall("depth")) - 1)
+    } else {
+        emit expand(n) + "("
+        for v in a sep "," { emit v }
+        emit ")"
+    }
+}
 
 ; A name that is a macro is replaced by its body run through these rules
 ; again, which is cpp's rescan: `#define A B` then `#define B 5` gives `A`
@@ -59,11 +99,15 @@
 ; duration and forgotten after. Without it the depth cap would stop it
 ; instead, at 64, with an error.
 @syntax x:name => {
-    if known("def:" + x) and not known("busy:" + x) {
-        remember("busy:" + x, "1")
-        emit expand(recall("def:" + x))
-        forget("busy:" + x)
-    } else { emit x }
+    if known("depth") and known("arg:" + recall("depth") + ":" + x) {
+        emit recall("arg:" + recall("depth") + ":" + x)
+    } else {
+        if known("def:" + x) and not known("busy:" + x) {
+            remember("busy:" + x, "1")
+            emit expand(recall("def:" + x))
+            forget("busy:" + x)
+        } else { emit x }
+    }
 }
 
 @end
@@ -76,6 +120,10 @@
 #define A B
 #define B 5
 #define SELF SELF
+#define DOUBLE(x) ((x) * 2)
+#define ADD(a, b) ((a) + (b))
+#define SEVEN() 7
+#define TWICE(x) (DOUBLE(x) + x)
 
 int main(void)
 {
@@ -87,5 +135,6 @@ int main(void)
     printf("%d\n", STEP + LIMIT);
     int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
     printf("%d %d\n", A, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
+    printf("%d %d %d %d\n", DOUBLE(LIMIT), ADD(1, DOUBLE(2)), SEVEN(), TWICE(3));
     return 0;
 }

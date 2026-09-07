@@ -714,6 +714,9 @@ typedef struct Cont {
     Elem  *grp;                  /* the turn just finished, if any      */
     int    turns;
     struct Cont *up;
+    size_t start;                /* where the turn began: one that ends
+                                    where it began took nothing and is
+                                    not a turn (see tm_done)           */
 } Cont;
 
 typedef struct {
@@ -810,6 +813,11 @@ static int tm_done(TM *t, size_t pos, Cont *cont, int append, const char *join)
     if (!cont) { t->end = pos; return 1; }
 
     if (cont->grp) {
+        /* A turn that took nothing is not a turn. A text hole may be empty,
+           so `[ a ]*` over `()` would otherwise read as one turn of an empty
+           `a` rather than as no turn at all, and `count(a)` would say 1 for
+           a call with no arguments; found by examples/cpp.mx's `SEVEN()`. */
+        if (pos == cont->start) return 0;
         Elem *g = cont->grp;
         size_t p2 = pos;
         int    ok = 1;
@@ -819,7 +827,7 @@ static int tm_done(TM *t, size_t pos, Cont *cont, int append, const char *join)
             else ok = 0;
         }
         if (ok) {
-            Cont c2 = { cont->el, cont->nel, cont->k, g, cont->turns + 1, cont->up };
+            Cont c2 = { cont->el, cont->nel, cont->k, g, cont->turns + 1, cont->up, p2 };
             Bind *snap = tm_save(t);
             if (tm_match(t, g->sub, g->nsub, 0, p2, &c2, 1, g->join)) return 1;
             tm_load(t, snap);
@@ -847,7 +855,7 @@ static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
 
     if (e->kind == EL_GROUP) {
         Bind *snap = tm_save(t);
-        Cont  c    = { el, nel, k + 1, e->rep == REP_ONE ? NULL : e, 1, cont };
+        Cont  c    = { el, nel, k + 1, e->rep == REP_ONE ? NULL : e, 1, cont, pos };
         if (tm_match(t, e->sub, e->nsub, 0, pos, &c,
                      e->rep == REP_ONE ? append : 1,
                      e->rep == REP_ONE ? join : e->join)) return 1;
