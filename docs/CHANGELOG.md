@@ -10,6 +10,12 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`tests/hygiene.sh` checks the number of scripts a page states.** Two pages
+said nine and six when there were ten, and neither had been wrong when it was
+written. The count is read off the Makefile and every page that states one
+must agree, wrapped across lines or written down the left of a fenced block.
+POSTMORTEM 16's lesson, applied a second time.
+
 **`refuse(text)`: a rule can stop the run and say why.** A statement, like
 `contribute` and `remember`; the message is the file's own text at the line
 of the rule that refused, and the status is 1. It exists because in text mode

@@ -1,16 +1,18 @@
 #!/bin/sh
-# hygiene.sh -- the five checks that read the tree instead of running it, and
-# a sixth that runs it once.
+# hygiene.sh -- the six checks that read the tree instead of running it, and
+# a seventh that runs it once.
 #
-# The last one is the file's original job and most of what is below. The
-# first is the limit guard, added because it is the same kind of check -- a
-# property nothing else here can express -- and a sixth script for one grep
-# would have been one too many; it closed a roadmap item and is
-# docs/COMPLETED.md's "The limit guard" now. The second is the roadmap's
-# numbers, added on the same reasoning, for docs/POSTMORTEM.md 20. The third
-# is the prose rule in CLAUDE.md, added so that a sweep of the documents had a
-# finish line the suite could see, and so that new writing has a guard. The
-# fourth is the errors page against the source, for docs/POSTMORTEM.md 24.
+# Number 5 is the file's original job and most of what is below. The first is
+# the limit guard, added because it is the same kind of check -- a property
+# nothing else here can express -- and a sixth script for one grep would have
+# been one too many; it closed a roadmap item and is docs/COMPLETED.md's "The
+# limit guard" now. The second is the roadmap's numbers, added on the same
+# reasoning, for docs/POSTMORTEM.md 20. The third is the prose rule in
+# CLAUDE.md, added so that a sweep of the documents had a finish line the
+# suite could see, and so that new writing has a guard. The fourth is the
+# errors page against the source, for docs/POSTMORTEM.md 24. The seventh is
+# the count of these very scripts where a page states it, for POSTMORTEM 16,
+# whose lesson it is a second application of.
 #
 # ---------------------------------------------------------------------------
 # 1 - the limit guard
@@ -186,6 +188,30 @@
 # no other, and the fresh counter is the one place the leak is visible from
 # outside. docs/POSTMORTEM.md 35.
 
+# ---------------------------------------------------------------------------
+# 7 - the number of scripts, where a page states it.
+#
+# POSTMORTEM 16 is that **a number in prose is not a check**, and it was
+# written about exactly this number: docs/COMPLETED.md once said "all six
+# places the suite runs the tool" when there were seven that morning and
+# eight by the evening. Check 1 above answered that by stating a property
+# instead of counting. This one cannot: "the ten scripts in tests/" is a
+# number a reader wants, and dropping it to make it uncheckable would be
+# losing information to avoid a check. So it is checked. Two pages said nine
+# and six on 2026-09-07, when there were ten, and neither had been wrong when
+# it was written.
+#
+# The count is read off the Makefile, which is the only thing that decides
+# what `make check` runs: every `sh tests/<name>.sh` in it, less limit.sh,
+# which is the guard the others are run through and not one of them.
+#
+# What is scanned is the tracked Markdown the citation check reads, less the
+# dated accounts, joined so that a claim wrapped across two lines or written
+# down the left of a fenced block is one claim. The phrase looked for is a
+# number word immediately before `scripts in tests/`, so "most of the scripts
+# in tests/ run" is prose and not a claim, and docs/COMPLETED.md's "verified
+# at ... nine scripts" is a state on a day and says nothing about tests/.
+#
 MX="${1:-./bin/mx}"
 CC="${CC:-cc}"
 LIMIT="${LIMIT:-10}"
@@ -572,6 +598,43 @@ if [ "$names" != 2 ] || [ "$last" != "t__3" ]; then
     exit 1
 fi
 echo "ok      hygiene.sh: a text hole is expanded once, after its rule has matched"
+
+# --- 7: the script count where a page states it. Described at the head of the file.
+nscript=$(grep -oE 'sh tests/[a-z]+\.sh' Makefile | sort -u | grep -vc 'limit\.sh')
+if [ "$nscript" -lt 2 ]; then
+    echo "FAILED  hygiene.sh: the Makefile names $nscript test scripts, which cannot be right."
+    echo "        The count below is read from it, so a check that cannot read it"
+    echo "        must fail rather than pass. See the note at the head of this file."
+    exit 1
+fi
+words="zero one two three four five six seven eight nine ten eleven twelve\
+ thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty"
+word=$(echo "$words" | tr ' ' '\n' | sed -n "$((nscript + 1))p")
+[ -n "$word" ] || word=$nscript
+numbers=$(echo "$words" | tr -s ' \n' '|' | sed 's/|$//')
+
+# The Markdown the citation check reads, less the dated accounts, which say
+# what was true on a day. Each file is joined into one line first, with a
+# leading `#` taken off, so that a claim wrapped across two lines or written
+# down the left of a fenced block is one claim.
+pages=$(echo "$scanned" | grep -E '\.md$')
+[ -n "$pages" ] || { echo "FAILED  hygiene.sh: no pages to read for the script count."; exit 1; }
+wrong=''
+for f in $pages; do
+    said=$(sed -e 's/^[[:space:]]*#[[:space:]]*//' "$f" | tr '\n' ' ' |
+           grep -oE "($numbers|[0-9]+) scripts in .?tests/" |
+           sed -E 's/ scripts in .*//' | sort -u |
+           grep -vx "$word" | grep -vx "$nscript")
+    [ -n "$said" ] && wrong="$wrong$f: says $(echo $said) scripts in tests/
+"
+done
+if [ -n "$wrong" ]; then
+    echo "FAILED  hygiene.sh: a page states the wrong number of scripts in tests/."
+    echo "        The Makefile runs $nscript of them, so the word is '$word'."
+    printf '%s' "$wrong" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: every page that counts the scripts in tests/ says $word"
 
 
 # Where it stands. Two lines right, one wrong, and the wrong one is not an error.

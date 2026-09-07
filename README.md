@@ -70,10 +70,11 @@ shell, and names the property each verdict rests on.
 
 ```
 make            # bin/mx
-make check      # every example against the .out beside it, then the nine
-                # scripts in tests/ -- six of which run what they produced,
-                # one of which is large enough to show a quadratic, and one
-                # of which runs the transcripts in docs/
+make check      # every example against the .out beside it, then the ten
+                # scripts in tests/ -- seven of which run what they produced,
+                # one of which runs the transcripts in docs/, one of which is
+                # large enough to show a quadratic, and one of which is every
+                # message a wrong file gets told
 ```
 
 `make check` runs on every push, on Linux and macOS, through
@@ -200,12 +201,13 @@ metaxis/cmd/mx.c       mx [-o out] [-b backend] [-t] [-g] file.mx, and the
 lib/                     files meant to be @use'd
 examples/                .mx beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong
-tests/hygiene.sh         six properties: every run goes through limit.sh, a
+tests/hygiene.sh         seven properties: every run goes through limit.sh, a
                          roadmap number cited anywhere resolves and is never
                          given twice, no em dash in prose, every message a
                          page quotes is one the source prints, what a
-                         string template cannot do, run, and a text hole
-                         expanded once
+                         string template cannot do, run, a text hole
+                         expanded once, and the count of these scripts
+                         wherever a page states it
 tests/docs.sh            every transcript in docs/ run, and every quoted file compared
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
 tests/basic.sh           BASIC in, C out, compiled and run
