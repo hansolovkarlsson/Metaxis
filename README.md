@@ -45,6 +45,15 @@ is [docs/notation.md](docs/notation.md).
 
 ## Reading it
 
+**The website is [hansolovkarlsson.github.io/Metaxis](https://hansolovkarlsson.github.io/Metaxis/)**:
+every page of it generated from the documents below by `site/build.py`, and
+rebuilt on every push once `make check` has passed.
+
+[docs/tutorial.md](docs/tutorial.md) teaches the tool one concept at a time,
+each with a file under `docs/tutorial/` you can run and the output it gives,
+and every transcript in it is checked by `make check`. [docs/glossary.md](docs/glossary.md)
+explains the terms of art and the concepts behind them, for a reader meeting
+them here first: PEG, Pratt, nud and led, attribute grammar, hygiene.
 [docs/REFERENCE.md](docs/REFERENCE.md) states what every part of a `.mx` file
 means: directives, patterns, groups, kinds, levels, templates, both modes, the
 command line and every error message. [docs/notation.md](docs/notation.md) says
@@ -56,20 +65,6 @@ Stratego, Rascal, Comby, Ohm, Coq's `Notation`, Seed7, and META II in 1964.
 [docs/languages.md](docs/languages.md) says which languages the tool can be
 pointed at and which it cannot, from Pascal and BASIC to C, Lisp and the
 shell, and names the property each verdict rests on.
-
-## Reading it
-
-**The website is [hansolovkarlsson.github.io/Metaxis](https://hansolovkarlsson.github.io/Metaxis/)**:
-every page of it generated from the documents below by `site/build.py`, and
-rebuilt on every push once `make check` has passed.
-
-[docs/tutorial.md](docs/tutorial.md) teaches the tool one concept at a time,
-each with a file under `docs/tutorial/` you can run and the output it gives,
-and every transcript in it is checked by `make check`. [docs/glossary.md](docs/glossary.md)
-explains the terms of art and the concepts behind them, for a reader meeting
-them here first: PEG, Pratt, nud and led, attribute grammar, hygiene.
-[docs/REFERENCE.md](docs/REFERENCE.md) states what every part of a file means;
-[docs/notation.md](docs/notation.md) says why it is shaped that way.
 
 ## Build
 

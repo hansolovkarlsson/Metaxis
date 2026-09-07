@@ -498,8 +498,8 @@ pretty-printer from the grammar.
 run backwards, a `.mx` file would come with a formatter for the notation it
 declares and, more valuably, with the strongest test a grammar can be given:
 **print then re-read, and check you got the same tree.** This tree's tests are
-already unusually serious about this: four of six scripts run what they
-produced rather than diffing it. A round-trip check is the same instinct
+already unusually serious about this: most of the scripts in `tests/` run
+what they produced rather than diffing it. A round-trip check is the same instinct
 applied to the grammar itself rather than to the translation.
 
 **Why it is declined, at least as stated.** A Metaxis template is a string of

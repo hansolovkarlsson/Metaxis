@@ -10,6 +10,16 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**The site's front page is under the same check as the documents.**
+`tests/docs.sh` scans `site/index.md` as it does `README.md` and `docs/`,
+so the one transcript written for the site is run; the site workflow had
+said every transcript on the site is one the suite runs, and that page was
+not scanned. Four sentences that counted things were reworded to name the
+property instead: the roadmap's error cases, prior-art's scripts, the
+journal's list of the documents about the thing, which gained
+[prior-art.md](prior-art.md) and [languages.md](languages.md), and the
+README's two *Reading it* sections, now one.
+
 **The site renders a nested list, and no longer hangs on one.** An item
 indented under another is a sub-item now, so the four consequences under
 the lexer property on the languages page are four bullets rather than one

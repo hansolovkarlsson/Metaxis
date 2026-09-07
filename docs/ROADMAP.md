@@ -396,8 +396,8 @@ the Metaxis syntax but wants to write their own engine and needs to confirm
 compatibility.*
 
 Most of one exists. Every script in `tests/` takes the engine as its first
-argument and defaults to `./bin/mx`; the sixteen examples and the 83 error
-cases are input and expected output with no C in them. A second engine could
+argument and defaults to `./bin/mx`; every example and every error case is
+input and expected output with no C in them. A second engine could
 be pointed at the tree today. What was missing was not the suite but four
 decisions the suite would force, each a place where
 [REFERENCE.md](REFERENCE.md) stated this implementation rather than the

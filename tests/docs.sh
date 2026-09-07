@@ -32,8 +32,9 @@
 #                it, and a check that demanded it could never pass. (Nothing here
 #                emits any now; mx.c's `show` used to, and this is what noticed.)
 #
-# Which documents. Everything in docs/ and README.md except the two dated
-# accounts, named rather than patterned: POSTMORTEM.md quotes the invented
+# Which documents. Everything in docs/, README.md and site/index.md, the one
+# page written for the site, except the two dated accounts, named rather
+# than patterned: POSTMORTEM.md quotes the invented
 # transcript *as* the record of the mistake and must go on quoting it, and
 # CHANGELOG.md says what somebody saw on a given day, which a later day may
 # rightly change. The work journal is the same kind of page and is not under
@@ -66,7 +67,7 @@ mkdir -p "$TMP" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 
 if [ -z "$DOCS" ]; then
-    for f in README.md docs/*.md; do
+    for f in README.md site/index.md docs/*.md; do
         case "$f" in
         docs/POSTMORTEM.md|docs/CHANGELOG.md) ;;
         *) DOCS="$DOCS $f" ;;
