@@ -223,6 +223,18 @@ expect "is already a bracket" <<'EOF'
 @bracket "[" ")"
 EOF
 
+# An empty word, in a pattern or as a side of a bracket, would match at every
+# position and nothing. The message is one; the source prints it from two
+# places, and REFERENCE.md §3.11 quotes it for the bracket.
+expect "an empty word matches nothing" <<'EOF'
+@syntax "" x => "{x}"
+EOF
+
+expect "an empty word matches nothing" <<'EOF'
+@mode text
+@bracket "" ")"
+EOF
+
 # Two files declaring one thing. The hole names differ on purpose: what makes
 # the second rule unreachable is its pattern, and a pattern does not know what
 # its holes were called.
