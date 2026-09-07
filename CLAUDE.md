@@ -30,7 +30,7 @@ it, then the nine scripts in `tests/`: `errors.sh`, `hygiene.sh`, `docs.sh`,
 of them **run what they produced** rather than diffing it, which is how a wrong
 answer is caught and not merely a changed one; `hygiene.sh` also checks properties of the tree,
 `docs.sh` runs every `$ mx …` transcript in `docs/` against what it claims to
-print, and `scale.sh` expands one input large enough for a quadratic to show.
+print and compares every labelled block to the file it quotes, and `scale.sh` expands one input large enough for a quadratic to show.
 The suite is otherwise small enough by construction that it cannot see one.
 Every invocation goes through `tests/limit.sh`, so a hang is reported instead of
 waited on; `make check LIMIT=30` raises the 10s default. `make record`

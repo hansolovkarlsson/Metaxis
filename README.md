@@ -185,7 +185,10 @@ tests/hygiene.sh         five properties: every run goes through limit.sh, a
                          roadmap number cited anywhere resolves, no em dash in
                          prose, every message the reference quotes is one the
                          source prints, and what a string template cannot do, run
+tests/docs.sh            every transcript in docs/ run, and every quoted file compared
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
+tests/basic.sh           BASIC in, C out, compiled and run
+tests/island.sh          mx.c rewritten in text mode, compiled and run
 tests/asm.sh             C in, arm64 out, assembled and run on a CPU
 tests/python.sh          Python in, C out -- and the same text run as Python too
 tests/scale.sh           one input large enough for a quadratic to show

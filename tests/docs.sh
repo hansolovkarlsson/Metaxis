@@ -38,6 +38,26 @@
 # CHANGELOG.md says what somebody saw on a given day, which a later day may
 # rightly change. The work journal is the same kind of page and is not under
 # docs/*.md. A transcript in any of the others is a claim about now.
+#
+# The second thing a page can claim, since 2026-09-06: that a fenced block *is*
+# a file. A line reading `docs/tutorial/01-first.mx`: on its own -- the
+# regex is site/build.py's, which renders that line as the caption of the
+# block under it -- followed by a fence, possibly after blank lines, says the
+# block is that file. Twenty-five of those stood on three pages the day this
+# was written, and nothing compared a block to its file: the transcript under
+# it runs the file on disk, so a block that drifted would sit above a
+# transcript true of a file the reader was not looking at, and stay green.
+# docs/POSTMORTEM.md 19 and 24 one layer up, and ROADMAP item 10 for a day.
+#
+# The convention, read off the pages: the block is the file whole, or the file
+# minus its leading `;` comment block and the blank lines after it, which is
+# how the tutorial quotes a file whose comment repeats the prose beside it.
+# Either is accepted; anything else is a drift. Trailing whitespace is
+# stripped on both sides, for the reason above, and a line that is exactly `…`
+# means *skip ahead* exactly as it does in a transcript: the tutorial's
+# customer for that is eight blocks that omit the three header lines an
+# earlier section already showed, and one `…` at the top says so to the
+# reader as well as to the check. The same awk compares both kinds of claim.
 
 MX="${1:-./bin/mx}"
 LIMIT="${LIMIT:-10}"
@@ -83,6 +103,36 @@ if [ "$n" -eq 0 ]; then
     exit 1
 fi
 
+# compare WANT GOT WHAT-WANT-IS WHAT-GOT-IS: the lines of WANT, a document's
+# claim, against the lines of GOT, what is really there. Trailing whitespace is
+# stripped on both sides; a WANT line that is exactly `…` or `...` skips ahead.
+# Prints why on a mismatch and exits 1. Used for a transcript against the tool's
+# output and for a quoted file against the file.
+compare() {
+    awk -v want="$1" -v wn="$3" -v gn="$4" '
+        function strip(s) { sub(/[ \t]+$/, "", s); return s }
+        FILENAME == want { w[++nw] = strip($0); next }
+                         { g[++ng] = strip($0) }
+        END {
+            j = 1; elide = 0
+            for (k = 1; k <= nw; k++) {
+                if (w[k] == "…" || w[k] == "...") { elide = 1; continue }
+                if (elide) {
+                    while (j <= ng && g[j] != w[k]) j++
+                    if (j > ng) { print "after the …, no line of the " gn " reads: " w[k]; exit 1 }
+                    elide = 0
+                } else if (j > ng) {
+                    print "the " gn " ends before: " w[k]; exit 1
+                } else if (g[j] != w[k]) {
+                    print gn " line " j " reads: " g[j]; exit 1
+                }
+                j++
+            }
+            if (!elide && j <= ng) { print "the " gn " goes on past the " wn ": " g[j]; exit 1 }
+        }
+    ' "$1" "$2"
+}
+
 fail=0
 i=1
 while [ "$i" -le "$n" ]; do
@@ -94,28 +144,7 @@ while [ "$i" -le "$n" ]; do
         echo "        did not finish in ${LIMIT}s -- killed."
         fail=1; i=$((i + 1)); continue
     fi
-    why=$(awk -v want="$TMP/$i.want" '
-        function strip(s) { sub(/[ \t]+$/, "", s); return s }
-        FILENAME == want { w[++nw] = strip($0); next }
-                         { g[++ng] = strip($0) }
-        END {
-            j = 1; elide = 0
-            for (k = 1; k <= nw; k++) {
-                if (w[k] == "…" || w[k] == "...") { elide = 1; continue }
-                if (elide) {
-                    while (j <= ng && g[j] != w[k]) j++
-                    if (j > ng) { print "after the …, no line of the output reads: " w[k]; exit 1 }
-                    elide = 0
-                } else if (j > ng) {
-                    print "the output ends before: " w[k]; exit 1
-                } else if (g[j] != w[k]) {
-                    print "output line " j " reads: " g[j]; exit 1
-                }
-                j++
-            }
-            if (!elide && j <= ng) { print "the output goes on past the transcript: " g[j]; exit 1 }
-        }
-    ' "$TMP/$i.want" "$TMP/$i.got")
+    why=$(compare "$TMP/$i.want" "$TMP/$i.got" transcript output)
     if [ $? -eq 0 ]; then
         echo "ok      docs.sh: $where  $cmd"
     else
@@ -130,7 +159,63 @@ while [ "$i" -le "$n" ]; do
     i=$((i + 1))
 done
 
+# Every labelled fence, against the file it names. One pair per block:
+# N.path holds `file:line<TAB>path`, N.fence the block's lines.
+m=$(awk -v tmp="$TMP" '
+    FNR == 1  { fence = 0; label = "" }
+    /^```/    {
+        fence = !fence
+        if (fence && label != "") {
+            m++; open = 1
+            printf "%s\t%s\n", where, label > (tmp "/" m ".path")
+            printf "" > (tmp "/" m ".fence")
+        } else open = 0
+        label = ""; next
+    }
+    fence     { if (open) print > (tmp "/" m ".fence"); next }
+    /^[ \t]*`[A-Za-z0-9_.\/-]+\.mx`(, whole)?:[ \t]*$/ {
+        label = $0; sub(/^[ \t]*`/, "", label); sub(/`.*$/, "", label)
+        where = FILENAME ":" FNR; next
+    }
+    /^[ \t]*$/ { next }
+    { label = "" }
+    END       { print m + 0 }
+' $DOCS) || {
+    echo "FAILED  docs.sh: the quoted-file extractor did not run -- awk exited $?."
+    exit 1
+}
+
+if [ "$m" -eq 0 ]; then
+    echo "FAILED  docs.sh: found no labelled fence in:$DOCS"
+    echo "        There are some, so the extractor is broken, not the documents."
+    exit 1
+fi
+
+i=1
+while [ "$i" -le "$m" ]; do
+    IFS='	' read -r where path < "$TMP/$i.path"
+    if [ ! -f "$path" ]; then
+        echo "FAILED  docs.sh: $where  labels a block as $path, and there is no such file."
+        fail=1; i=$((i + 1)); continue
+    fi
+    awk 'BEGIN { head = 1 } head && /^;/ { next } head && /^$/ { next } { head = 0; print }' "$path" > "$TMP/$i.body"
+    if compare "$TMP/$i.fence" "$path" block file > /dev/null; then
+        echo "ok      docs.sh: $where  $path"
+    elif why=$(compare "$TMP/$i.fence" "$TMP/$i.body" block file); then
+        echo "ok      docs.sh: $where  $path"
+    else
+        echo "FAILED  docs.sh: $where  quotes $path, and the block is not the file."
+        echo "        Neither the file whole nor the file after its leading comment: $why"
+        echo "        --- the document, then the file after its comment:"
+        sed 's/^/            /' "$TMP/$i.fence"
+        echo "        ---"
+        sed 's/^/            /' "$TMP/$i.body"
+        fail=1
+    fi
+    i=$((i + 1))
+done
+
 if [ $fail -eq 0 ]; then
-    echo "ok      docs.sh: $n transcripts"
+    echo "ok      docs.sh: $n transcripts, $m quoted files"
 fi
 exit $fail

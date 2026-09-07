@@ -296,6 +296,7 @@ exactly wrong.
 `docs/tutorial/04-kinds.mx`:
 
 ```
+…
 @syntax a "=" b   10 right   => "{a} := {b}"
 @syntax a "+" b   60         => "{a} + {b}"
 @syntax "for" i:name "=" a "to" b "do" s  => "for {i} in {a}..{b}: {s}"
@@ -362,6 +363,7 @@ they are about two different languages.
 `docs/tutorial/05-statements.mx`:
 
 ```
+…
 @separator ";" => ";\n"
 
 @syntax a "=" b   10 right               => "{a} = {b}"
@@ -429,6 +431,7 @@ be confused with a bracket the body writes: one of those would be quoted.
 `docs/tutorial/06-groups.mx`:
 
 ```
+…
 @syntax a "+" b   60                                  => "({a} + {b})"
 @syntax f "(" [ x ]* sep "," join ", " ")"   95        => "{f}({x})"
 @syntax "let" [ n:name ]+ sep "," join ", "           => "let {n}"
@@ -557,6 +560,7 @@ and can walk two lists in step, which is the case that matters.
 `docs/tutorial/07-lists.mx`:
 
 ```
+…
 @syntax "fn" f:name "(" [ p:name ":" t:name ]* sep "," ")"
     => {
         emit f + "("
@@ -647,6 +651,7 @@ has**: one that occurs nowhere in the source and in no template.
 `docs/tutorial/08-fresh.mx`:
 
 ```
+…
 @syntax "swap" a "," b
     => "{{ int {~t} = {a}; {a} = {b}; {b} = {~t}; }}" terminated
 @syntax "loop" n "times" b:stmts "end"
@@ -769,6 +774,7 @@ output side listens to `-b`.
 `docs/tutorial/10-backends.mx`:
 
 ```
+…
 @syntax a "=" b   10 right   => "{a} = {b}"
 @syntax a "+" b   60         => "{a} + {b}"
 @syntax "print" x            => "printf(\"%d\\n\", {x})"
@@ -872,13 +878,15 @@ own vocabulary.
 `docs/tutorial/11-blocks.mx`:
 
 ```
+…
 @separator "\n" => ";\n" indent
 
 @syntax n:name "=" v   5 right     => { emit n + " = " + v }
 @syntax a "+" b   60               => { emit a + " + " + b }
 @syntax a "<" b   40               => { emit a + " < " + b }
 @syntax "print" x                  => { emit "printf(\"%d\\n\", " + x + ")" }
-
+; The block's last statement needs its own `;` unless it already ends one --
+; the separator goes between statements, never after the last.
 @template braces(b) {
     emit "{\n" + indent(b, 4)
     if not terminated(b) { emit ";" }
@@ -1016,6 +1024,7 @@ without seeing anyone else's contribution.
 `docs/tutorial/13-collections.mx`:
 
 ```
+…
 @syntax "program" n:name
     => { emit "/* " + n + " */\n" + splice("head") + "\nint main(void) {\n    " + splice("vars") } terminated
 @syntax "let" v:name "=" e

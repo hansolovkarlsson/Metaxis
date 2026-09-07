@@ -9,6 +9,45 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## The pages' copies of files, compared to the files
+
+```
+ok      docs.sh: docs/tutorial.md:68  docs/tutorial/01-first.mx
+ok      docs.sh: docs/languages.md:228  docs/languages/case.mx
+ok      docs.sh: 55 transcripts, 25 quoted files
+```
+
+Three pages quote files whole under a label line the site captions, a line
+reading `` `docs/tutorial/01-first.mx`: `` on its own, and until 2026-09-06
+nothing compared the block under it to the file: eleven in
+[tutorial.md](tutorial.md), thirteen in [languages.md](languages.md), and §1
+of [REFERENCE.md](REFERENCE.md). The transcript beneath such a block is run
+by `tests/docs.sh` against the file on disk, so a block that drifted would
+have sat above a transcript true of a file the reader was not looking at,
+and the page would have stayed green: [POSTMORTEM.md](POSTMORTEM.md) 19 and
+24 one layer up, a copy compared to nothing. Roadmap item 10, for a day.
+
+**The check is a second extractor in `tests/docs.sh`**, over the same
+documents and the same fences, and its label regex is `site/build.py`'s own,
+so a block the site captions is a block the suite checks. The block must be
+the file whole, or the file after its leading `;` comment block, which is how
+the tutorial quotes a file whose comment repeats the prose beside it; trailing
+whitespace is stripped on both sides. **The one decision the item named was
+decided by its first customer the same afternoon.** Eight tutorial blocks
+quote a file minus the three header lines an earlier section had shown, and
+one had dropped a comment from the middle. So a line that is exactly `…`
+inside a labelled block skips ahead, exactly as it does in a transcript, and
+the same awk now compares both kinds of claim; the eight blocks open with one
+`…`, which tells the reader what it tells the check, and the ninth has its
+comment back.
+
+Proved on three defects before it was trusted: a drifted line in a quoted
+block, a wrong line in a transcript, and an elision that skips to a line the
+file does not have, each named with the line.
+
+Verified at 16 examples, 85 error cases and nine check scripts: 196 `ok`
+lines where there were 171, the twenty-five quoted files the difference.
+
 ## The errors page against the source: hygiene's fourth tree check
 
 ```

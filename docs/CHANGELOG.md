@@ -10,6 +10,14 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-06
 
+**A block that quotes a file is checked against the file.** `make check`
+now compares the twenty-five fenced blocks that [tutorial.md](tutorial.md),
+[languages.md](languages.md) and [REFERENCE.md](REFERENCE.md) label with a
+filename to the file itself, whole or after its leading comment, and a `…`
+line inside such a block skips ahead as it does in a transcript. Eight blocks
+in the tutorial that omit the header lines an earlier section showed now
+open with that `…`.
+
 **The errors page is checked against the source.** `make check` now prints
 `ok      hygiene.sh: every message the errors page quotes is one the source
 prints`, and three cells of [REFERENCE.md](REFERENCE.md) §10 changed on its
