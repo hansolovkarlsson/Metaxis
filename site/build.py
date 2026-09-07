@@ -166,14 +166,34 @@ def render_md(src):
             out.append(t + '</tbody></table></div>'); continue
         m = re.match(r'^(\s*)(-|\d+\.) (.*)', l)
         if m:
-            flush(); ordered = m.group(2) != '-'; items = []
+            # A list, with one level of nesting: an item indented past the
+            # first is a sub-item of the item before it, and a line indented
+            # by two or more that is not an item continues the last item at
+            # either level. The first line always matches the first branch,
+            # so the loop always advances; until 2026-09-07 an indented item
+            # that opened a list matched nothing and the build hung.
+            flush(); base = len(m.group(1)); ordered = m.group(2) != '-'
+            items = []   # [text, sub_ordered, [sub texts]]
             while i < len(lines):
-                mm = re.match(r'^(-|\d+\.) (.*)', lines[i])
-                if mm: items.append(mm.group(2)); i += 1
-                elif lines[i].startswith('  ') and items: items[-1] += ' ' + lines[i].strip(); i += 1
+                mm = re.match(r'^(\s*)(-|\d+\.) (.*)', lines[i])
+                if mm and len(mm.group(1)) <= base:
+                    items.append([mm.group(3), mm.group(2) != '-', []]); i += 1
+                elif mm and items:
+                    if not items[-1][2]: items[-1][1] = mm.group(2) != '-'
+                    items[-1][2].append(mm.group(3)); i += 1
+                elif lines[i].startswith('  ') and items:
+                    if items[-1][2]: items[-1][2][-1] += ' ' + lines[i].strip()
+                    else: items[-1][0] += ' ' + lines[i].strip()
+                    i += 1
                 else: break
+            def li(text, sub_ordered, sub):
+                h = '<li>' + inline(text)
+                if sub:
+                    st = 'ol' if sub_ordered else 'ul'
+                    h += f'<{st}>' + ''.join('<li>' + inline(x) + '</li>' for x in sub) + f'</{st}>'
+                return h + '</li>'
             tag = 'ol' if ordered else 'ul'
-            out.append(f'<{tag}>' + ''.join('<li>' + inline(x) + '</li>' for x in items) + f'</{tag}>'); continue
+            out.append(f'<{tag}>' + ''.join(li(*x) for x in items) + f'</{tag}>'); continue
         if l.startswith('*') and not l.startswith('**') and i < 20 and not out:
             flush(); buf = [l]; i += 1
             while i < len(lines) and lines[i].strip() and not lines[i].startswith('*'): buf.append(lines[i]); i += 1

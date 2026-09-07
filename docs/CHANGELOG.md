@@ -10,6 +10,12 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**The site renders a nested list, and no longer hangs on one.** An item
+indented under another is a sub-item now, so the four consequences under
+the lexer property on the languages page are four bullets rather than one
+paragraph with dashes in it. A list whose first item was indented, which no
+page has, made `site/build.py` loop forever; it renders as a list.
+
 **A tenth collection is spliced where its own mark was.** A splice mark is
 `splice__N`, and `splice__1` is a prefix of `splice__10`: the second pass
 took the first mark that matched, so a template with ten or more collections
