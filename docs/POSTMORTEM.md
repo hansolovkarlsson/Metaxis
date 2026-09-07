@@ -12,6 +12,46 @@ Newest first.
 
 ---
 
+## 30 · Twenty-five blocks said to match, from three that were read
+
+**Issue.** Roadmap item 10, written by the audit on 2026-09-06, said that
+three pages quote twenty-five files under a caption line, that the
+convention is the file minus its leading comment, and that all twenty-five
+matched that day. The check built from the item, on its first run, named
+eight tutorial blocks that were neither the file nor the file after its
+comment, and one that had dropped a comment from the middle.
+
+**Root cause.** The audit's script compared each block to its file whole
+and reported twelve that differed. Three of the twelve were diffed by hand,
+all three differed only by the leading comment, and the convention was
+written from those three and the count from the twenty-five. The nine that
+were not read were partial quotes of a different shape, the tutorial
+omitting header lines it had shown before, and the item's own "one
+decision", whether a page may quote partially, was described as having no
+customer yet while nine stood on the page it had just counted.
+
+**What found it.** The check, built the same evening and run over all
+twenty-five, which is what the audit's script should have been: the
+prototype of the check, not a count.
+
+**Solution.** The check accepts a `…` line as a transcript does, the eight
+blocks open with one, and the ninth has its comment back. The item's claim
+is corrected in [COMPLETED.md](COMPLETED.md)'s entry, which says what the
+convention turned out to be.
+
+**Learnings.** **A count of things that match is a claim about every one of
+them, and reading three is not the check.** The script that produced the
+twelve differing blocks was the measurement; the three diffs were a
+hypothesis about the other nine, and entry 28 had said that morning that a
+sentence generalised from one input is a prediction about the others. What
+would catch the next one is the same as for 27: build the check before
+writing the number, since a candidate check over all the cases costs less
+than the item that describes it. A number in a roadmap item is a number in
+prose, entry 16, and the item's job is to name the customer, not to count
+it.
+
+---
+
 ## 29 · A roadmap number used twice, because the retired set was read off the page that retires them
 
 **Issue.** An audit on 2026-09-06 proposed a roadmap item and it was added as
