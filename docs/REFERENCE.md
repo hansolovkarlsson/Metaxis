@@ -582,7 +582,8 @@ block*.
 | --- | --- |
 | `expr` | one expression, at a binding power set by §5. **The default.** |
 | `stmts` | statements separated by the declared separator, up to the pattern's next word. Expanded, and joined with the separator's output form. |
-| `text` | raw source text up to the pattern's next word. Text mode only (§7); in expression mode it is `a 'text' hole belongs to @mode text`. |
+| `text` | source text up to the pattern's next word, **expanded in its turn** (§7). Text mode only; in expression mode it is `a 'text' hole belongs to @mode text`. |
+| `raw` | the same run of source text, **not expanded**: the template gets it as written and may hand it to `expand` (§8.3) or leave it. Text mode only; in expression mode it is `a 'raw' hole belongs to @mode text`. Since 2026-09-07; a macro's body kept for a later rescan, and the arm of an `#ifdef` not taken, are what asked. |
 | `block` | the indented run of statements that follows, expanded and joined the way `stmts` is. Requires `@separator "…\n…" indent` (§3.3); without one it is `'b:block' wants a block, and nothing here opens one`. Expression mode only. |
 | *a class name* | exactly one token of that class, spliced as its source text. In text mode (§7) it is the token the scan would take at the cursor, and the rule fails where none of that class stands. |
 
@@ -1385,7 +1386,7 @@ not read, or memory it could not get.
 | `nothing here is anything this file declared: '…'` | a character that matches no class and begins no word, §6.1 |
 | `no rule reads 'x' here` | the parser stopped; `x` is the furthest token it reached |
 | `the file ends in the middle of something` | as above, at end of file |
-| `a 'text' hole belongs to @mode text` | §4.3 |
+| `a 'text' hole belongs to @mode text` · `a 'raw' hole belongs to @mode text` | §4.3 |
 | `this line is indented and no rule opened a block here` | an `indent` no `block` hole reads, §6.1 |
 | `this line ends a block but lines up with nothing that opened one` | a column between two open ones, §6.1 |
 | `the grammar recurses without consuming anything` | 400 deep, §6.2 |

@@ -158,8 +158,8 @@ static int dnumber(D *d, int *out)
 
 /* ------------------------------------------------------------------- @syntax */
 
-static const char *KINDS[]  = { "expr", "stmts", "text", "block", NULL };
-static const int   KINDKS[] = { K_EXPR,  K_STMTS, K_TEXT, K_BLOCK };
+static const char *KINDS[]  = { "expr", "stmts", "text", "block", "raw", NULL };
+static const int   KINDKS[] = { K_EXPR,  K_STMTS, K_TEXT, K_BLOCK, K_RAW };
 
 /* A pattern element, and a group of them. `[ … ]` is Metaxis's vocabulary and
    lives outside the strings, so it can never be mistaken for the body's own

@@ -10,6 +10,14 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**A `raw` hole kind: source text, not expanded.** Text mode only; it matches
+as a `text` hole does and the template gets it as written, to hand to
+`expand` or to leave. `examples/cpp.mx` keeps a macro's body raw and
+expands it at each use, which is cpp's order: `TOTAL` defined as
+`(LIMIT * STEP)` reads the `STEP` that stands where `TOTAL` is used, and
+the example prints 70 after `#undef STEP` made it a variable. In expression
+mode it is `a 'raw' hole belongs to @mode text`.
+
 **`examples/cpp.mx` reads function-like macros.** `#define F(a, b) body`
 and `F(x, g(y))`, arguments taken whole under the brackets, bound to their
 parameters through the store at a depth the file counts, and the body

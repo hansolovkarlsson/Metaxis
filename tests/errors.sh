@@ -128,6 +128,13 @@ expect "a 'text' hole belongs to @mode text" <<'EOF'
 f a g
 EOF
 
+expect "a 'raw' hole belongs to @mode text" <<'EOF'
+@token name "[a-z]+"
+@syntax "f" a:raw "g" => "{a}"
+@end
+f a g
+EOF
+
 expect "a fresh name needs a label" <<'EOF'
 @syntax "f" a => "{~}{a}"
 EOF

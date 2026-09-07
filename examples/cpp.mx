@@ -19,12 +19,7 @@
 ; a name the third rule sees; the three brackets keep a hole over `(a, b)`
 ; whole.
 ;
-; What this cut does and does not do, said plainly. A body is expanded when
-; it is defined, because a hole's text is expanded in its turn: `TOTAL`
-; below is remembered as `(10 * 3)`, where cpp would keep `(LIMIT * STEP)`
-; and expand it at each use. The two agree unless a macro the body names is
-; redefined between the definition and a use, which this file does not do;
-; the plan for the item makes it use-time in a later step. A directive wants
+; What this file does not do, said plainly. A directive wants
 ; exactly one space after its word and before its body, because text mode
 ; matches a word byte for byte; `#  define` and a tab do not read, and a
 ; function-like macro's parameters are written `(a, b)` with that one space.
@@ -56,11 +51,14 @@
 ; A function-like macro remembers its body under `fn:` and each parameter
 ; under its position. Declared before the object-like rule, which shares
 ; its first word: `#define F(x)` has `(` where the other wants a space.
-@syntax "#define " n:name "(" [ p:name ]* sep ", " ")" " " b "\n" => {
+; The body is a `raw` hole, kept as written and expanded at each use by the
+; rules below, which is cpp's order: `#define TOTAL (LIMIT * STEP)` names
+; whatever `STEP` means where `TOTAL` is used, not where it was defined.
+@syntax "#define " n:name "(" [ p:name ]* sep ", " ")" " " b:raw "\n" => {
     remember("fn:" + n, b)
     for i, q in p { remember("param:" + n + ":" + i, q) }
 }
-@syntax "#define " n:name " " b "\n" => { remember("def:" + n, b) }
+@syntax "#define " n:name " " b:raw "\n" => { remember("def:" + n, b) }
 @syntax "#undef " n:name "\n"        => { forget("def:" + n); forget("fn:" + n) }
 
 ; A call. Every call in the file fires this, and one that is not a macro is
@@ -133,6 +131,7 @@ int main(void)
 #undef STEP
     int STEP = 7;                 /* an ordinary variable now, STEP being undefined */
     printf("%d\n", STEP + LIMIT);
+    printf("%d\n", TOTAL);        /* 70: its body is read here, where the name it multiplies by is the variable */
     int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
     printf("%d %d\n", A, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     printf("%d %d %d %d\n", DOUBLE(LIMIT), ADD(1, DOUBLE(2)), SEVEN(), TWICE(3));

@@ -405,7 +405,8 @@ static int m_elems(P *p, Rule *r, Elem *el, int nel, int tail,
             break;
         }
         default:
-            p->err = xfmt("%s:%d: a 'text' hole belongs to @mode text", r->file, r->line);
+            p->err = xfmt("%s:%d: a '%s' hole belongs to @mode text", r->file, r->line,
+                          e->hk == K_RAW ? "raw" : "text");
             return 0;
         }
         bind_put(b, nb, e->hole, v, append, join, lev, term);
@@ -900,7 +901,11 @@ static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
             Bind *snap = tm_save(t);
             bind_put(t->b, t->nb, e->hole, xstrndup(t->s + pos, stop - pos),
                      append, join, LEVEL_ATOM, 0);
-            bind_raw(t->b, t->nb, e->hole, join);
+            /* A `raw` hole is the source and stays so: what the rule does
+               with it, `expand(h)` or nothing, is the template's to say. An
+               `#ifdef` arm not taken is the customer, since a `#define`
+               inside it must not fire. */
+            if (e->hk != K_RAW) bind_raw(t->b, t->nb, e->hole, join);
             if (tm_match(t, el, nel, k + 1, stop, cont, append, join)) return 1;
             tm_load(t, snap);
             if (t->closer && text_word(t->g, t->s, t->len, stop, t->closer)) break;

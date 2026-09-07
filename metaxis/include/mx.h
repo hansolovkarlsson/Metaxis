@@ -29,7 +29,7 @@ char *buf_take(Buf *b);
 
 enum { MODE_EXPR, MODE_TEXT };
 enum { EL_WORD, EL_HOLE, EL_GROUP };
-enum { K_EXPR, K_CLASS, K_STMTS, K_TEXT, K_BLOCK };
+enum { K_EXPR, K_CLASS, K_STMTS, K_TEXT, K_BLOCK, K_RAW };
 enum { REP_ONE, REP_STAR, REP_PLUS };
 
 typedef struct { char *name, *src; regex_t re; char *file; int line; } Class;

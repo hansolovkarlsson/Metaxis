@@ -45,12 +45,12 @@ gone=$(( $(idents TOTAL) + $(idents GREETING) + $(idents A) + $(idents B) \
        + $(idents DOUBLE) + $(idents ADD) + $(idents SEVEN) + $(idents TWICE) ))
 step=$(idents STEP)
 self=$(idents SELF)
-if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] || [ "$step" != 3 ] || [ "$self" != 2 ]; then
+if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] || [ "$step" != 4 ] || [ "$self" != 2 ]; then
     echo "FAILED  cpp.sh: the rules did not do what they do to examples/cpp.mx's body"
     echo "        directives left: $dirs (want 1, the include: $inc)"
     echo "        LIMIT as an identifier: $lim (want 1, inside the string)"
     echo "        TOTAL, GREETING, A, B and the four function-like names left: $gone (want 0)"
-    echo "        STEP left: $step (want 3: the undefined variable, its use, and the comment)"
+    echo "        STEP left: $step (want 4: the undefined variable, its use, the comment, and TOTAL's body read after the undef)"
     echo "        SELF left: $self (want 2: the variable and its use, the macro having stopped at itself)"
     exit 1
 fi
@@ -77,6 +77,7 @@ want=$("$TMP/b")
 expected='limit=10 step=3 total=30
 LIMIT is not a macro inside a string
 17
+70
 5 4
 20 5 7 9'
 
@@ -95,5 +96,5 @@ fi
 
 echo "ok      cpp.sh: seven object-like and four function-like macros, and cc's own preprocessor agrees"
 echo "            no directive left but the include, LIMIT kept inside its string,"
-echo "            and both programs print the same five lines"
+echo "            and both programs print the same six lines"
 exit 0
