@@ -282,7 +282,9 @@ its children's. Metaxis is bottom-up in both senses.
 
 **Bracket.** `@bracket "(" ")"`: two words that nest. A text-mode hole stops
 only where they balance, and a close with no opener behind it ends the hole.
-REFERENCE §3.11, §7.
+In expression mode the lexer counts them, and between an opener and its match
+a newline is whitespace rather than a separator, so a wrapped call reads.
+REFERENCE §3.11, §6.1, §7.
 
 **Budget.** A cap on how much work a search may do before it is declared
 stuck. Text mode has one: 200,000 match attempts per rule. Expression mode has

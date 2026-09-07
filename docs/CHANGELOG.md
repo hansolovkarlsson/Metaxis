@@ -10,6 +10,13 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**A call wrapped onto a second line reads.** Between a declared bracket and
+its match the lexer treats a newline as whitespace: no separator, and no
+indent or dedent measured. `@bracket` is read by expression mode now, and
+each of its sides is a word; the refusal `@bracket belongs to @mode text`
+is gone. `examples/python.mx` wraps its last `print`, and
+`docs/languages/toml-wrapped.mx` reads whole.
+
 **Every message a page quotes is checked against the source, not only
 §10's.** `tests/hygiene.sh` takes a backticked span outside the errors page
 as a message when two words of it in a row are in a source literal, and

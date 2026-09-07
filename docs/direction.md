@@ -336,8 +336,8 @@ the lexer. Both are context, and both are the wall.
 **Stage 3 walked up to that wall from the Python side and stopped where it
 should.** The lexer *was* the hard part and the lexer is what got the state, so
 blocks read. What did not follow, and was not made to: `elif` is a rule per arm
-count, a wrapped call is not read at all, and the C types come off Python's own
-annotations because nothing here can infer one. `examples/python.mx` says all
+count, a wrapped call was not read until `@bracket` reached the lexer, and the
+C types come off Python's own annotations because nothing here can infer one. `examples/python.mx` says all
 three in its own closing note. That is what "a subset, and it says so" looks
 like in practice, and it is the difference between reaching and claiming.
 

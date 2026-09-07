@@ -264,7 +264,9 @@ if [ -n "$stale" ]; then
 fi
 echo "ok      hygiene.sh: every roadmap citation in the tree resolves to an item"
 
-headpage=$(git show HEAD:docs/ROADMAP.md 2>/dev/null) || {
+# The path is quoted so that the citation scan above does not read the `2>`
+# after it as a citation of item 2, which is retired.
+headpage=$(git show "HEAD:docs/ROADMAP.md" 2>/dev/null) || {
     echo "FAILED  hygiene.sh: git show HEAD:docs/ROADMAP.md did not answer, so the"
     echo "        lost-item check has nothing to compare against."
     exit 1

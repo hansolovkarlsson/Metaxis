@@ -495,11 +495,13 @@ template kept the hole last.
   with another, and '|' is both`. A word that is already a side of a declared
   bracket is `'x' is already a bracket, declared at file:line`; an empty word
   is `an empty word matches nothing`.
-- **In expression mode it is refused**, once the header has finished:
-  `@bracket belongs to @mode text -- in expression mode nothing reads it yet`.
-  The lexer does not read brackets, and a line that continues inside one is
-  [ROADMAP.md](ROADMAP.md) 2; this directive is the declaration that item had
-  asked the shape of.
+- **In expression mode the lexer reads it** (§6.1): each side is a word, and
+  between an opener and its match a newline is whitespace, whatever the
+  separator is, and the indent or dedent the next line's column would have
+  made is not made. So `f(a,` newline `b)` reads under `@separator "\n"`. A
+  closer with no opener behind it counts nothing and is `no rule reads ')'
+  here`; an opener never closed runs to `the file ends in the middle of
+  something`.
 - **Nothing may follow the two words.** Anything else is `trailing text after
   @bracket`.
 
@@ -714,7 +716,8 @@ At each position, in this order:
    a newline, in which case one separator token is produced for a run.
    Under `@separator … indent` (§3.3) the whitespace is also *counted*, and
    what it comes to decides whether an `indent` or a run of `dedent`s is
-   produced first. See below.
+   produced first. See below. **Between a declared bracket and its match**
+   (§3.11) a newline is whitespace: no separator, and nothing counted.
 2. **Comments** are looked for, and win. This is the only precedence in the
    lexer that the file did not set.
 3. **The longest match from every declared token class**, and **the longest
@@ -737,7 +740,8 @@ was declared first.
 Nothing else is a token. A character that matches no class and begins no word is
 `nothing here is anything this file declared: '…'`.
 
-The word set is every word any rule quoted, plus the separator.
+The word set is every word any rule quoted, plus the separator, plus each side
+of every declared bracket.
 
 **Indentation, when `@separator … indent` asked for it.** A column count runs
 from each newline and stops at the first thing that is not whitespace; a space
@@ -753,6 +757,8 @@ whose bottom is column 0:
   first. If the count lands between two columns rather than on one, that is
   `this line ends a block but lines up with nothing that opened one`.
 - **the same**: nothing but the ordinary separator.
+- **inside a bracket**: nothing at all. The count restarts at the line that
+  carries the token after the closer.
 - **end of file**: a `dedent` for every column still open.
 
 Because every newline restarts the count, the indentation that is measured is
@@ -1227,7 +1233,6 @@ not read, or memory it could not get.
 | `'contribute' is a statement -- it adds to a collection on a line of its own and has no value to use here` | §8.4 |
 | `'contribute' takes 2 -- the collection's name and what to add to it -- and was given 1` | §8.4 |
 | `a rule that begins with a hole is infix, and text mode has nothing for it to continue -- it could never fire` | §7 |
-| `@bracket belongs to @mode text -- in expression mode nothing reads it yet` | §3.11 |
 | `a bracket opens with one word and closes with another, and '|' is both` | §3.11 |
 | `'x' is already a bracket, declared at file:line` | §3.11 |
 | `a rule needs a pattern` | `@syntax => "…"` |

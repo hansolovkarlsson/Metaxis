@@ -500,12 +500,14 @@ markdown, 2000 lines, 60ms, with the `**` and `[[…]]` rules of
 budget. See [ROADMAP.md](ROADMAP.md).
 
 **A line that continues inside brackets is not read.** `f(a,` newline `b)` is a
-parse error under a newline separator: Python's lexer suppresses the newline
-between an opening bracket and its match and this one does not. It wants a
-bracket depth beside the indent stack, and the thing that makes it more than a
-copy of that work is that **the lexer cannot know what a bracket is**:
-everything else it knows came out of a directive, and no directive says *these
-two words nest*. [ROADMAP.md](ROADMAP.md) 2 has the three spellings that would.
+parse error under a newline separator until 2026-09-07: Python's lexer
+suppresses the newline between an opening bracket and its match and this one
+did not. It wanted a bracket depth beside the indent stack, and the thing that
+made it more than a copy of that work is that **the lexer cannot know what a
+bracket is**: everything else it knows came out of a directive, and no
+directive said *these two words nest*. `@bracket` is that directive now, one
+declaration read by both modes, and the depth is
+[COMPLETED.md](COMPLETED.md)'s *The wrapped line*.
 
 **`left` is accepted and does nothing**, since left is the default. It stays
 because writing it is sometimes clearer than leaving it out. (The other half of

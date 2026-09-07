@@ -9,6 +9,59 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## The wrapped line: between a bracket and its match, a newline is whitespace
+
+`f(a,` newline `b)` reads under `@separator "\n"`. **The lexer keeps a bracket
+depth beside the indent stack, and while it is above zero a newline is
+whitespace**: the separator it would have produced is not produced, and the
+indent or dedent the next line's column would have made is not made. Python's
+lexer does the same, and this one did not; it was roadmap item 2 from the day
+stage 3 landed, left out named, and the last thing the item's shape question
+had waited on.
+
+**The declaration was already there.** `@bracket "(" ")"` landed on
+2026-09-06 for text mode's holes, taken over two other shapes because one
+declaration serves both modes and keeps the foreign text inside a string, and
+expression mode refused it so that a file could not declare a bracket nothing
+consulted. That refusal is gone and its error case with it. What replaces it is
+one loop in `grammar_seal`, each side of a bracket joining the word set the way
+the separator does, in expression mode only, and one counter in `lex`: a word
+token that is an opener adds one, a closer that has an opener behind it takes
+one away, and a closer with none counts nothing and is left to the parser,
+which says `no rule reads ')' here`. An opener never closed runs to the end of
+the file and is `the file ends in the middle of something`. Text mode matches
+a bracket whole itself and its word set is left as it was, which is what keeps
+`tests/island.sh` reading the front end as before.
+
+**The customer is the last `print` in `examples/python.mx`**, now wrapped onto
+two lines inside an indented block, under an `@bracket "(" ")"` line the
+example did not have. `tests/python.sh` runs the text as Python and compiles
+the C it becomes, and both still say 40, 80 and 50; the C is byte-identical to
+what the unwrapped call produced. Take the `@bracket` line out and the file is
+`this line is indented and no rule opened a block here`, the continuation
+line's column read as an indent, which is the fault by its indent-mode name.
+`docs/languages/toml-wrapped.mx`, which had pinned the refusal with a
+transcript since 2026-09-06, declares its bracket and reads whole, and the
+transcript says so. The languages page's property 4 is restated with the
+condition it has now, and the two verdicts that had named the item moved: the
+fixed-shape formats read whole rather than *when a statement stays on its
+line*, and Go's wall is no longer the wrapped list but the trailing comma
+`gofmt` leaves on it, which a `sep` group does not admit.
+
+**What it does not do.** A line that continues without a bracket, by a
+backslash or an operator left open at the line's end, is a separator where the
+language has none, and no directive spells that. A bracket the file declares
+but no rule reads is `no rule reads '(' here`, honest and useless, as before.
+
+Proved on six probes before the pages were touched: a wrapped call; one
+inside an indented block whose continuation lines sit at column 0 and deeper
+than the block; an opener unclosed at the end of the file; a stray closer; a
+`gofmt` trailing comma; and a bracket no rule reads. Then the Python example
+with and without its new line.
+
+Verified at 16 examples byte-identical, 86 error cases and nine check scripts:
+201 `ok` lines where there were 202, the refusal's error case the difference.
+
 ## The messages the pages quote outside the errors page, held to the source
 
 `tests/hygiene.sh`'s fourth check read §10 of [REFERENCE.md](REFERENCE.md) and
@@ -253,15 +306,14 @@ bound stays and is now checked at each candidate stop rather than found
 ahead, which is the same set of stops where no bracket is declared, and no
 recorded output changed but the island example's.
 
-**The declaration is item 2's answer.** [ROADMAP.md](ROADMAP.md) 2 had met the
-question of whether a bracket is declared or known and offered three shapes;
+**The declaration is item 2's answer.** Item 2 of the roadmap, the wrapped
+line, had met the question of whether a bracket is declared or known and offered three shapes;
 this is the second, a directive of its own, taken because one declaration
 serves both modes and keeps the foreign text inside a string. Reading pairs
 off the shape of rules was declined there and stays declined. In expression
-mode the directive is refused once the header has finished, `@bracket belongs
-to @mode text -- in expression mode nothing reads it yet`, so that a file
-cannot declare a bracket nothing consults; the lexer state that would read it
-is what remains of item 2, and its shape question is closed. `mx -g` prints
+mode the directive was refused once the header had finished, so that a file
+could not declare a bracket nothing consulted; the lexer state that reads it
+landed on 2026-09-07 as *The wrapped line* above. `mx -g` prints
 `bracket ( )`.
 
 **The customer is the one `!(` in the front end.** `lib/island.mx` declares
@@ -1173,8 +1225,8 @@ passes a diff and passes `tests/pascal.sh`; it fails this. Both halves print `40
 
 **What the example does not do, in its own closing note.** `elif` is one rule
 per arm count, which is the shape [ROADMAP.md](ROADMAP.md) 6 declines to build
-for. A wrapped call is not read, which is ROADMAP 2 and was found by running the
-thing rather than reading it. C's types come off Python's annotations or nowhere,
+for. A wrapped call was not read, which was item 2 of the roadmap until it landed
+on 2026-09-07, and was found by running the thing rather than reading it. C's types come off Python's annotations or nowhere,
 which is the stage-1 wall in its honest form. And the example says `twice`
 because a Python function called `double` translates to a C function called
 `double`: **a rewriter that moves tokens cannot see that the word it just copied

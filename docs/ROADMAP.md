@@ -16,7 +16,7 @@ and not by how much is known. The last entry is the best worked out and the
 least asked for, which is why it is last. **A number is for life**: an item
 that lands keeps its number in [COMPLETED.md](COMPLETED.md)'s prose and the
 number is not used again, so a citation stays right for as long as the item
-is open. Retired so far: 4, 7, 9, 10, 12 and 13. That sentence is read by
+is open. Retired so far: 2, 4, 7, 9, 10, 12 and 13. That sentence is read by
 `tests/hygiene.sh`, which refuses a heading that reuses a number on it and a
 heading that leaves the page without joining it, so it keeps this shape. 9
 never reached a commit as a heading, which is how it came to be used twice on
@@ -195,50 +195,6 @@ can rewrite a literal where it stands: it has to happen inside a rule that has
 a word in it, which is what `code.mx` does inside `writeln`. That is the one
 thing between `pascal.out` and a program that runs, it is recorded in the file's
 own closing note, and `tests/pascal.sh` fails if it ever starts compiling.
-
-## 2 · A line that continues inside brackets
-
-`f(a,` newline `b)` is `no rule reads '\n' here` under a newline separator.
-Python's lexer suppresses the newline between an opening bracket and its match,
-and this one does not.
-
-**This is the piece stage 3 left out, and it was left out named.** The item it
-came from listed three obstacles to reading Python and this was a fourth, found
-by running the thing rather than by reading it, which is why it is here and not
-in a comment somewhere. `examples/python.mx` says so in its own closing note and
-avoids wrapped calls. Since 2026-09-06 the suite mentions it once:
-`docs/languages/toml-wrapped.mx` pins the refusal with a transcript
-`tests/docs.sh` runs, and is the file that reads whole when this lands.
-
-It wants a second piece of lexer state beside the indent stack, a bracket
-depth, and **that is the interesting part**: the lexer cannot know what a
-bracket is. Every other thing it knows came out of a directive, and there is no
-directive that says *these two words nest*. So this is not the same size as the
-indent stack even though it is the same kind of state, and the shape of the
-declaration is the decision:
-
-- a suffix naming the pairs, `@separator "\n" indent joining "(" ")" "[" "]"`,
-  which is honest and gets long;
-- a directive of its own, `@bracket "(" ")"`, which is a second global that has
-  to agree with the first;
-- or reading it off the rules: any rule whose pattern is a word, then holes,
-  then a word. That is free, silent, and wrong the moment a rule is shaped
-  like that and is not a bracket.
-
-Nothing has asked yet: the example does not need it, and Python without wrapped
-calls is still Python. It is here so that the next file that wants one finds the
-question already asked.
-
-**The declaration exists since 2026-09-06, and it is the second shape.**
-`@bracket "(" ")"` is a directive of its own, built for text mode's holes as
-the last piece of the island rule ([COMPLETED.md](COMPLETED.md)'s *The island
-rule, finished*), taken because one declaration serves both modes and keeps
-the foreign text inside a string. In expression mode it is refused until the
-lexer reads it, `@bracket belongs to @mode text -- in expression mode nothing
-reads it yet`, so that a file cannot declare a bracket nothing consults. What
-is left here is the mechanic: between an opener and its match, the lexer
-suppresses the newline separator and the indent and dedent it would have made.
-The shape question this item was written around is answered.
 
 ## 3 · The three rules `as` cannot share
 

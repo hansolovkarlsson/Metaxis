@@ -64,12 +64,15 @@ reference states it, and each has a list of languages it settles.
    property that surprised this page, and it puts the smallest grammar on
    it in the unfit list. `lisp.mx` and `atoms.mx` below are its two sides.
 
-4. **A newline is whitespace or a separator, and no bracket suspends it.**
-   [ROADMAP.md](ROADMAP.md) 2. A language whose statements end at a line
-   break reads under `@separator "\n"`, and then a call wrapped onto a
-   second line does not, because the lexer cannot know what a bracket is.
-   A language that ends statements with a word does not care. `toml.mx` and
-   `toml-wrapped.mx` below are the two sides of the line.
+4. **A newline is whitespace or a separator, and only a declared bracket
+   suspends it.** A language whose statements end at a line break reads
+   under `@separator "\n"`, and a call wrapped onto a second line reads
+   only between the sides of an `@bracket`, because the lexer knows what a
+   bracket is from that line and from nothing else. A line that continues
+   past a bracket, or by a rule of the language the file cannot spell, such
+   as a backslash or an open operator, is a separator where the language
+   has none. A language that ends statements with a word does not care.
+   `toml.mx` and `toml-wrapped.mx` below are the two sides of the line.
 
 5. **A block is braces, a pair of words, or one shape of indentation.**
    `@separator … indent` and the `block` kind, REFERENCE §4.3, are Python's
@@ -100,9 +103,9 @@ reference states it, and each has a list of languages it settles.
 **Two readings of the same list.** The properties are limits of the tool as
 it stands, and most of them are limits by decision: 1 is what keeps a rule
 composable and `@use`-able, and 2, 3 and 4 are what keep the lexer something
-a header can fully declare. The ones that are merely unbuilt say so:
-[ROADMAP.md](ROADMAP.md) 2 would move a verdict or two below, and nothing
-else on the roadmap would.
+a header can fully declare. None of them is merely unbuilt: the wrapped line
+was, until 2026-09-07, and landing it moved the two verdicts it had named
+and no other. Nothing else on the roadmap would move one.
 
 ---
 
@@ -118,13 +121,13 @@ language reads without a wall.*
 | **Expression languages**: calculators, spreadsheet formulas, filter and query expressions | whole | A Pratt grammar is exactly this shape: literals by `@token`, infix by level, calls by a led `"("`. A cell range like `A1:B9` is one token class. `examples/calc.mx` evaluates instead of translating, and is the closest thing here to an interpreter (property 7 and [direction.md](direction.md)). |
 | **Pascal** | a subset, and a large one | Stage 1. Every construct in a Wirth-style program reads: `program`, `var`, `procedure`, `function`, `begin … end`, `if`, `while`, `for`, `repeat`, `case`, over the types the header names. Property 1 stops it in three places [ROADMAP.md](ROADMAP.md) 1 records: assigning to the function's own name, calling a parameterless procedure, and `writeln` over mixed types. Property 2 adds one: the language is case-insensitive and the header is not, so a source that writes `Begin` and `BEGIN` on different lines needs a rule per spelling. |
 | **BASIC**, line-numbered | whole | Stage 4, and the language that asked for collections: it declares nothing, C wants every variable declared first, and a rule `contribute`s the declaration for each name it meets. The type is on the sigil, `A$`, which is property 7 answered by the source. `examples/basic.mx` reads it and `tests/basic.sh` runs the C. |
-| **Python** | a subset, and it says so | Stage 3, and the reason property 5 exists: `@separator "\n" indent` gives the lexer a stack of columns and a `block` hole reads what it emits. Nesting, `else` after a block, and blank lines all fell out. What stops it is 4, a call wrapped onto a second line ([ROADMAP.md](ROADMAP.md) 2), and 1, the first assignment C wants declared and the types C wants everywhere, which `examples/python.mx` takes off the source's own annotations. Its closing note lists the rest. |
+| **Python** | a subset, and it says so | Stage 3, and the reason property 5 exists: `@separator "\n" indent` gives the lexer a stack of columns and a `block` hole reads what it emits. Nesting, `else` after a block, and blank lines all fell out. What stops it is 1, the first assignment C wants declared and the types C wants everywhere, which `examples/python.mx` takes off the source's own annotations. Its closing note lists the rest. |
 | **Lua** | a subset, near whole | The smallest grammar of the general-purpose languages people ship code in: `end`-delimited blocks, `do`, `then`, `function`, a dozen operators, and no statement separator, which property 4 forgives because a statement that ends in `)` or `end` ends in a word and one that ends in a name has a newline after it. What stops it is a long string with a level, `[==[ … ]==]`, which POSIX ERE cannot count (property 2), and the ambiguity Lua's own manual records, a line beginning with `(` after one that ended in a name. `lua.mx` below reads the core. |
 | **SQL** | a subset, one per dialect | Keyword-led mixfix with comma lists is the pattern language's native shape: `"select" [ c ]+ sep "," "from" t:name [ "where" w ] [ "order" "by" o ]` reads a query, and each optional clause is an optional group: `sql.mx`, below. Property 2 is the cost: `SELECT` and `select` are two words. The dialects are the other cost, and are not the tool's. |
 | **Prolog** | a subset | An operator-precedence syntax is a Pratt grammar, and `op/3` is `@syntax` with a level: [prior-art.md](prior-art.md) § 2 counts Prolog among the ancestors for that reason. Terms, lists, clauses and `:-` all read. What stops it is a program that declares an operator in its own body with `:- op(700, xfx, ===)` and uses it on the next line: this tool reads the header first and the body second, and a directive in the body is a term (property 2). |
 | **Assembly** | whole | Line-oriented, mnemonic-led, comma-separated operands, labels by a token class: nothing in it touches a property. Stage 2 *writes* it, `examples/asm.mx`, and `tests/asm.sh` runs the result on a CPU. Reading one stops only at a macro assembler's macros, which change what later lines mean (property 1). |
 | **JSON** | whole | Two rules: an object is `"{" [ k:string ":" v ]* sep "," "}"` and an array is `"[" [ v ]* sep "," "]"`. The body is a single expression, so no separator is declared and property 4 never arises: `json.mx`, below. It is the smallest useful input, and a `.mx` that reads JSON and writes a C initialiser, a table, or another config format is a page long. |
-| **Fixed-shape formats**: CSV, INI, TOML, Graphviz DOT, Protocol Buffers and GraphQL schemas | whole, when a statement stays on its line | Brackets, keywords and comma- or newline-separated lists, which is what the pattern language was made from. Each declares `@separator "\n"`, and property 4 then says what stops it: a TOML array or a DOT attribute list that wraps onto the next line is [ROADMAP.md](ROADMAP.md) 2. That is how the files are usually written, and a file that wraps is refused rather than misread: `toml.mx` and `toml-wrapped.mx`, below. |
+| **Fixed-shape formats**: CSV, INI, TOML, Graphviz DOT, Protocol Buffers and GraphQL schemas | whole | Brackets, keywords and comma- or newline-separated lists, which is what the pattern language was made from. Each declares `@separator "\n"`, and a TOML array or a DOT attribute list that wraps onto the next line reads once the file declares the bracket it wraps inside, which is property 4's one condition: `toml.mx` and `toml-wrapped.mx`, below. |
 | **CSS** | a subset | Rules, declarations and the common selectors read: `s "{" [ p:name ":" v ]* sep ";" "}"`. What stops it is property 2: an unquoted `url(a.png)` is a token that exists only after `url(`, and `calc()` has arithmetic the rest of the value language does not. `css.mx` below reads a rule. |
 | **Markdown, wiki markup, lightweight markup** | whole, for what is inline and per line | Text mode's home, and `examples/poem.mx` is the demonstration: emphasis, links, headings, rules, lists, with the hole's text expanded in its turn so that constructs nest. What stops it is property 6: a construct defined by its column, an indented code block or a nested list, since text mode has no columns to measure. |
 
@@ -149,7 +152,7 @@ rewrite is still worth having, the row says so.*
 | **C** | Property 1 at its sharpest: `x * y` is a product or a declaration depending on whether `x` is a typedef, and no grammar decides it. The preprocessor is a second language interleaved by line, whose `#define` changes what the lines after it mean, and whose `#include` names text the tool cannot see. Declarators, `int (*f)(int)`, are readable and unpleasant. **What is fit**: an expression-and-statement subset over types the header names, which is what `examples/clike.mx` and stage 2 read, and text-mode rewrites over a real file, the row above. [direction.md](direction.md) says why a front end is declined. |
 | **C++** | Everything C has, and then property 2: `a < b > c` is a template or two comparisons depending on what `a` is, and `>>` closes two templates or shifts. The most vexing parse is property 1 again. |
 | **Java, C#, Kotlin, Swift** | The grammars run to hundreds of rules, which is cost and not a wall. The wall is generics against `<` (properties 1 and 2), interpolated strings that nest an expression inside a token (`$"…"`, `"${…}"`, `"\(…)"`, property 2), and that any translation worth doing, overload by overload, needs the types (property 1). A subset for a demonstration reads, as Pascal's did, and stops in the same places. |
-| **Go** | Its lexer inserts a semicolon at a line break after a name, a literal or a closing bracket, which is nearly this tool's own rule, and the expression core reads. What stops it is property 4: `gofmt` puts every long argument list on several lines with a trailing comma, and each of those is [ROADMAP.md](ROADMAP.md) 2. Past the syntax, property 1 for the types. |
+| **Go** | Its lexer inserts a semicolon at a line break after a name, a literal or a closing bracket, which is nearly this tool's own rule, and the expression core reads. A long argument list wrapped by `gofmt` reads under `@bracket "(" ")"`, but `gofmt` also leaves a trailing comma on it, and a `sep` group does not admit one: `f(a, b,)` is `no rule reads ')' here`. Past the syntax, property 1 for the types. |
 | **Rust** | Property 2 three times: `'a` is a lifetime or the start of `'a'`, block comments nest, and a generic `<` is a comparison until the name before it is known to be a type. And `macro_rules!` declares syntax the body then uses, which is what a `.mx` header does, except that it happens in the body. |
 | **JavaScript, TypeScript** | Property 2: `/` divides after an operand and opens a regex literal after an operator, and a template literal's `${ … }` nests an expression inside a token, which no regex lexes. Automatic semicolon insertion is decided by the *next* token. JSX is a second grammar inside the first. **As an output** it is fit, and `examples/groups.mx` writes it. |
 | **Ruby** | The lexer is the wall. `foo -1` and `foo - 1` differ, and which one `foo -1` is depends on whether `foo` is a local (properties 1 and 2 together); heredocs, `%w[…]` literals with a chosen delimiter, regex literals as in JavaScript, and `do … end` against `{ … }` chosen by the call. |
@@ -384,19 +387,21 @@ section server
   hosts: list("a", "b")
 ```
 
-Property 4, **the wrapped line**. The same header and the array broken after its comma. The newline is a separator, no bracket suspends it, and the file is refused rather than misread, which is [ROADMAP.md](ROADMAP.md) 2:
+Property 4, **the wrapped line**. The same header plus `@bracket "[" "]"`, and the array broken after its comma. Between the bracket's sides the newline is whitespace, and the file reads whole; take the `@bracket` line out and the same file is refused, `no rule reads '\n' here`, which was the recorded answer until 2026-09-07:
 
 `docs/languages/toml-wrapped.mx`:
 
 ```
-; toml-wrapped.mx -- property 4: the same header as toml.mx, and the array
-; wrapped onto a second line. The newline is a separator and no bracket
-; suspends it, so the file is refused rather than misread. ROADMAP 2.
+; toml-wrapped.mx -- property 4: the same header as toml.mx plus one line,
+; and the array wrapped onto a second line. The newline is a separator, and
+; between a declared bracket and its match the lexer treats it as whitespace,
+; so the file reads whole. Without the @bracket line it is refused.
 
 @token number "[0-9]+"
 @token string "\"[^\"]*\""
 @token name   "[A-Za-z_][A-Za-z0-9_-]*"
 @separator "\n"
+@bracket "[" "]"
 @syntax "[" t:name "]"                        => "section {t}"
 @syntax k:name "=" v   10                     => "  {k}: {v}"
 @syntax "[" [ x ]* sep "," join ", " "]"      => "list({x})"
@@ -408,8 +413,8 @@ hosts = ["a",
 
 ```
 $ mx docs/languages/toml-wrapped.mx
-mx: docs/languages/toml-wrapped.mx:15: no rule reads '
-' here
+section server
+  hosts: list("a", "b")
 ```
 
 **SQL.** Keyword-led mixfix with a comma list and two optional clauses. A clause that was not there splices as nothing, which is what an optional group is:

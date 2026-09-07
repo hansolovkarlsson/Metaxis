@@ -29,6 +29,10 @@
 ; what a line break leads to. Out: C's `;` between two statements.
 @separator "\n" => ";\n" indent
 
+; A call wrapped onto a second line: between `(` and its `)` the lexer treats
+; a newline as whitespace and measures no indentation, so the last `print`
+; below reads. The lexer can count brackets only because this line named them.
+@bracket "(" ")"
 @syntax "(" e ")"                              => { emit "(" + e + ")" }
 ; A code template is handed the group's turns as a *list* and joins them
 ; itself, which is what `for … sep` is for; `join` is the string template's
@@ -151,7 +155,8 @@ if __name__ == "__main__":
         i = i + 1
     print(total)
     print(twice(total))
-    print(clamp(twice(total), 50))
+    print(clamp(twice(total),
+                50))
 
 # ------------------------------------------------------------------ the note
 #
@@ -173,10 +178,10 @@ if __name__ == "__main__":
 #                is a rule of its own, and that is the shape docs/ROADMAP.md 6
 #                describes and declines to build for.
 #
-#   A wrapped call.  `f(a,` newline `b)` is not read either: Python's lexer
-#                suppresses the newline inside brackets and this one does not,
-#                which wants a bracket depth beside the indent stack. It is
-#                left out **named** rather than missed -- ROADMAP 2.
+#   A wrapped call.  `f(a,` newline `b)` was not read until 2026-09-07: Python's
+#                lexer suppresses the newline inside brackets and this one did
+#                not. It does now, under `@bracket "(" ")"`, and the last
+#                `print` above is wrapped to show it.
 #
 # And one the compiler found. This file's Python says `twice` because a
 # function called `double` translates to a C function called `double`, and a

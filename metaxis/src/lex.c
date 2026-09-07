@@ -182,6 +182,13 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
     int    col = 0, only_ws = 1;
     Stack  st = { NULL, 0, 0 };
     if (g->sep_indent) col_push(&st, 0);
+    /* How many declared brackets are open. While one is, a newline is
+       whitespace: the separator it would have produced, and the indent or
+       dedent the next line's column would have made, are not made. The
+       lexer can count brackets only because @bracket named them; every
+       other thing it knows came out of a directive too. A closer with no
+       opener behind it counts nothing and is left for the parser to refuse. */
+    int    depth = 0;
 
     for (;;) {
         for (;;) {
@@ -198,6 +205,8 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
             if (comment_at(g, src, i, &after)) { i = after; only_ws = 0; continue; }
             break;
         }
+
+        if (depth > 0) pending_nl = 0;
 
         if (g->sep_indent && pending_nl && src[i]) {
             if (col > st.v[st.n - 1]) {
@@ -251,6 +260,11 @@ int lex(Grammar *g, const char *src, size_t from, const char *file,
             return -1;
         }
         push(out, t);
+        if (t.kind == T_PUNCT)
+            for (int b = 0; b < g->nbr; b++) {
+                if (t.n == strlen(g->br[b].open)  && !memcmp(t.p, g->br[b].open,  t.n)) depth++;
+                if (t.n == strlen(g->br[b].close) && !memcmp(t.p, g->br[b].close, t.n) && depth) depth--;
+            }
         i += t.n;
         only_ws = 0;
     }

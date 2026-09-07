@@ -1225,17 +1225,18 @@ int grammar_seal(Grammar *g, char **err)
     for (int r = 0; r < g->nrule; r++)
         seal_elems(g, g->rule[r].el, g->rule[r].nel);
     if (g->sep_in && !g->sep_nl) seal_word(g, g->sep_in);
+    /* In expression mode each side of a bracket is a word, so the lexer can
+       see one and count it: between an opener and its match it suspends the
+       newline separator (lex.c). Text mode matches a bracket whole itself
+       and its word set is left as it was. Done here for seal_check's reason:
+       @mode may come after @bracket, or from @use. */
+    if (g->mode != MODE_TEXT)
+        for (int b = 0; b < g->nbr; b++) {
+            seal_word(g, g->br[b].open);
+            seal_word(g, g->br[b].close);
+        }
     qsort(g->punct, (size_t)g->npunct, sizeof *g->punct, cmp_len);
 
-    /* A bracket is read by text mode's holes and by nothing else. Accepting
-       it in expression mode would be a directive that reads as if it worked,
-       so it is refused until the lexer reads it (docs/ROADMAP.md 2). Checked
-       here for seal_check's reason: @mode may come after it, or from @use. */
-    if (g->mode != MODE_TEXT && g->nbr) {
-        *err = xfmt("%s:%d: @bracket belongs to @mode text -- in expression mode"
-                    " nothing reads it yet", g->br[0].file, g->br[0].line);
-        return -1;
-    }
 
     if (g->mode == MODE_TEXT)
         for (int r = 0; r < g->nrule; r++) {
