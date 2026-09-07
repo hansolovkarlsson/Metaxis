@@ -270,6 +270,39 @@ is obviously right:
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing: one instance is a fact and two are a pattern.
 
+## 9 · The pages' copies of files, compared to the files
+
+Three pages quote files whole. A line reading `` `docs/tutorial/01-first.mx`: ``
+labels the fenced block under it as that file, the site renders the label as
+the block's caption, and the block is a copy typed into the page: eleven in
+[tutorial.md](tutorial.md), thirteen in [languages.md](languages.md), and §1
+of [REFERENCE.md](REFERENCE.md). The convention, read off the pages rather
+than written anywhere, is the file minus its leading `;` comment block. All
+twenty-five matched on 2026-09-06, which is the day the last thirteen were
+generated from the files with `cat`.
+
+**What breaks today without it.** Nothing compares a block to its file. A
+`$ mx` transcript under the block is run by `tests/docs.sh` against the file
+on disk, so a block that drifts sits above a transcript that is true of a
+file the reader is not looking at, and the page stays green. That is the
+shape of [POSTMORTEM.md](POSTMORTEM.md) 19 and 24, a copy compared to
+nothing, one layer up: those were an invented transcript and a typeset
+message, and this is a quoted file. A rename of a hole in a tutorial file,
+made where the transcript is re-recorded, is the edit that would do it.
+
+**What would have to be true for it to land.** One more extractor beside
+`tests/docs.sh`'s: for every label line followed by a fence in the scanned
+documents, the fence's lines equal the named file's lines after its leading
+comment block, trailing whitespace stripped on both sides for the reason
+`docs.sh` gives. The label regex is `site/build.py`'s own, so a block the
+site captions is a block the suite checks, and a label the site does not
+recognise is left alone. Whether a page may quote a file *partially*, with
+`…` for an elision the way a transcript may, is the one decision: the
+tutorial's blocks are whole today, and starting without elision and adding
+it on the first customer is the cheaper order.
+
+---
+
 ## 5 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
