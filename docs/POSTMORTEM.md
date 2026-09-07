@@ -12,6 +12,84 @@ Newest first.
 
 ---
 
+## 32 · Two pipelines that passed when their machinery failed, in the file that says so
+
+**Issue.** The roadmap check in `tests/hygiene.sh`, added on 2026-09-06 and
+entry 23's "harmless" earlier case, discarded grep's standard error in its
+citation scan and piped a `git show` whose failure was lost in its lost-item
+scan. A regex grep rejects, a regex that matches nothing, a page git cannot
+show and a page with no headings all printed `ok`.
+
+**Root cause.** The pipelines were written as pipelines, and a pipeline's
+status is its last command's, which was awk reading nothing. The limit guard
+three checks up ends in `|| exit` with a note explaining why, and entry 23
+records the prose check learning the same thing in the same file the same
+afternoon. The roadmap check was placed between them and guarded neither
+half. Exit status could not have been the guard for the first half in any
+case: `xargs` exits 123 for a file with no match and for a broken regex
+alike, so the check needed grep's stderr and an empty-result refusal, which
+is a different shape from the two guards beside it and was not copied from
+them.
+
+**What found it.** The audit's reviewer, reading the script diff of the day
+with the instruction to find a check that can pass vacuously, and
+demonstrating each by changing the regex on a copy.
+
+**Solution.** grep's stderr goes to a file and any content fails; an empty
+citation list fails, since the tree cites the roadmap from several pages;
+`git show` is guarded like `git ls-files` above it; a HEAD page with no
+numbered headings fails. Each proved on a broken copy run from the tree.
+
+**Learnings.** **A guard is copied by shape, and a check whose failure has a
+different shape needs a guard written for it.** The two guards in the file
+were for awk's exit status; this check's failure hid behind `xargs` and
+behind a pipe, and neither guard's shape fit, so none was written. The
+question to ask of a new check is not "does it have the guard the others
+have" but "what does this one print when each command in it fails", answered
+by breaking each command on a copy, which is what the audit did and what
+writing the check should have done. Third time in one file: the note does
+not prevent it, entry 23 did not prevent it, and a line that fails is the
+only thing that has.
+
+---
+
+## 31 · A fresh name that was fresh against everything but the other fresh names
+
+**Issue.** A code template with ten collections spliced the first's text at
+the head of the tenth's mark and copied the rest of the mark through:
+`foo` then `|0|` where `|foo|` was wanted. Collections were built on
+2026-09-06 and nothing in `examples/` has more than four.
+
+**Root cause.** A splice mark is `splice__N` from `pt_fresh`, whose
+substring test guarantees the name occurs nowhere in the source and in no
+template. The second pass matched each mark against the output with
+`strncmp` over the mark's own length and took the first collection that
+matched, and `splice__1` is a prefix of `splice__10`. The guarantee was
+about the text the marks are hidden in, and the collision was between two
+marks.
+
+**What found it.** The audit's reviewer, reading the collections diff with
+the instruction to report a bug only with an input that triggers it, and
+running the ten-collection file. The suite had no such file.
+
+**Solution.** The pass takes the longest mark that matches, since a shorter
+one that matches at a position is a prefix of the longer one that also
+does. `tests/basic.sh`, the collections' test, writes the ten-collection
+file and wants `|foo|`; on the old code it fails with the wrong output
+shown.
+
+**Learnings.** **A set of generated names is guaranteed distinct from the
+text and not from each other, and a matcher that reads by prefix needs the
+second guarantee.** The freshness test answers "is this name in the file";
+the pass asked "which name is at this position", which is a different
+question with a different failure. The bound to check when a generator's
+names share a prefix is the one past the first digit: ten of anything, not
+two. Nothing in the tree had ten, and a limit no example reaches is a limit
+the suite does not test, which is `tests/scale.sh`'s reason applied to a
+count rather than a size.
+
+---
+
 ## 30 · Twenty-five blocks said to match, from three that were read
 
 **Issue.** Roadmap item 10, written by the audit on 2026-09-06, said that
