@@ -382,7 +382,7 @@ Three shapes, none obviously right:
   what happens rather than the tool deciding.
 
 **And one thing it would break.** Expression mode's completeness is a
-*feature*: `no rule reads X here` is how a grammar under construction tells you
+*feature*: `no rule reads 'x' here` is how a grammar under construction tells you
 it is incomplete. An island mode must be opted into per file, never a default,
 or every grammar bug becomes silent output. The shape of the opt-in is the
 decision, and it is the same decision `@mode` already exists to make.

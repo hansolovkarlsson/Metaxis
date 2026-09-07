@@ -177,9 +177,10 @@ lib/                     files meant to be @use'd
 examples/                .mx beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong
 tests/hygiene.sh         five properties: every run goes through limit.sh, a
-                         roadmap number cited anywhere resolves, no em dash in
-                         prose, every message the reference quotes is one the
-                         source prints, and what a string template cannot do, run
+                         roadmap number cited anywhere resolves and is never
+                         given twice, no em dash in prose, every message a
+                         page quotes is one the source prints, and what a
+                         string template cannot do, run
 tests/docs.sh            every transcript in docs/ run, and every quoted file compared
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
 tests/basic.sh           BASIC in, C out, compiled and run

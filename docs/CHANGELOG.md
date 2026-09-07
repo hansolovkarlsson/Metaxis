@@ -10,6 +10,19 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**Every message a page quotes is checked against the source, not only
+§10's.** `tests/hygiene.sh` takes a backticked span outside the errors page
+as a message when two words of it in a row are in a source literal, and
+holds it to the same rule as a §10 cell. Two spellings were wrong and are
+fixed: `cannot open …` in the ledger and `no rule reads 'x' here` in the
+survey.
+
+**A roadmap number cannot be given twice.** `tests/hygiene.sh` reads the
+retired numbers off the roadmap's opening note, `Retired so far: …`, refuses
+a heading that reuses one, and refuses a commit that takes an item off the
+page without adding its number to the list. Two new `ok` lines, and the note
+is refused if the sentence is not in the one shape the check reads.
+
 **A numbered list with blank lines between its items is one list.** The
 seven properties on the languages page were seven lists, each numbered 1;
 they are 1 to 7. And a caption line reaches its block by one rule on the

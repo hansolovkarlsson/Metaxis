@@ -59,6 +59,16 @@
 #           commit being prepared is the one that moves it -- say so with
 #           SETTLED='N' (numbers, space-separated) on the make line.
 #
+#   reused  a number given twice (docs/POSTMORTEM.md 29). The page's gaps
+#           cannot show what was retired, because an item settled the same
+#           afternoon leaves no gap in any commit, so the roadmap's opening
+#           note carries the list as one sentence, `Retired so far: 4, 7
+#           and 9.`, and this reads it. No `## N ·` heading may have an N
+#           on that list, and every N that was a heading at HEAD and is not
+#           one now must be on it, which is what keeps the list complete.
+#           A note the sentence cannot be read from is refused, the way a
+#           page with no headings is.
+#
 # A citation is one of the four spellings the tree uses -- ROADMAP N,
 # ROADMAP.md N, docs/ROADMAP.md N, and the link [ROADMAP.md](ROADMAP.md) N --
 # and nothing looser: "item 4 of the roadmap as it then stood" is prose about
@@ -103,14 +113,28 @@
 # rather than running anything.
 #
 # A message on the page is fixed text around placeholders, and the check knows
-# four shapes of placeholder: a quoted span opened at the start or after a
+# five shapes of placeholder: a quoted span opened at the start or after a
 # space ('x', 'f:n', '{~name}'), an ellipsis (… or ...), `f:n` and `file:line`
-# bare, and a run of digits. The fixed pieces between them must stand in one
-# string literal of metaxis/src or metaxis/cmd, in order; a quoted span must
-# be in that literal verbatim unless the literal has a `%` where a value goes.
-# Adjacent literals are joined the way the C compiler joins them, since a long
-# message is written across two lines. Cells that list several messages with
-# `·` between them are several messages.
+# bare, a run of digits, and a directive name after a space (`@mode`), which
+# the source fills in from a variable. The fixed pieces between them must
+# stand in one string literal of metaxis/src or metaxis/cmd, in order; a
+# quoted span must be in that literal verbatim unless the literal has a `%`
+# where a value goes. Adjacent literals are joined the way the C compiler
+# joins them, since a long message is written across two lines. Cells that
+# list several messages with `·` between them are several messages.
+#
+# The other pages quote messages too, in sentences rather than cells, with
+# nothing marking which backticks are messages (docs/COMPLETED.md, "The
+# messages the pages quote outside the errors page"). So outside §10 a
+# backticked span is taken as a message when two words of letters in a row
+# from one of its fixed pieces stand in a source literal, and is then held
+# to the rule above, whole. The window is looser than the rule on purpose:
+# a message with one word gone stale is still recognised by the words beside
+# it. What that cannot see is a message rewritten past recognition, and a
+# code span two of whose words happen to be in a literal is held to a rule
+# it did not sign up for, which has not happened. The pages read are the
+# ones the citation check reads, the dated accounts excepted, and a span
+# that wraps across a line break is one span.
 #
 # What it cannot see: a word the source chooses at run time. `'at' was given
 # 9 and there are 2` is printed from `... and there %s %d`, so the page ends
@@ -264,6 +288,55 @@ if [ -n "$lost" ]; then
 fi
 echo "ok      hygiene.sh: every roadmap item at HEAD is still on the page"
 
+# The retired list, read off the roadmap's opening note. The sentence may
+# wrap, so the page is read as one line and the sentence taken up to its
+# period, in the one shape it is allowed: numbers, commas, one `and`.
+tr '\n' ' ' < docs/ROADMAP.md > "$TMP/roadmap.line" || {
+    echo "FAILED  hygiene.sh: docs/ROADMAP.md could not be read as one line, so"
+    echo "        the retired list cannot be found."
+    exit 1
+}
+retired=$(sed -n -E \
+    's/.*Retired so far: ([0-9]+(, [0-9]+)*( and [0-9]+)?)\..*/\1/p' \
+    "$TMP/roadmap.line" | tr -c '0-9\n' ' ')
+if [ -z "$retired" ]; then
+    echo "FAILED  hygiene.sh: docs/ROADMAP.md's opening note has no sentence of the"
+    echo "        shape 'Retired so far: 4, 7 and 9.' that the reuse check can read."
+    echo "        Without the list a retired number can be given again in silence."
+    exit 1
+fi
+retired=" $(printf '%s ' $retired)"
+
+reused=$(grep -E '^## [0-9]+ ·' docs/ROADMAP.md |
+    awk -v retired="$retired" '{ if (index(retired, " " $2 " ")) print }') || {
+    echo "FAILED  hygiene.sh: the reuse scan did not run -- awk exited $?."
+    exit 1
+}
+if [ -n "$reused" ]; then
+    echo "FAILED  hygiene.sh: a roadmap heading uses a number the note has retired."
+    echo "        A number is for life: the next free one is after the highest"
+    echo "        ever used, on the page or on the list. Retired:$retired"
+    echo "$reused" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: no roadmap heading reuses a retired number"
+
+unlisted=$(echo "$headpage" |
+    awk -v ok="$ok" -v retired="$retired" '
+        /^## [0-9]+ ·/ { n = $2
+          if (index(ok, " " n " ") == 0 && index(retired, " " n " ") == 0) print }') || {
+    echo "FAILED  hygiene.sh: the retired-list scan did not run -- awk exited $?."
+    exit 1
+}
+if [ -n "$unlisted" ]; then
+    echo "FAILED  hygiene.sh: a roadmap item left the page and its number is not on"
+    echo "        the note's retired list. Add it to 'Retired so far:' in the same"
+    echo "        commit, so the number is never given again."
+    echo "$unlisted" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: every roadmap item that left the page is on the retired list"
+
 # --- 3: the prose rule. Described at the head of the file.
 pages=$(echo "$tracked" | grep -E '\.md$' | grep -v -E '^docs/work-journal/')
 if [ -z "$pages" ]; then
@@ -296,9 +369,18 @@ fi
 echo "ok      hygiene.sh: no em dash in general prose"
 
 # --- 4: the errors page against the source. Described at the head of the file.
+# The pages read beside it are the ones the citation check reads: every
+# tracked Markdown file but the dated accounts, and the reference is not
+# listed twice.
+claims=$(echo "$pages" | grep -v -E '^docs/(POSTMORTEM|CHANGELOG|REFERENCE)\.md$')
+if [ -z "$claims" ]; then
+    echo "FAILED  hygiene.sh: the message scan found no page to read beside the"
+    echo "        reference, which cannot be right."
+    exit 1
+fi
 unmatched=$(LC_ALL=C awk -v q="'" '
     FNR == 1 { incomment = 0; pendingline = 0 }
-    FILENAME != "docs/REFERENCE.md" {
+    FILENAME ~ /[.]c$/ {
         line = $0; n = length(line); i = 1
         join = (pendingline && line ~ /^[ \t]*"/); pendingline = 0
         while (i <= n) {
@@ -326,10 +408,12 @@ unmatched=$(LC_ALL=C awk -v q="'" '
         }
         next
     }
-    /^## 10 / { insec = 1; next }
-    /^## 11 / { insec = 0 }
-    !insec || !/^\| `/ { next }
-    {
+    FNR == 1 { insec = 0; fenced = 0; carry = "" }
+    /^```/ { fenced = !fenced; next }
+    fenced { next }
+    FILENAME == "docs/REFERENCE.md" && /^## 10 / { insec = 1; next }
+    FILENAME == "docs/REFERENCE.md" && /^## 11 / { insec = 0 }
+    insec && /^\| `/ {
         cell = substr($0, 3); j = index(cell, " | "); if (j) cell = substr(cell, 1, j - 1)
         m = split(cell, parts, " · ")
         for (p = 1; p <= m; p++) {
@@ -339,8 +423,48 @@ unmatched=$(LC_ALL=C awk -v q="'" '
             nmsg++
             if (!found(msg)) print msg
         }
+        next
     }
-    function found(msg,    n, i, c, nf, nq, k, s, l, pos, j, ok, prev) {
+    insec { next }
+    {
+        # Outside the errors page a span is a message when two words in a
+        # row of one of its fixed pieces, cut at the same placeholders, stand
+        # in a source literal. Then the whole span is held to the same rule.
+        # The window is looser than the rule on purpose: a message with one
+        # word gone stale is still recognised by the words beside it, and
+        # then fails. Two words of letters, long enough together to be nobody
+        # else; the quoted string of a directive is not a word of letters,
+        # which keeps `@separator "\n" indent` out although a hint prints it.
+        # (No apostrophe in these comments: sh would read it as the end of
+        # the program.)
+        # A span that wraps is carried into the next line with one space
+        # where the break was; the end of a paragraph drops it.
+        rest = $0
+        if (carry != "" && $0 != "") { sub(/^[ \t]+/, "", rest); rest = carry " " rest }
+        carry = ""
+        while ((a = index(rest, "\140")) > 0) {   # \140 is a backtick, which sh would pair
+            rest = substr(rest, a + 1); b = index(rest, "\140")
+            if (!b) { carry = "\140" rest; break }
+            span = substr(rest, 1, b - 1); rest = substr(rest, b + 1)
+            if (span == "" || !quotes(span)) continue
+            nout++
+            if (!found(span)) print FILENAME ":" FNR ": " span
+        }
+    }
+    function quotes(msg,    nf, j, l, nw, w, pair) {
+        nf = cut(msg)
+        for (j = 1; j <= nf; j++) {
+            nw = split(frag[j], words, " ")
+            for (w = 1; w < nw; w++) {
+                if (words[w] !~ /^[A-Za-z]+[,.:;]?$/ || words[w + 1] !~ /^[A-Za-z]+[,.:;]?$/) continue
+                pair = words[w] " " words[w + 1]
+                if (length(pair) < 10) continue
+                for (l = 1; l <= nlit; l++) if (index(lit[l], pair)) return 1
+            }
+        }
+        return 0
+    }
+    function cut(msg,    n, i, c, nf, k, s, prev) {
         n = length(msg); nf = 0; nq = 0; s = ""; prev = " "
         for (i = 1; i <= n; i++) {
             c = substr(msg, i, 1)
@@ -352,9 +476,14 @@ unmatched=$(LC_ALL=C awk -v q="'" '
             if (substr(msg, i, 3) == "f:n") { frag[++nf] = s; s = ""; i += 2; prev = "n"; continue }
             if (substr(msg, i, 9) == "file:line") { frag[++nf] = s; s = ""; i += 8; prev = "e"; continue }
             if (c ~ /[0-9]/) { frag[++nf] = s; s = ""; while (substr(msg, i + 1, 1) ~ /[0-9]/) i++; prev = "0"; continue }
+            if (c == "@" && prev == " " && substr(msg, i + 1, 1) ~ /[a-z]/) { frag[++nf] = s; s = ""; while (substr(msg, i + 1, 1) ~ /[a-z]/) i++; prev = "@"; continue }
             s = s c; prev = c
         }
         frag[++nf] = s
+        return nf
+    }
+    function found(msg,    nf, k, l, pos, j, ok) {
+        nf = cut(msg)
         for (l = 1; l <= nlit; l++) {
             pos = 1; ok = 1
             for (j = 1; j <= nf; j++) {
@@ -371,24 +500,28 @@ unmatched=$(LC_ALL=C awk -v q="'" '
     END {
         if (nlit == 0) { print "NONE: the scan found no string literal in the source"; exit 1 }
         if (nmsg == 0) { print "NONE: the scan found no message on the errors page"; exit 1 }
-        print "COUNT " nmsg
+        if (nout == 0) { print "NONE: the scan found no message quoted outside the errors page"; exit 1 }
+        print "COUNT " nmsg " " nout
     }
-' metaxis/src/*.c metaxis/cmd/mx.c docs/REFERENCE.md) || {
+' metaxis/src/*.c metaxis/cmd/mx.c docs/REFERENCE.md $claims) || {
     echo "FAILED  hygiene.sh: the errors-page scan did not run -- awk exited $?."
     echo "$unmatched" | sed 's/^/        /'
     exit 1
 }
-nmsg=$(echo "$unmatched" | sed -n 's/^COUNT //p')
+nmsg=$(echo "$unmatched" | sed -n 's/^COUNT \([0-9]*\) .*/\1/p')
+nout=$(echo "$unmatched" | sed -n 's/^COUNT [0-9]* //p')
 unmatched=$(echo "$unmatched" | grep -v '^COUNT ')
 if [ -n "$unmatched" ]; then
-    echo "FAILED  hygiene.sh: docs/REFERENCE.md 10 quotes a message the source does not print."
-    echo "        Each line below is a backticked message on the errors page whose"
-    echo "        fixed text is in no string literal of metaxis/. Check the line"
-    echo "        that prints it and make the page verbatim, with … where a value goes."
-    echo "$unmatched" | sed 's/^/            /'
+    echo "FAILED  hygiene.sh: a page quotes a message the source does not print."
+    echo "        Each line below is a backticked message, on the errors page or"
+    echo "        elsewhere with its file and line, whose fixed text is in no string"
+    echo "        literal of metaxis/. Check the line that prints it and make the"
+    echo "        page verbatim, with … where a value goes."
+    printf '%s\n' "$unmatched" | sed 's/^/            /'
     exit 1
 fi
 echo "ok      hygiene.sh: every message the errors page quotes is one the source prints ($nmsg)"
+echo "ok      hygiene.sh: every message quoted outside the errors page is one too ($nout)"
 
 
 # Where it stands. Two lines right, one wrong, and the wrong one is not an error.

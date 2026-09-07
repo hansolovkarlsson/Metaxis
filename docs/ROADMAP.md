@@ -16,9 +16,11 @@ and not by how much is known. The last entry is the best worked out and the
 least asked for, which is why it is last. **A number is for life**: an item
 that lands keeps its number in [COMPLETED.md](COMPLETED.md)'s prose and the
 number is not used again, so a citation stays right for as long as the item
-is open. Retired so far: 4, 7, 9 and 10, and 9 never reached a commit as a
-heading, which is how it came to be used twice on 2026-09-06
-([POSTMORTEM.md](POSTMORTEM.md) 29).
+is open. Retired so far: 4, 7, 9, 10, 12 and 13. That sentence is read by
+`tests/hygiene.sh`, which refuses a heading that reuses a number on it and a
+heading that leaves the page without joining it, so it keeps this shape. 9
+never reached a commit as a heading, which is how it came to be used twice on
+2026-09-06 ([POSTMORTEM.md](POSTMORTEM.md) 29).
 
 ---
 
@@ -346,37 +348,6 @@ and `#include` over a small C source, with `tests/cpp.sh` compiling what comes
 out and running it, which is how every stage has been pinned. The order above
 is the order to build in, and the store is the only piece that is a decision
 rather than work.
-
-## 12 · The reuse check POSTMORTEM 29 names
-
-**What breaks today without it.** Nothing in the tree, which is the point:
-a number given twice is invisible to `tests/hygiene.sh`, whose citation
-check reads the page's headings and asks only that a cited number is one of
-them. 9 was given twice on 2026-09-06, the second time after the note above
-said a number is for life, and no check said so
-([POSTMORTEM.md](POSTMORTEM.md) 29).
-
-**What would have to be true for it to land.** Two greps beside the
-lost-item check: every `## N ·` on the page has an N that is not in the
-note's retired list, and every N that was a heading at HEAD and is not one
-now is in that list. The list is read off the note above, so the note keeps
-its shape, `Retired so far: …`, and a note the check cannot read is refused
-the way a page with no headings is.
-
-## 13 · The messages the reference quotes outside §10
-
-**What breaks today without it.** Hygiene's fourth check reads §10 of
-[REFERENCE.md](REFERENCE.md) and nothing else. §3.1, §3.3, §3.6 and §3.11
-quote messages too, and so does [COMPLETED.md](COMPLETED.md); a message
-that changes in the source goes stale on those pages in silence, which is
-what §10 did until 2026-09-06 ([POSTMORTEM.md](POSTMORTEM.md) 24).
-
-**What would have to be true for it to land.** A decision about which
-backticks are messages. In §10 every cell is one; elsewhere a span is a
-message, a directive, a filename or a hole, with nothing marking which.
-Either the pages adopt a marking, or the check takes a span as a message
-when it contains one of the source's fixed texts, the loose rule the
-errors check already uses for a `%` span.
 
 ---
 

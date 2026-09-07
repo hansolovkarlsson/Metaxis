@@ -9,6 +9,109 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## The messages the pages quote outside the errors page, held to the source
+
+`tests/hygiene.sh`'s fourth check read §10 of [REFERENCE.md](REFERENCE.md) and
+nothing else, and §3 quotes the same messages in sentences, as do §4, §6, §7,
+§8, this ledger, the roadmap and the survey. A message that changed in the
+source went stale on every one of those in silence, which is what §10 did
+until 2026-09-06. **Every backticked span on a page that is a message is now
+one the source prints**, and it was roadmap item 13 for a day.
+
+**The decision was which backticks are messages.** In §10 every cell is one;
+elsewhere a span is a message, a directive, a filename, a pattern or a hole,
+with nothing marking which, and the item offered two ways: the pages adopt a
+marking, or the check decides. It decides, and the rule is deliberately looser
+than the one it then applies: a span is a message when **two words of letters
+in a row**, from one of its fixed pieces, stand in a source literal; then the
+whole span is held to §10's rule, fixed pieces in one literal in order. The
+looseness is the point. A message with one word gone stale is still recognised
+by the words beside it and then fails, where a rule that recognised a message
+by matching it whole would let a stale one un-recognise itself, which is what
+the first draft did. The first draft's other mistake was to look for the
+source's fixed texts on the page rather than the page's on the source: a
+message the page shortens with an ellipsis has a piece the source's piece runs
+past.
+
+**What the rule keeps out, and what it let through.** Two words of letters,
+because the one hint in the source that spells a directive,
+`@separator "\n" indent`, made every page quoting that directive a message
+until the quoted string stopped counting as a word. A directive name after a
+space is the fifth placeholder shape, since `trailing text after @mode` is
+printed through `%s` and the pages quote the filled-in form. A span that
+wraps across a line break is one span, joined with one space; two of the
+reference's messages wrap. And 62 spans across four pages are messages by
+the rule, three of them in this entry, every one read and every one a
+message; two were wrong. This
+ledger had written the open message with the word *path* where the tool prints
+the path, and the survey the no-rule message with a bare *X* for the token,
+both schematic where the tool prints a value, and both now spell the
+placeholder the way §10 does, `cannot open …` and `no rule reads 'x' here`.
+The first thing the check caught unplanted was the draft of this paragraph,
+which quoted the two wrong spellings in backticks, as the entry for the
+roadmap check below had been caught by its own draft.
+
+**What it cannot see** is a message rewritten past recognition, no two words
+surviving, and a code span two of whose words are in a literal by chance
+would be held to a rule it did not sign up for. Neither has happened, and the
+second fails loudly when it does. The check's own program cannot contain an
+apostrophe: `sh` reads one as the end of the awk text, and the first two
+drafts of its comments had one each.
+
+Proved on a one-word plant in §4.2, named with its line; on one letter of a
+wrapped message, named at the line the span closes on; on a copy whose
+classifier says nothing is a message, refused as an empty scan; and on a copy
+with the awk broken, refused with its exit code.
+
+Verified at 16 examples, 85 error cases and nine check scripts: 202 `ok`
+lines where there were 201.
+
+## The reuse check: a roadmap number is never given twice
+
+`tests/hygiene.sh`'s roadmap check has a third half, and it states the rule
+the page had only written down: **no `## N ·` heading on the roadmap has a
+number the page has retired, and every number that was a heading at HEAD and
+is not one now is on the retired list.** [POSTMORTEM.md](POSTMORTEM.md) 29
+asked for both after 9 was given twice on 2026-09-06, the second time after the
+rule was the rule; it was roadmap item 12 for a day.
+
+**The list lives where the rule is stated.** The roadmap's gaps cannot say what
+was retired, because an item settled the same afternoon leaves no gap in any
+commit, which is exactly how 9 came back. So the opening note carries the list
+as one sentence, `Retired so far: 4, 7, 9, 10 and 12.`, and the check reads
+that sentence and nothing else: the page joined into one line, the sentence
+taken up to its period, in the one shape it is allowed, numbers, commas and one
+`and`. A note the sentence cannot be read from is refused, the way a page with
+no headings is, and the note as it stood before this, which ran the list into
+the next clause with a comma, was the first thing refused.
+
+**The second half makes the list maintain itself.** An item that leaves the
+page must join the list in the same commit, or the commit fails with the
+heading named. It runs after the lost-item check, so a departure is first
+asked whether it was meant, `SETTLED='N'`, and then whether it was recorded.
+The two questions now have the same answer at the same moment, and the
+make-line variable is the one that could go: the list is the tree's own
+record of intent, where `SETTLED` is a word said once at the desk. It stays
+until somebody wants it gone.
+
+**What it can and cannot see.** A number reused after it is on the list is
+caught, with the heading. A number retired without ever reaching HEAD, which is
+what 9 did, is caught only if whoever retires it writes it down, which is the
+rule the note now states beside the list. And a number never used at all is
+not the check's business: the next free number is one past the highest on the
+page or on the list, and that arithmetic is left to the reader.
+
+Proved on the note in its old shape, refused; on a planted `## 4 ·`, named; on
+item 12's own heading taken off the page under `SETTLED=12` with the list
+unchanged, named, and then with 12 on the list, passed; and on four copies of
+the script with one command broken each, the `sed` that finds the sentence, the
+`tr` that joins the page, and each of the two `awk` scans, every one failing
+with its own message. That order, fault first and fix second, is the habit
+[POSTMORTEM.md](POSTMORTEM.md) 32 asked for.
+
+Verified at 16 examples, 85 error cases and nine check scripts: 201 `ok`
+lines where there were 199, one per half.
+
 ## The pages' copies of files, compared to the files
 
 ```
@@ -74,7 +177,7 @@ time, so the `at` message and `cannot open` end on the page with an
 ellipsis.
 
 **Its first run found three cells wrong**, all confirmed against the line
-that prints them: `cannot open path` takes the path, the `at` message
+that prints them: `cannot open …` takes the path, the `at` message
 assembles its verb, and four `trailing text after` spellings were one
 literal with the directive's name filled in, printed by six directives where
 the page listed four. It was proved on the defect before it was trusted: an
