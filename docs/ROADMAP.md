@@ -277,6 +277,78 @@ is obviously right:
 Nothing has picked one, and nothing should until a second grammar wants the
 same thing: one instance is a fact and two are a pattern.
 
+## 11 · A C preprocessor, and the store the internal language would need
+
+**Hans, 2026-09-06:** *something I'd like to put on the roadmap is to create a
+C-preprocessor, which most likely will require some expansion on the internal
+language in Metaxis.*
+
+A preprocessor is C→C, line-directed, with everything that is not a directive
+passed through, which is text mode's shape exactly: the file declares C's
+identifiers, strings and comments as classes so that a `#define` inside a
+string is never seen, and a rule fires on each directive. What the rules
+would then have to do is the list of what the tool cannot do today, in the
+order a preprocessor meets it:
+
+- **`#define NAME body`, and `NAME` on a later line.** A rule sees its own
+  pattern and nothing else (property 1 on [languages.md](languages.md), and
+  the whole of [direction.md](direction.md)'s table). A collection is
+  write-only and filled in after the whole body, so it cannot say what `NAME`
+  meant *at the line where it appears*, and order is the point: a macro
+  defined below its use is not expanded. This is the store
+  [direction.md](direction.md)'s "The likely shape" sketches as `remember`
+  and `recall`, written and read at expansion time in body order, and this
+  is its first customer with a name. That page also says why it is built
+  last: it is the one change that compromises rule locality, and two `@use`d
+  files writing one key is the problem `override` answered for words.
+- **`#define F(x) body`.** A rule declared by the body. Every rule today comes
+  from the header, so either the internal language can declare a rule at
+  expansion time, or the store holds the parameter list and body and one
+  fixed rule, `n:name "(" [ a ]* sep "," ")"`, substitutes by hand with
+  `replace` over whole tokens. The second needs no new mechanic beyond the
+  store and is where to start.
+- **Rescanning.** Expanded text is expanded again until nothing changes. Text
+  mode already expands a hole's text in its turn, 64 deep (REFERENCE §7), so
+  this comes free where the substitution is emitted through a hole, and the
+  depth cap is the recursion guard `#define X X` needs.
+- **`#if`, `#ifdef`, `#else`, `#endif`.** Conditional inclusion is a rule with
+  a `stmts` or `text` hole per arm and a code template that emits one of them,
+  which the code template can do today; `defined(X)` is a read of the store,
+  and the constant expression is what `examples/calc.mx` already evaluates.
+  What it cannot do is skip a *directive* inside the arm not taken, since the
+  arm's text is expanded in its turn, so an arm's `#define` would still fire.
+  That wants the arm's text passed through unexpanded, which is a class hole
+  today and would need to be a text hole that is not expanded.
+- **`#include`.** A file's text into a hole. Nothing in a template reads a
+  file; `@use` reads directives and nothing else. A builtin `read(path)` is
+  the smallest shape and the first time the output depends on something
+  outside the `.mx` file, which `notation.md`'s "What it costs" would have to
+  say.
+- **`#` and `##`.** Stringizing is `"\"" + x + "\""`; pasting is `a + b` and
+  a rescan. Both exist.
+
+**What breaks today without it.** Nothing in the tree: no example wants a
+preprocessor, and the C the stages read has none. What it would buy is the
+customer that items 1 and 3 lack: both stop at a wall wanting a symbol table,
+and neither is a strong enough reason to build one. A preprocessor is the
+smallest real program whose *entire* job is that table, with no types and no
+scopes to argue about, so it is the cleanest place to find out what the store
+costs rule locality before Pascal's `writeln` asks the same question with
+types attached. If it is taken it is stage 6 in the table above: C in, C out,
+and the mechanic it drives is the store.
+
+**What would have to be true for it to land.** The store first, as
+[direction.md](direction.md) shapes it: `remember(key, text)` a statement
+beside `contribute`, `recall(key)` an expression, both in body order, and a
+decision about two used files writing one key. Then a text-mode file,
+`examples/cpp.mx`, that reads object-like and function-like macros, `#ifdef`
+and `#include` over a small C source, with `tests/cpp.sh` compiling what comes
+out and running it, which is how every stage has been pinned. The order above
+is the order to build in, and the store is the only piece that is a decision
+rather than work.
+
+---
+
 ## 5 · Source maps
 
 The output has no way back to the line that produced it, so an error from a
