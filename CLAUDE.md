@@ -25,8 +25,9 @@ read as the thing it is declaring.
 
 `make`, `make check` (`make test` is the same target), `make record`,
 `make clean`. `make check` runs every example against the `.out` recorded beside
-it, then the nine scripts in `tests/`: `errors.sh`, `hygiene.sh`, `docs.sh`,
-`pascal.sh`, `asm.sh`, `python.sh`, `basic.sh`, `island.sh` and `scale.sh`. Six
+it, then the ten scripts in `tests/`: `errors.sh`, `hygiene.sh`, `docs.sh`,
+`pascal.sh`, `asm.sh`, `python.sh`, `basic.sh`, `island.sh`, `cpp.sh` and
+`scale.sh`. Seven
 of them **run what they produced** rather than diffing it, which is how a wrong
 answer is caught and not merely a changed one; `hygiene.sh` also checks properties of the tree,
 `docs.sh` runs every `$ mx …` transcript in `docs/` against what it claims to

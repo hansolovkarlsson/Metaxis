@@ -98,6 +98,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [python.mx](examples/python.mx) | Python in, C out: stage 3, and a block that is an **indentation**. `@separator "\n" indent` gives the lexer a stack of columns and a `block` hole reads what it emits: the one delimiter in the notation that is not a string, because an indent is not text anybody wrote. Its body is real Python, and `tests/python.sh` runs it under `python3` as well as compiling the C, so the two answers can be compared |
 | [basic.mx](examples/basic.mx) | BASIC in, C out: stage 4, and a source that **declares nothing**. A line number is the left operand of its statement, `FOR` and `NEXT` are two statements the way BASIC means them, and the type of a variable is the sigil on its name. The declarations C wants first are the aggregate of every line below, and the LET and FOR that meet a name `contribute` its declaration to a collection that leads the output; `tests/basic.sh` compiles the result with nothing supplied but `main` |
 | [island.mx](examples/island.mx) | stage 5: **C in, C out, over a file not written for it.** The rules in [lib/island.mx](lib/island.mx) turn one `fprintf` shape into a call and insert its definition, and leave everything else alone; `tests/island.sh` points them at `metaxis/cmd/mx.c` itself, compiles what comes out against the tool's own objects, and runs it. A third rule renames a variable and leaves `outpath`, a string and a comment alone, because the file declares C's tokens as classes and the scan moves by them; a fourth puts text after a hole over a nested call, which is right because the file declares C's brackets. Text mode was an island grammar all along |
+| [cpp.mx](examples/cpp.mx) | stage 6, begun: **a C preprocessor in three text-mode rules.** `#define` remembers a body under a name, `#undef` forgets it, and a rule led by a class hole fires on every identifier and emits what is remembered or the identifier itself. It is the first customer of the store, REFERENCE §8.5, the one mechanism by which a rule's output depends on a rule that ran before it; `tests/cpp.sh` compiles what comes out and compares it with the C compiler's own preprocessor. Object-like macros only so far, and the file's note says what is not there yet |
 | [poem.mx](examples/poem.mx) | `@mode text`: prose in, HTML out |
 | [reserved.mx](examples/reserved.mx) | every character Metaxis writes a directive with, declared as an operator by a directive: `@`, `=>`, `.`, `:`, `<`, `>`, `"`, `{`, `}` |
 | [use.mx](examples/use.mx) | `@use`, taking its arithmetic from [lib/arith.mx](lib/arith.mx) and keeping its own comment and separator, a diamond through [lib/vector.mx](lib/vector.mx), and an `override` of one of arith's rules |
@@ -176,17 +177,20 @@ metaxis/cmd/mx.c       mx [-o out] [-b backend] [-t] [-g] file.mx
 lib/                     files meant to be @use'd
 examples/                .mx beside the .out it must still produce
 tests/errors.sh          what a file gets told when it is wrong
-tests/hygiene.sh         five properties: every run goes through limit.sh, a
+tests/hygiene.sh         six properties: every run goes through limit.sh, a
                          roadmap number cited anywhere resolves and is never
                          given twice, no em dash in prose, every message a
-                         page quotes is one the source prints, and what a
-                         string template cannot do, run
+                         page quotes is one the source prints, what a
+                         string template cannot do, run, and a text hole
+                         expanded once
 tests/docs.sh            every transcript in docs/ run, and every quoted file compared
 tests/pascal.sh          Pascal in, C out, compiled and run -- the number is the test
 tests/basic.sh           BASIC in, C out, compiled and run
 tests/island.sh          mx.c rewritten in text mode, compiled and run
 tests/asm.sh             C in, arm64 out, assembled and run on a CPU
 tests/python.sh          Python in, C out -- and the same text run as Python too
+tests/cpp.sh             C preprocessed in text mode, compiled and run -- and cc's own
+                         preprocessor run on the same text as the oracle
 tests/scale.sh           one input large enough for a quadratic to show
 tests/limit.sh           a wall-clock limit, so a hang is reported and not waited on
 .github/workflows/       make check, on Linux and macOS, on every push

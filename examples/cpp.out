@@ -1,0 +1,12 @@
+#include <stdio.h>
+
+
+int main(void)
+{
+    int limit = 10;
+    printf("limit=%d step=%d total=%d\n", limit, 3, (10 * 3));
+    printf("LIMIT is not a macro inside a string\n");
+    int STEP = 7;                 /* an ordinary variable now, STEP being undefined */
+    printf("%d\n", STEP + 10);
+    return 0;
+}

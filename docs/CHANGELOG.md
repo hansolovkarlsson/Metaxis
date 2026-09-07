@@ -10,6 +10,12 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**`examples/cpp.mx`: a C preprocessor in three text-mode rules, stage 6
+begun.** Object-like macros: `#define` remembers, `#undef` forgets, and a
+rule on every identifier recalls. `tests/cpp.sh` compiles what comes out,
+runs the same body through the C compiler's own preprocessor, and holds the
+two programs to the same three lines. `make check` runs ten scripts now.
+
 **Under `@mode text` a rule may begin with a class hole.** `x:name => { … }`
 fires on every identifier; it needs no level and no word after it, and is
 tried after every word-led rule at that position, in declaration order. A

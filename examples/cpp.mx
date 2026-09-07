@@ -1,0 +1,72 @@
+; cpp.mx -- a C preprocessor, in text mode. Stage 6, the first cut.
+;
+; C in, C out, and the mechanic it drives is the store (REFERENCE §8.5).
+; A preprocessor is the smallest real program whose entire job is a symbol
+; table: `#define` puts a name in it and every later line is read against
+; it, in order, so a macro defined below its use is not expanded. That is
+; exactly what a rule could not do before 2026-09-07 -- a rule saw its own
+; pattern and nothing else -- and what `remember` and `recall` are for.
+;
+; Three rules. `#define NAME body` remembers the body under the name and
+; emits nothing, so the line goes; `#undef NAME` forgets it; and a rule led
+; by a class hole, `x:name`, fires on every identifier in the file and emits
+; either what is remembered under it or the identifier itself. The four
+; classes are C's, as in lib/island.mx, so that a macro name inside a string,
+; a character literal or a comment is a token the scan passes over and never
+; a name the third rule sees; the three brackets keep a hole over `(a, b)`
+; whole.
+;
+; What this cut does and does not do, said plainly. A body is expanded when
+; it is defined, because a hole's text is expanded in its turn: `TOTAL`
+; below is remembered as `(10 * 3)`, where cpp would keep `(LIMIT * STEP)`
+; and expand it at each use. The two agree unless a macro the body names is
+; redefined between the definition and a use, which this file does not do;
+; the plan for the item makes it use-time in a later step. A directive wants
+; exactly one space after its word and before its body, because text mode
+; matches a word byte for byte; `#  define` and a tab do not read. There are
+; no function-like macros, no `#ifdef`, no `#include "file"`, no `#` or
+; `##` yet; each is a later step and each is a rule, not a change to the
+; tool. `#include <stdio.h>` is not a directive this file knows, so it goes
+; through whole, which is right: the output is C for a compiler that has a
+; preprocessor of its own.
+;
+; tests/cpp.sh runs the body below through this file and compiles what comes
+; out, and runs the same body through the C compiler directly, whose own
+; preprocessor is the oracle: the two programs must print the same three
+; lines, and the first must contain no `#define`, no `#undef` and no macro
+; name outside the one string that mentions one.
+
+@mode text
+
+@token name    "[A-Za-z_][A-Za-z0-9_]*"
+@token string  "\"([^\"\\\\]|\\\\.)*\""
+@token char    "'([^'\\\\]|\\\\.)*'"
+@token comment "/\\*([^*]|\\*+[^*/])*\\*+/"
+
+@bracket "(" ")"
+@bracket "[" "]"
+@bracket "{" "}"
+
+@syntax "#define " n:name " " b "\n" => { remember("def:" + n, b) }
+@syntax "#undef " n:name "\n"        => { forget("def:" + n) }
+
+@syntax x:name => { if known("def:" + x) { emit recall("def:" + x) } else { emit x } }
+
+@end
+#include <stdio.h>
+
+#define LIMIT 10
+#define STEP 3
+#define TOTAL (LIMIT * STEP)
+#define GREETING "limit=%d step=%d total=%d\n"
+
+int main(void)
+{
+    int limit = LIMIT;
+    printf(GREETING, limit, STEP, TOTAL);
+    printf("LIMIT is not a macro inside a string\n");
+#undef STEP
+    int STEP = 7;                 /* an ordinary variable now, STEP being undefined */
+    printf("%d\n", STEP + LIMIT);
+    return 0;
+}

@@ -39,6 +39,7 @@ on introducing new mechanics and test them out properly.*
 | **3 · done** | Python | C | a language whose blocks are indentation |
 | **4 · done** | BASIC | C | a source that declares nothing: the head of the output is determined by its body |
 | **5 · done** | C | C | a real file, not one written to fit: the tool rewriting its own front end |
+| **6 · begun 2026-09-07** | C | C | a directive that changes what the lines after it mean: the store, and a preprocessor as its customer (item 11) |
 
 Stage 2 landed on 2026-09-05 as `examples/asm.mx` and `tests/asm.sh`. **The
 output side generalises**, which was the question: a rule's value became *the
@@ -311,9 +312,14 @@ the decision went to a flat store with the last write winning, for the
 reason collections took. Before it, a rehearsal found that a text hole was
 expanded at every candidate stop the matcher tried, so a `#define` inside an
 arm would have been remembered once per candidate; that is fixed and is
-[POSTMORTEM.md](POSTMORTEM.md) 35. What is left is the preprocessor itself,
-in the order above, and a text-mode rule that may begin with a class hole,
-which a bare `NAME` on a later line is.
+[POSTMORTEM.md](POSTMORTEM.md) 35. A text-mode rule may begin with a class
+hole, which a bare `NAME` on a later line is, and `examples/cpp.mx` with
+`tests/cpp.sh` reads object-like macros and holds the result to the C
+compiler's own preprocessor: the first two bullets above, with the body
+expanded at definition rather than at use. What is left is the rest of the
+list, in order: use-time expansion through a template that re-enters text
+mode, function-like macros, a hole bound to its source unexpanded, the
+conditionals, `#include "file"`, and the two operators.
 
 ---
 

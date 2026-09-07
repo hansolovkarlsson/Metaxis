@@ -77,9 +77,12 @@ source. The table carries whole messages now and its comment says why.
 **Verified at:** `make check` green at 207 `ok` lines with `errors.sh` at
 91 cases, five of them the store's; REFERENCE §8.5 new, §8.3, §10 and the
 index extended; the tutorial's statement table at seven rows. The store's
-first customer with a compiled and run test is the preprocessor, two steps
-on in the plan; until it lands the store's runs are the example above and
-the rehearsals in `scratch/cpp/`.
+first customer with a compiled and run test landed the same day, two
+commits on: `examples/cpp.mx`, three rules that preprocess object-like
+macros, and `tests/cpp.sh`, which compiles the result and holds it to what
+the C compiler's own preprocessor makes of the same body. That is stage 6
+begun and not done; the item stays on the roadmap until the preprocessor
+reads what the item lists.
 
 ## The wrapped line: between a bracket and its match, a newline is whitespace
 
