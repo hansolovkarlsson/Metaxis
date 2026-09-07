@@ -876,7 +876,13 @@ else is copied through unchanged.
   running on to whatever `|` appears later in the file. `examples/poem.mx` pins
   it, and [POSTMORTEM.md](POSTMORTEM.md) 4 says what it cost to find.
 - **A hole's text is expanded in its turn**, so `**a //slanted// claim**` nests.
-  Depth is capped at 64 (`a text rule expands into itself`).
+  Depth is capped at 64 (`a text rule expands into itself`). It is expanded
+  **once, after the whole rule has matched**: the search binds source text at
+  every stop it tries, and only the winning binding is expanded, so a rule
+  nested in the hole fires for the match and for none of the candidates the
+  search rejected. Until 2026-09-07 it fired once per candidate, which a
+  `contribute` or a `fresh` inside it could see
+  ([POSTMORTEM.md](POSTMORTEM.md) 35).
 - If a rule's pattern does not complete, nothing is consumed and the next rule is
   tried; if none matches, one character is copied and the scan moves on.
 - A comment declared with `@comment` is removed. **A comment that is alone on

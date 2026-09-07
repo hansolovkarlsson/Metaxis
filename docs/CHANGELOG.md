@@ -10,6 +10,12 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**A text hole is expanded once, after its rule has matched.** A rule nested
+inside the hole used to fire once for every stop the search tried, so a
+`contribute` or a `fresh` in it ran for candidates that were then rejected:
+two contributions came out as six. Recorded outputs are unchanged; fresh
+names in a nested text rule now count 1, 2, 3.
+
 **A call wrapped onto a second line reads.** Between a declared bracket and
 its match the lexer treats a newline as whitespace: no separator, and no
 indent or dedent measured. `@bracket` is read by expression mode now, and

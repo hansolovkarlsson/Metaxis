@@ -12,6 +12,52 @@ Newest first.
 
 ---
 
+## 35 · A side effect that ran once per candidate the search rejected, hidden by deduplication
+
+**Issue.** Text mode's matcher tries a hole at every stop in turn and lets
+the rest of the pattern decide. Each candidate was expanded on the spot, so
+a rule nested in the hole ran once per stop tried, and what it did stayed
+done when that stop was rejected. Two `!` inside `[ ]`, each contributing a
+fresh name, put six lines in the collection, and the fresh counter stood at
+8 after three names. Every example in the tree passed.
+
+**Root cause.** Expansion was done as part of matching, where it is not
+needed: nothing in the matcher reads a binding's value, so the expansion
+could have waited for the match. It was written that way because matching
+and expanding were one step and a template's only product was its text, so
+running one early cost nothing but time. The two things that gave a template
+an effect beyond its text, `fresh` and `contribute`, were each placed against
+expression mode's customers, and nobody asked where a text-mode template
+runs. The defect was invisible for a reason that reads as a virtue: a
+collection keeps one copy of each distinct text, so the six copies of the
+same declaration collapsed to one, and no example put a fresh name in a
+contribution.
+
+**What found it.** A rehearsal for a different item. Roadmap 11's store
+would write a key at expansion time, and a `#define` inside an `#ifdef` arm
+would have written it once per candidate, so the question *when does a
+nested template run* was asked with a file rather than by reading, and the
+file answered in one line of output.
+
+**Solution.** The search binds source text; `text_rule()` expands the
+winning bindings once, after the whole pattern has matched, a turn at a
+time for a list hole and rejoined with the group's join. `tests/hygiene.sh`
+runs the rehearsal file and counts two contributions ending at `t__3`.
+Recorded outputs did not move.
+
+**Learnings.** **A builtin with an effect has to be placed against every
+site that runs a template, not against the one that asked for it.** Both
+effectful builtins were added for expression mode's customers, and text
+mode runs templates in a place expression mode has no analogue for, inside
+a search. The general form: when a mechanism becomes effectful, list the
+places it is invoked and ask of each whether it is invoked exactly once per
+thing it means. And the deduplication lesson stands beside entry 33's: a
+step that discards duplicates also discards the evidence of them, so a
+check on a deduplicating mechanism must count something the mechanism does
+not collapse. Here that was the fresh counter.
+
+---
+
 ## 34 · A citation scan that read a shell redirect as a citation, silent while the number was live
 
 **Issue.** When roadmap item 2 was retired on 2026-09-07 the citation check

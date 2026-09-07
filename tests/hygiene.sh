@@ -1,5 +1,6 @@
 #!/bin/sh
-# hygiene.sh -- the five checks that read the tree instead of running it.
+# hygiene.sh -- the five checks that read the tree instead of running it, and
+# a sixth that runs it once.
 #
 # The last one is the file's original job and most of what is below. The
 # first is the limit guard, added because it is the same kind of check -- a
@@ -168,6 +169,22 @@
 # The numbers are Proto's. `Proto/examples/forms.pro` demonstrates the same two
 # failures against the same expansion, and its comments record #105 and #0 for
 # the second -- the same pair the last line here still prints.
+#
+# ---------------------------------------------------------------------------
+# 6 - a text hole is expanded once, after its rule has matched.
+#
+# Text mode's matcher is a search: a hole tries every stop in turn and the
+# rest of the pattern decides. Until 2026-09-07 each candidate was expanded on
+# the spot, so a rule nested inside the hole fired once per stop the search
+# tried, and everything that rule did stayed done when the stop was rejected.
+# Two `!` inside `[ ]`, each contributing a fresh name, put six lines in the
+# collection. Every example in the tree hid it, because a collection keeps one
+# copy of each distinct text and no example contributed a fresh name. It was
+# found by rehearsing roadmap item 11, whose store would have run a `#define`
+# once per candidate. The check is here because it is a hygiene defect in the
+# literal sense: a template's side effects belong to the match it made and to
+# no other, and the fresh counter is the one place the leak is visible from
+# outside. docs/POSTMORTEM.md 35.
 
 MX="${1:-./bin/mx}"
 CC="${CC:-cc}"
@@ -524,6 +541,37 @@ if [ -n "$unmatched" ]; then
 fi
 echo "ok      hygiene.sh: every message the errors page quotes is one the source prints ($nmsg)"
 echo "ok      hygiene.sh: every message quoted outside the errors page is one too ($nout)"
+
+# --- 6: a text hole is expanded once. Described at the head of the file.
+cat > "$TMP/once.mx" <<'EOF'
+@mode text
+@token name "[A-Za-z_][A-Za-z0-9_]*"
+@syntax "[" b "]" => { emit "<" + b + ">" }
+@syntax "!" => { contribute("c", fresh("t")) }
+@syntax "end" => { emit splice("c") }
+@end
+[ ! ! ] end
+EOF
+once=$(sh tests/limit.sh "$LIMIT" "$MX" "$TMP/once.mx" 2>&1)
+rc=$?
+if [ $rc -ne 0 ]; then
+    echo "FAILED  hygiene.sh: the once file did not expand (exit $rc)"
+    echo "$once" | sed 's/^/        /'
+    exit 1
+fi
+# The `!` fires twice, so the collection holds two names and the second one
+# is t__3, the splice mark having taken 2 from the one counter (REFERENCE
+# §8.2). Six names, ending at t__7, was what every candidate stop the search
+# tried cost before 2026-09-07.
+names=$(echo "$once" | grep -o 't__[0-9]*' | wc -l | tr -d ' ')
+last=$(echo "$once" | grep -o 't__[0-9]*' | tail -1)
+if [ "$names" != 2 ] || [ "$last" != "t__3" ]; then
+    echo "FAILED  hygiene.sh: a rule inside a text hole fired once per candidate stop"
+    echo "        contributions: $names (want 2)   last name: $last (want t__3)"
+    echo "$once" | sed 's/^/            /'
+    exit 1
+fi
+echo "ok      hygiene.sh: a text hole is expanded once, after its rule has matched"
 
 
 # Where it stands. Two lines right, one wrong, and the wrong one is not an error.

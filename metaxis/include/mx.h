@@ -166,6 +166,8 @@ typedef struct {
     int         level;   /* the level of what filled it, or -1 */
     int         terminated; /* what filled it already ends a statement */
     int         islist;  /* it sits inside a repeated group   */
+    int         raw;     /* text mode: holds source not yet expanded (expand.c) */
+    const char *join;    /* text mode: the group's join, to rebuild val after  */
 } Bind;
 
 #define LEVEL_ATOM 1000

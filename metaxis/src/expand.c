@@ -717,6 +717,44 @@ typedef struct {
 static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
                     int append, const char *join);
 
+/* Marks a text hole's binding as source still to be expanded, and keeps the
+   group's join so the joined value can be rebuilt from the expanded turns. */
+static void bind_raw(Bind *b, int nb, const char *name, const char *join)
+{
+    for (int i = 0; i < nb; i++)
+        if (!strcmp(b[i].name, name)) { b[i].raw = 1; b[i].join = join; return; }
+}
+
+/* Expands every raw binding once, after the match. A list hole is expanded a
+   turn at a time and joined again with the group's join, exactly as bind_put
+   joined the sources; every other hole is expanded whole. */
+static int bind_expand(TM *t)
+{
+    for (int i = 0; i < t->nb; i++) {
+        Bind *b = &t->b[i];
+        if (!b->raw) continue;
+        if (b->nitems) {
+            Buf v = {0};
+            for (int j = 0; j < b->nitems; j++) {
+                char *x = text_expand(t->g, b->items[j], strlen(b->items[j]),
+                                      t->depth + 1, t->err);
+                if (!x) return -1;
+                b->items[j] = x;
+                if (j && b->join) buf_str(&v, b->join);
+                buf_str(&v, x);
+            }
+            if (!v.p) buf_str(&v, "");
+            b->val = v.p;
+        } else {
+            char *x = text_expand(t->g, b->val, strlen(b->val), t->depth + 1, t->err);
+            if (!x) return -1;
+            b->val = x;
+        }
+        b->raw = 0;
+    }
+    return 0;
+}
+
 /* The word that closes the rule: the last literal one in its pattern, groups
    looked into. **A hole may not span it.** Without that, `"[[" t "|" u "]]"`
    given `[[here]] and a bar|pipe` lets `t` walk past the `]]` it should have
@@ -824,14 +862,22 @@ static int tm_match(TM *t, Elem *el, int nel, int k, size_t pos, Cont *cont,
        began. Two things end the search: the word that closes the rule, and a
        close bracket with no opener behind it, which belongs to the construct
        around this one. So a hole over `f(x, g(y))` is all of it and not
-       `f(x, g(y)` with the last `)` copied through behind. */
+       `f(x, g(y)` with the last `)` copied through behind.
+
+       What is bound here is the *source*, not its expansion. Until 2026-09-07
+       every candidate was expanded on the spot, and a rule that fired inside
+       a candidate the search then rejected had still run: two `!` inside
+       `[ … ]`, each contributing a fresh name, put six lines in the
+       collection. Nothing in the matcher reads a binding's value, so the
+       match is the same either way, and text_rule() expands the winning
+       binding once, after the whole pattern has matched. */
     int depth = 0;
     for (size_t stop = pos;;) {
         if (depth == 0) {
             Bind *snap = tm_save(t);
-            char *v = text_expand(t->g, t->s + pos, stop - pos, t->depth + 1, t->err);
-            if (!v) return 0;
-            bind_put(t->b, t->nb, e->hole, v, append, join, LEVEL_ATOM, 0);
+            bind_put(t->b, t->nb, e->hole, xstrndup(t->s + pos, stop - pos),
+                     append, join, LEVEL_ATOM, 0);
+            bind_raw(t->b, t->nb, e->hole, join);
             if (tm_match(t, el, nel, k + 1, stop, cont, append, join)) return 1;
             tm_load(t, snap);
             if (t->closer && text_word(t->g, t->s, t->len, stop, t->closer)) break;
@@ -861,6 +907,7 @@ static char *text_rule(Grammar *g, Rule *r, const char *s, size_t len,
 
     if (!tm_match(&t, r->el, r->nel, 0, i, NULL, 0, NULL)) return NULL;
     *end = t.end;
+    if (bind_expand(&t) < 0) return NULL;
 
     if (r->body) return code_eval(g, r, b, nb, err);
 
