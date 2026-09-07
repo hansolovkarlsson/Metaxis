@@ -538,7 +538,10 @@ Read off the elements, not declared:
 
 A pattern that **begins with a hole** is a *led* rule: it continues an
 expression already parsed, and needs a level. One that **begins with a word** is
-a *nud* rule: it starts one, and does not.
+a *nud* rule: it starts one, and does not. Under `@mode text` a pattern that
+begins with a **class** hole is a nud rule too, firing on a token of that
+class where it stands (§7), so its two checks below are made once the header
+has finished and the mode is known.
 
 ### 4.2 What a pattern may not be
 
@@ -547,8 +550,8 @@ a *nud* rule: it starts one, and does not.
 | empty | `a rule needs a pattern` |
 | an empty word `""` | `an empty word matches nothing` |
 | begins with a group | `a rule is found by its first word, so it cannot begin with a group` |
-| begins with a hole, no level | `…is infix or postfix and needs a level` |
-| begins with a hole, second element not a word | `…must have a word after it` |
+| begins with a hole, no level | `…is infix or postfix and needs a level`, unless the hole is a class under `@mode text` (§7) |
+| begins with a hole, second element not a word | `…must have a word after it`, with the same exception |
 | a greedy hole immediately before another hole | `two holes in a row: the first would take everything the second wants` |
 | a `stmts` hole with no word after it | `a 'stmts' hole needs a word after it to stop at` |
 | an empty group | `a group needs something in it` |
@@ -826,6 +829,15 @@ else is copied through unchanged.
 - Only **nud** rules apply, and a led rule is refused: `a rule that begins with
   a hole is infix, and text mode has nothing for it to continue -- it could
   never fire`. Until 2026-09-06 it was accepted and silently never fired.
+- **A rule led by a class hole is a nud rule here**, since 2026-09-07: it
+  fires on a token of that class where the token stands, and needs neither a
+  level nor a word after it. `x:name => { … }` fires on every identifier, which
+  is how a bare macro name on a later line is reached. At a position, every
+  word-led rule is tried first, longest word first as below, and then the
+  class-led rules in declaration order, the first to complete winning: so
+  `n:name "(" [ a ]* sep ", " ")"` declared before `x:name` takes the call and
+  leaves the bare name to it. A rule led by any other kind of hole is still
+  refused, since a text hole would match anywhere.
 - **Matching is a search, not a scan.** A rule takes an alternative, tries the
   whole remainder of its pattern, and puts the cursor and every binding back if
   it fails. That is what groups need: an optional part may or may not be there,

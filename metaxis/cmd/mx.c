@@ -53,7 +53,8 @@ static void dump(Grammar *g)
     printf("\n");
     for (int i = 0; i < g->nrule; i++) {
         Rule *r = &g->rule[i];
-        printf("%-6s    ", r->led ? "infix" : "prefix");
+        /* Under @mode text a rule led by a class hole is a nud rule (§7). */
+        printf("%-6s    ", r->led && g->mode != MODE_TEXT ? "infix" : "prefix");
         show(r->el, r->nel);
         if (r->level >= 0) printf(" [%d%s]", r->level, r->right ? " right" : "");
         if (r->terminated) printf(" terminated");

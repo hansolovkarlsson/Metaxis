@@ -10,6 +10,14 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-07
 
+**Under `@mode text` a rule may begin with a class hole.** `x:name => { … }`
+fires on every identifier; it needs no level and no word after it, and is
+tried after every word-led rule at that position, in declaration order. A
+rule led by any other kind of hole is still refused there. Under expression
+mode nothing changed, except that a class-led rule's two checks are made
+once the header has finished, so that `@mode` may come after the rule.
+`mx -g` prints such a rule as `prefix`.
+
 **The store: `remember(key, text)`, `forget(key)`, `recall(key)` and
 `known(key)`.** A rule writes a key when it fires and a rule that runs later
 reads it, in body order; the last write wins, and `recall` of a key nobody

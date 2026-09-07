@@ -56,6 +56,27 @@ expect "begins with a hole is infix or postfix and needs a level" <<'EOF'
 @syntax a "+" b => "{a}"
 EOF
 
+# A rule led by a class hole is settled at seal, since under @mode text it is
+# a nud rule that fires on a token of that class (REFERENCE §7). Under
+# expression mode it is the infix rule it always was, and the two checks
+# above are made then, with the same words.
+expect "begins with a hole is infix or postfix and needs a level" <<'EOF'
+@token name "[a-z]+"
+@syntax x:name "+" b => "{x}{b}"
+EOF
+
+expect "begins with a hole must have a word after it" <<'EOF'
+@token name "[a-z]+"
+@syntax x:name 50 => "{x}"
+EOF
+
+# And under @mode text a rule led by any other kind of hole still cannot
+# fire, since a text hole would match anywhere.
+expect "text mode has nothing for it to continue -- it could never fire" <<'EOF'
+@mode text
+@syntax a "+" b 60 => "{a}{b}"
+EOF
+
 expect "two holes in a row" <<'EOF'
 @syntax "f" a b 10 => "{a}{b}"
 EOF

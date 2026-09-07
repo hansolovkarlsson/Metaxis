@@ -392,8 +392,9 @@ everything else passed through. Text mode is one. Part one; prior-art.md
 REFERENCE §4.3.
 
 **Led rule.** *Left denotation*: a Pratt rule that continues an expression
-already read. A pattern beginning with a hole; needs a level. REFERENCE
-§4.1, §6.2.
+already read. A pattern beginning with a hole; needs a level. Under
+`@mode text` a pattern beginning with a class hole is a nud rule instead,
+firing on a token of that class. REFERENCE §4.1, §6.2, §7.
 
 **Leftmost-longest.** POSIX's rule for regular expressions: of the matches
 starting at the current position, take the longest. REFERENCE §3.1.

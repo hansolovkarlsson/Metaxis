@@ -61,7 +61,10 @@ operands. Once words are quoted, position says it:
 The Pratt distinction is already in the shape: a pattern that **begins with a
 hole** is a led rule and needs a level; one that **begins with a word** is a nud
 rule and does not. Nobody declares which: it is read off, in
-`header.c:rule_syntax`, in one line.
+`header.c:rule_syntax`, in one line. Text mode has one exception, since
+2026-09-07: a pattern that begins with a **class** hole is a nud rule there,
+firing on a token of that class (REFERENCE §7), because a scan has no left
+operand to continue and a class names a token the scan can stand on.
 
 **`<` and `>` stop being needed.** A hole is a bare name because a word is a
 quoted string, so a pattern's own punctuation no longer comes out of the pool of

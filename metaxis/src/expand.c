@@ -951,6 +951,17 @@ static char *text_expand(Grammar *g, const char *s, size_t len, int depth, char 
                 res = text_rule(g, r, s, len, i, &end, depth, err);
                 if (*err) return NULL;
             }
+        /* Then the rules led by a class hole, in declaration order, the first
+           to complete winning. A word is more specific than a class, so every
+           word-led rule at this position has had its turn first. `x:name`
+           fires on every identifier; `n:name "(" [ a ]* ")"` declared before it
+           takes the call and leaves the bare name to it. */
+        for (int k = 0; k < g->nrule && !res; k++) {
+            Rule *r = &g->rule[k];
+            if (!r->led || r->el[0].hk != K_CLASS) continue;
+            res = text_rule(g, r, s, len, i, &end, depth, err);
+            if (*err) return NULL;
+        }
         if (res) { buf_str(&out, res); i = end; continue; }
         /* Nothing fired: the token, or the character, goes through whole. */
         size_t n = text_tok(g, s, len, i);

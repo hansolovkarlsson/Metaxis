@@ -475,11 +475,18 @@ static int rule_syntax(Grammar *g, D *d, int line)
         derr(d, "a rule is found by its first word, so it cannot begin with a group");
         return -1;
     }
-    if (r.led && r.level < 0) {
+    /* A rule led by a *class* hole is settled at seal, not here: under @mode
+       text it is a nud rule that fires on a token of that class where it
+       stands, `x:name => …` on every identifier, and wants neither a level
+       nor a word after it; under expression mode it is the infix rule it
+       always was and gets both checks then. `@mode` may be written after the
+       rule or in the file that @used it, so the mode is not known yet. */
+    int class_led = r.led && el[0].hk == K_CLASS;
+    if (r.led && !class_led && r.level < 0) {
         derr(d, "a rule that begins with a hole is infix or postfix and needs a level");
         return -1;
     }
-    if (r.led && (nel < 2 || el[1].kind != EL_WORD)) {
+    if (r.led && !class_led && (nel < 2 || el[1].kind != EL_WORD)) {
         derr(d, "a rule that begins with a hole must have a word after it");
         return -1;
     }
@@ -1245,7 +1252,7 @@ int grammar_seal(Grammar *g, char **err)
                rule was accepted and simply never fired -- a rule that reads as
                if it worked, which is the shape of defect seal_check exists to
                refuse. The island rehearsal in the journal is what found it. */
-            if (g->rule[r].led) {
+            if (g->rule[r].led && g->rule[r].el[0].hk != K_CLASS) {
                 *err = xfmt("%s:%d: a rule that begins with a hole is infix, and"
                             " text mode has nothing for it to continue -- it could"
                             " never fire", g->rule[r].file, g->rule[r].line);
@@ -1253,6 +1260,23 @@ int grammar_seal(Grammar *g, char **err)
             }
             if (seal_check(g, &g->rule[r], g->rule[r].el, g->rule[r].nel, err) < 0)
                 return -1;
+        }
+    else
+        for (int r = 0; r < g->nrule; r++) {
+            /* The two checks rule_syntax() defers for a class-led rule, since
+               under expression mode it is an ordinary infix rule. */
+            Rule *q = &g->rule[r];
+            if (!q->led || q->el[0].hk != K_CLASS) continue;
+            if (q->level < 0) {
+                *err = xfmt("%s:%d: a rule that begins with a hole is infix or postfix"
+                            " and needs a level", q->file, q->line);
+                return -1;
+            }
+            if (q->nel < 2 || q->el[1].kind != EL_WORD) {
+                *err = xfmt("%s:%d: a rule that begins with a hole must have a word"
+                            " after it", q->file, q->line);
+                return -1;
+            }
         }
     for (int r = 0; r < g->nrule; r++)
         if (seal_block(g, &g->rule[r], g->rule[r].el, g->rule[r].nel, err) < 0)
