@@ -176,8 +176,11 @@ rewrite is still worth having, the row says so.*
 
 Property 7: any language can be written, and the examples deliberately write
 several. What the suite has compiled, assembled or run: **C**, in every test that
-compiles what it produced, **arm64 assembly** on a CPU, and **Python**'s own
-source through `python3` beside the C made from it. What the examples write and the recorded `.out`
+compiles what it produced, **arm64 assembly** on a CPU, and **Python** twice
+over: `examples/python.mx`'s own source through `python3` beside the C made
+from it, and, since 2026-09-08, Python the tool **wrote**, which
+`tests/mini.sh` runs against the C written from the same body by a second
+backend file. What the examples write and the recorded `.out`
 checks: **JavaScript**, **HTML**, **Pascal**, and Proto's **Solveig**.
 
 What decides an output is what the source carries, and the rows above say

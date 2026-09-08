@@ -70,8 +70,8 @@ shell, and names the property each verdict rests on.
 
 ```
 make            # bin/mx
-make check      # every example against the .out beside it, then the ten
-                # scripts in tests/ -- seven of which run what they produced,
+make check      # every example against the .out beside it, then the eleven
+                # scripts in tests/ -- eight of which run what they produced,
                 # one of which runs the transcripts in docs/, one of which is
                 # large enough to show a quadratic, and one of which is every
                 # message a wrong file gets told
@@ -105,6 +105,7 @@ Each is run by `make check` against the `.out` recorded beside it.
 | [use.mx](examples/use.mx) | `@use`, taking its arithmetic from [lib/arith.mx](lib/arith.mx) and keeping its own comment and separator, a diamond through [lib/vector.mx](lib/vector.mx), and an `override` of one of arith's rules |
 | [code.mx](examples/code.mx) | `=> { … }`: `examples/pascal.mx` rule for rule, with the parenthesis noise gone, the literal translated, and the C indented. `diff examples/pascal.out examples/code.out` is the point, and `tests/pascal.sh` compiles this one and runs it |
 | [backends.mx](examples/backends.mx) | **one grammar, two targets.** Every rule is written once; where the two agree there is one template and no tag, and where they differ a second `=> … as tight` sits under the first. `mx` and `mx -b tight` emit different C from the same file, both compile, and both print `7 2`: the difference is what it reads like, not what it means |
+| [mini.mx](examples/mini.mx) | **one grammar, two languages out.** The grammar is [lib/mini.mx](lib/mini.mx) and it names no target: every rule emits by calling one procedure. What those procedures are is a file of its own, [lib/mini-c.mx](lib/mini-c.mx) or [lib/mini-python.mx](lib/mini-python.mx), and which one is used is decided on the command line, `mx -u lib/mini.mx -u lib/mini-python.mx -i prog.mini`. `backends.mx` above varies a template by tag inside the rule, which is the shape for a small difference; this varies the whole set by file, which is the shape for a second language. `tests/mini.sh` compiles the C, runs the Python, and requires the same three numbers from both |
 | [groups.mx](examples/groups.mx) | `[ … ]`, `[ … ]*` and `[ … ]+`: an argument list of any arity in one rule, and an optional part |
 | [hygiene.mx](examples/hygiene.mx) | `{~t}`, and the half of hygiene it cannot close. `tests/hygiene.sh` compiles the C it emits and runs it, so the remaining wrong answer is a number |
 
@@ -216,6 +217,8 @@ tests/asm.sh             C in, arm64 out, assembled and run on a CPU
 tests/python.sh          Python in, C out -- and the same text run as Python too
 tests/cpp.sh             C preprocessed in text mode, compiled and run -- and cc's own
                          preprocessor run on the same text as the oracle
+tests/mini.sh            one grammar, two backend files: C compiled and run, and
+                         Python run, and the two must print the same numbers
 tests/scale.sh           one input large enough for a quadratic to show
 tests/limit.sh           a wall-clock limit, so a hang is reported and not waited on
 .github/workflows/       make check, on Linux and macOS, on every push

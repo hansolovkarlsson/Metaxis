@@ -288,8 +288,8 @@ rule about quoting; the difference is only what happens to text no rule claimed.
 
 ```
 make            # bin/mx
-make check      # every example against the .out beside it, then the ten
-                # scripts in tests/ -- seven of which run what they produced
+make check      # every example against the .out beside it, then the eleven
+                # scripts in tests/ -- eight of which run what they produced
 make record     # re-record those .out files; read the diff before committing it
 
 bin/mx examples/clike.mx          # to stdout

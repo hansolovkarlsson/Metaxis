@@ -1,0 +1,58 @@
+; mini.mx -- the grammar of a small imperative language, and no target at all.
+;
+; Every rule below emits by calling one procedure and does nothing else. What a
+; construct *is* is in this file; what it is *written as* is in a backend file
+; beside it, lib/mini-c.mx or lib/mini-python.mx, and neither of them is named
+; here. The target is chosen where the file is read rather than where it is
+; written:
+;
+;     mx -u lib/mini.mx -u lib/mini-c.mx      -i prog.mini    ; C
+;     mx -u lib/mini.mx -u lib/mini-python.mx -i prog.mini    ; Python
+;
+; Nothing had to be built for this. `-u` may be given more than once
+; (REFERENCE §9), a rule may call a template that arrived in another file
+; because calls are resolved once the whole header is sealed (§3.8), and a
+; parameter carries its hole's level, so `group(a, 60)` answers inside a
+; backend and each target decides its own brackets. Without that last one the
+; split would be cosmetic: the grammar would be making a decision about C.
+;
+; Two things are deliberately not here, and docs/ROADMAP.md 15 is the entry:
+;
+;   the separator     `=> "\n"` below joins statements with a line break and
+;                     nothing else, and every procedure emits its own
+;                     terminator, C's `;` included. A backend *can* take the
+;                     output separator instead, with `@separator … override`,
+;                     but only if it is named after this file on the command
+;                     line, where a call is order-free. One of the two orders
+;                     working is worse than neither, so the terminator is the
+;                     statement's here.
+;
+;   `terminated`      belongs to a template (§3.4) and there is one template
+;                     per rule here, so it could not vary by target anyway.
+;                     Nothing above needs it, because nothing is joined after
+;                     a statement but a newline.
+;
+; And what this file cannot say: which procedures it requires. A backend that
+; is missing one is `no template called '…'` at the call site, which is a good
+; message and not a contract.
+
+@comment "#" eol
+
+@token number "[0-9]+"
+@token name   "[A-Za-z_][A-Za-z0-9_]*"
+
+@separator ";" => "\n"
+
+@syntax "program" "{" b:stmts "}"           => { program(b) }
+
+@syntax "let" n:name "=" v                  => { let(n, v) }
+@syntax "set" n:name "=" v                  => { set(n, v) }
+@syntax "print" x                           => { print(x) }
+@syntax "if" c "then" "{" b:stmts "}"       => { iff(c, b) }
+@syntax "while" c "do" "{" b:stmts "}"      => { loop(c, b) }
+
+@syntax a "<" b   40                        => { lt(a, b) }
+@syntax a "+" b   60                        => { add(a, b) }
+@syntax a "-" b   60                        => { sub(a, b) }
+@syntax a "*" b   70                        => { mul(a, b) }
+@syntax "(" e ")" 95                        => { paren(e) }

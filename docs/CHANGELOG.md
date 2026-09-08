@@ -8,6 +8,20 @@ the reasoning behind any of it, belongs in [the journal](work-journal/) instead.
 Metaxis has not been released, so there are no version numbers yet. Entries
 are grouped by the day the work happened, newest first.
 
+## 2026-09-08
+
+**One grammar read out to two languages, with the target named from outside
+the file.** `lib/mini.mx` is a small imperative language whose every rule
+emits by calling one procedure and which names no target; `lib/mini-c.mx` and
+`lib/mini-python.mx` are those procedures, and which one is used is decided on
+the command line, `mx -u lib/mini.mx -u lib/mini-python.mx -i prog.mini`.
+Nothing in the tool changed: `-u` already took more than one file, a call
+already resolved after the whole header was sealed, and a parameter already
+carried its hole's level, so a backend brackets its own way. `examples/mini.mx`
+is the whole file and `tests/mini.sh` compiles the C, runs the Python under
+`python3`, and requires the same three numbers from both. It is the eleventh
+script in `tests/`.
+
 ## 2026-09-07
 
 **`tests/hygiene.sh` checks the number of scripts a page states.** Two pages

@@ -245,7 +245,7 @@ five do not, and say so.**
 
 ---
 
-### 3.1 A second backend without a second grammar: *has a customer, and it is measured*
+### 3.1 A second backend without a second grammar: **built 2026-09-06, and answered a second way 2026-09-08**
 
 **Who has it.** Ohm separates a grammar from its semantics entirely, so one
 grammar carries many semantics objects. ANTLR + StringTemplate makes the same
@@ -265,8 +265,8 @@ nothing else, so `pascal.mx` cannot be used: it has a body. And `override`
 re-declares the *whole rule*, pattern included (§3.10), so overriding a
 template means writing the pattern again, which is the thing being avoided.
 
-**The shape that fits.** A rule carrying more than one template, tagged, with
-one chosen at the command line:
+**The shape this section proposed, and it landed on 2026-09-06.** A rule
+carrying more than one template, tagged, with one chosen at the command line:
 
 ```
 @syntax a "*" b 70
@@ -274,18 +274,31 @@ one chosen at the command line:
     => { emit group(a, 70) + " * " + group(b, 71) }   as tight
 ```
 
-`mx -b tight examples/pascal.mx`. The tag namespace is new; nothing else is,
-and the flag letters here are illustrative: `-b` and `-t` below are simply two
-that `mx` has not spent.
+`mx -b tight`, and [COMPLETED.md](COMPLETED.md)'s "`as`: a rule may emit more
+than once" is the entry. `examples/backends.mx` is the customer it was earned
+against: one grammar, two targets, both C, both compiled and both run.
 
-**And it makes the demonstration better rather than worse.** Today the
-argument for the code template is a diff between two files that a reader has to
-be told are identical; then it is a diff between two runs of one file, and the
-identity is a fact rather than a claim.
+**And the falsification this section wrote for itself was met.** It said the
+idea would fail if the two template sets wanted different *patterns* often
+enough that the sharing is a lie. Measured rule by rule, 36 of 39 patterns are
+shared exactly and three are not, `as` chooses a template and never a pattern,
+and the two Pascal files therefore do **not** merge: the 272 lines are still
+duplicated. What is left of that is a decision rather than a mechanic and it is
+[ROADMAP.md](ROADMAP.md) 3.
 
-**What would falsify it.** If the two template sets turn out to want different
-*patterns* often enough that the sharing is a lie. This tree is the evidence
-against that: they want the same patterns exactly, and the file says so.
+**And the claim quoted above is answered a second way, which cost nothing.**
+`-u` may be given more than once, so a grammar file whose every template is a
+single procedure call can be read with a backend file that is nothing but
+`@template` procedures, and the target is then a **file named on the command
+line** rather than a tag inside the rules. That is retargeting by swapping in a
+view, in the sense the quotation means it, and it works today because template
+calls resolve after the whole header is sealed and a parameter carries its
+hole's level. `lib/mini.mx` with `lib/mini-c.mx` and `lib/mini-python.mx` is
+that, landed on 2026-09-08: one grammar, C out of one backend and Python out of
+the other, `tests/mini.sh` compiling the first and running the second and
+requiring the same three numbers from both. What it lacks is one flag that
+cannot cross the file boundary and any way for a grammar to say which
+procedures it requires, which is [ROADMAP.md](ROADMAP.md) 15.
 
 ---
 
@@ -520,7 +533,7 @@ precedence and a plausible-looking wrong one when they do not.
 
 ---
 
-### 3.7 A parse trace: *serves the one thing the tool is good at*
+### 3.7 A parse trace: **built 2026-09-05**
 
 **Who has it.** The Ohm editor visualises the parse interactively as you type
 the grammar. ANTLR has `-trace` and a parse-tree GUI. Spoofax gives you an
@@ -528,9 +541,9 @@ editor for the language as you define it. Every tool in family B treats
 *watching the parse* as part of the job, because a grammar under construction
 is the normal state.
 
-**Metaxis has `-g`**, which prints the grammar the header built, and nothing
-that prints the parse it attempted. When expression mode says `no rule reads
-'X' here`, it does not say which candidates were tried, in what order, or how
+**Metaxis had `-g`**, which prints the grammar the header built, and nothing
+that printed the parse it attempted. When expression mode says `no rule reads
+'X' here`, it did not say which candidates were tried, in what order, or how
 far each got before the cursor was restored. Candidates ordered longest-first
 with backtracking is precisely the mechanism that cannot be reasoned about from
 the outside.
@@ -541,8 +554,10 @@ claims the tool is for**: *"inventing notations, quickly"*, the loop from
 level or a candidate order is the commonest way that loop stalls, and there is
 currently no instrument for it.
 
-**Cost: small.** `mx -t` printing each candidate tried, its pattern, and the
-token it failed on, indented by depth. **And it is two features for one price**:
+**Cost: small, and it was.** `mx -t` prints each candidate tried, its pattern,
+and the token it failed on, indented by depth, and it landed the same day this
+page was written; [COMPLETED.md](COMPLETED.md)'s "`mx -t`, and the quadratic it
+found" is the entry. **It was two features for one price**:
 [ROADMAP.md](ROADMAP.md)'s backtracking budget wanted a *measurement* of expression-mode
 backtracking before a budget is picked, and says so: *"a budget picked without
 one is a number somebody made up."* A trace with a counter is that instrument.
@@ -642,13 +657,16 @@ rule. **Nothing here was a roadmap item when this was written**; the four with
 customers were the ones that could become one without inventing a reason, and
 on 2026-09-06 the fourth did, after a translator, stage 4's BASIC, asked for
 it. It was the roadmap's item 4 for one day and landed the same evening; it is
-[COMPLETED.md](COMPLETED.md)'s *Collections* entry.
+[COMPLETED.md](COMPLETED.md)'s *Collections* entry. **Five of the eight have
+since been built or half built**, and the rows say which and when: a survey
+that keeps its scores after the work is done is a survey that has stopped being
+read.
 
 | | | customer | cost |
 | --- | --- | --- | --- |
-| 1 | **A second backend without a second grammar**, `mx -b` (§3.1) | `examples/code.mx`, 272 duplicated lines, stated in the file | small: a tag namespace and a flag |
-| 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and it was the measurement that settled the backtracking budget | small |
-| 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/` | small, and the spelling is the decision |
+| 1 | **A second backend without a second grammar**, `mx -b` (§3.1) | `examples/code.mx`, 272 duplicated lines, stated in the file. **Built 2026-09-06**, see [COMPLETED.md](COMPLETED.md); the duplication it was aimed at survives it, [ROADMAP.md](ROADMAP.md) 3 | small: a tag namespace and a flag, and that is what it was |
+| 2 | **A parse trace, `mx -t`** (§3.7) | grammar-under-construction; and it was the measurement that settled the backtracking budget. **Built 2026-09-05**, see [COMPLETED.md](COMPLETED.md) | small |
+| 3 | **Layout-aware splicing** (§3.5) | every nested output in `examples/`. **Half built 2026-09-05** as `indent(s, n)`, which is the manual half | small, and the spelling is the decision |
 | 4 | **Collection attributes** (§3.4) | `#include <stdio.h>` emitted unconditionally in `code.mx`; the declarations `examples/basic.mx` could not write. **Built 2026-09-06**, see [COMPLETED.md](COMPLETED.md) | medium: a second pass over the output, which the tool now has |
 | 5 | **An island rule** (§3.3) | since 2026-09-06 `tests/island.sh`, which rewrites the tool's own front end; text mode had the rule, and the three things it lacked landed the same day, [COMPLETED.md](COMPLETED.md)'s *The island rule, finished*** | medium, and it can make grammar bugs silent |
 | 6 | **A guard on a rule** (§3.2) | thin: two candidates, neither strong | very small; the backtracking is already there |

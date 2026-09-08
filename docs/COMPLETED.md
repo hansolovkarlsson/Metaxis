@@ -9,6 +9,73 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## One grammar, two languages out: a backend in a file of its own
+
+**Nothing in the tool was built for this.** `lib/mini.mx` is the grammar of a
+small imperative language and names no target: each of its eleven rules emits
+by calling one procedure. `lib/mini-c.mx` and `lib/mini-python.mx` are those
+eleven procedures written twice, and the target is chosen where the file is
+read rather than where it is written:
+
+```
+mx -u lib/mini.mx -u lib/mini-c.mx      -i prog.mini
+mx -u lib/mini.mx -u lib/mini-python.mx -i prog.mini
+```
+
+**Three properties that already existed hold it up**, and none of them was
+built for it. `-u` may be given more than once (REFERENCE §9). A rule may call
+a template that arrived in another file, because calls are resolved once the
+whole header is sealed, so the order of the flags does not change the answer
+(§3.8). And a parameter carries its hole's level, so `group(a, 60)` answers
+inside a procedure and **each backend brackets its own way**: without that one
+the grammar would be making a decision about C and the split would be
+cosmetic.
+
+**This is `as` and `mx -b` the other way up, not a second copy of it.** A tag
+varies a template inside the rule, so the two targets are read side by side
+and the second costs only the rules that differ: the shape for a small
+difference, which `examples/backends.mx` is, one grammar and two ways of
+writing the same C. A file varies the whole set at once, so a second target
+edits no rule and the grammar becomes an artifact of its own: the shape for a
+second **language**. The cost is the mirror of the gain, and it is real: where
+the tag form writes only the delta, the file form writes every procedure again,
+eleven here of which four are identical in both files.
+
+**`examples/mini.mx` is the whole file and `tests/mini.sh` is the oracle.** The
+example uses the grammar and the C backend from inside itself, so `make check`
+diffs what it expands to against `examples/mini.out` the way it does every
+other example. A diff cannot say whether the C is C, so the script compiles it
+and runs it, takes the same body as a file of its own, reads it out to Python,
+runs that under `python3`, and requires the two programs to print the same
+three numbers. The numbers are pinned as well, so two targets agreeing on a
+wrong answer is caught too.
+
+**And four ways the demonstration could have been hollow rather than wrong**,
+each checked: the two-file form must give the C that the whole file gives byte
+for byte, which is what lets one body stand for both runs; the C must have a
+`main` and the Python must have none and no semicolon, so a backend that
+quietly emitted the other's text is caught; `mx -g -u lib/mini.mx` must
+**fail**, because a grammar that can be sealed on its own has a target in it;
+and both backends must define the same eleven names, which is the contract the
+tool does not state.
+
+**What it does not close is [ROADMAP.md](ROADMAP.md) 15**, which is the same
+item this earned its way onto the page under. `terminated` belongs to a
+template and there is one template per rule here, so it cannot vary by target;
+`lib/mini.mx` sidesteps that by joining statements with a newline and having
+every procedure emit its own terminator, C's `;` included, and says so in its
+own note. A backend can take the output separator instead, with
+`@separator … override`, but only if it is named **after** the grammar on the
+command line, where a call is order-free: one of two orders working is worse
+than neither. And nothing lets a grammar say which procedures it requires: a
+missing one is `no template called '…'` at the call site, a good message and
+not a contract.
+
+**Why it is here rather than on the roadmap as an idea.** The shape was
+reachable by any reader of the reference the day `-u` landed, and pinned by
+nothing. That is a weaker position than an unbuilt feature: an unbuilt feature
+cannot break.
+
 ## The script count, checked instead of corrected
 
 `tests/hygiene.sh`'s seventh check. It reads the number of test scripts off
@@ -18,7 +85,7 @@ and every page stating that number must agree with it.
 **Why it is a count and not a property.** Check 1, the limit guard, answered
 [POSTMORTEM.md](POSTMORTEM.md) 16 by stating a property instead of counting,
 which is the better move wherever it is available. It is not available for
-this one: "the ten scripts in `tests/`" is a number a reader wants, and the
+this one: "the eleven scripts in `tests/`" is a number a reader wants, and the
 only way to make it uncheckable is to delete it. So it is checked. 38 is why
 that distinction had to be drawn: `README.md` and `notation.md` had gone
 stale on this number **twice**, three weeks apart, and both times the response

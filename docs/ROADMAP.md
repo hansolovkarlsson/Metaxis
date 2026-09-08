@@ -254,6 +254,128 @@ same thing: one instance is a fact and two are a pattern.
 
 ---
 
+## 15 · A backend in a file of its own, and the flag that cannot follow it
+
+**Hans, 2026-09-08:** *now when we have a new toolchain option on the CLI, we
+could load one file defining the backend using procedures, and a second for
+syntax using the procedures as templates, and basically solving the "prior art"
+segment 3.1.*
+
+**The shape runs today and nothing had to be built for it**, which is why this
+item is about what it is missing rather than about how to reach it. `-u` may be
+given more than once (REFERENCE §9), so a set of rules splits into a grammar
+file whose every template is a single call and a backend file that is nothing
+but `@template` procedures. The target is then a file named on the command
+line, and the grammar names none:
+
+```
+lib/mini.mx          @syntax "let" n:name "=" v  => { let(n, v) }
+                     @syntax "print" x           => { print(x) }
+
+lib/mini-c.mx        @template let(n, v)  { emit "int " + n + " = " + v + ";" }
+                     @template print(x)   { emit "printf(\"%d\\n\", " + x + ");" }
+
+lib/mini-python.mx   @template let(n, v)  { emit n + " = " + v }
+                     @template print(x)   { emit "print(" + x + ")" }
+
+mx -u lib/mini.mx -u lib/mini-c.mx      -i prog.mini
+mx -u lib/mini.mx -u lib/mini-python.mx -i prog.mini
+```
+
+**Landed on 2026-09-08 as `lib/mini.mx` with `lib/mini-c.mx` and
+`lib/mini-python.mx` beside it**, eleven rules and eleven procedures twice
+over, with `examples/mini.mx` the whole file and `tests/mini.sh` compiling the
+C, running the Python and requiring the same three numbers from both.
+[COMPLETED.md](COMPLETED.md)'s "One grammar, two languages out" is the entry.
+**The item stays open for what that could not close**, which is the two things
+below.
+
+**Three properties already stated hold it up**, and every one of them was built
+for something else:
+
+- **Calls resolve once the whole header is sealed** (§3.8), so a rule may call
+  a template that arrived in another file, and the order the `-u` flags are
+  written in does not change the answer. Both orders were run. A *directive*
+  is not order-free: a backend that takes the output separator with
+  `@separator … override` must be named after the grammar, or it is
+  `'override', but no separator was declared before it`. One of two orders
+  working is worse than neither, which is why `lib/mini.mx` keeps the
+  separator and every procedure emits its own terminator.
+- **A parameter carries its hole's level**, so `group(a, 60)` and `level(x)`
+  answer inside a procedure (§3.8, §8.3). The **target** decides its own
+  bracketing, and that is what keeps target knowledge out of the grammar file.
+  Without it the split would be cosmetic.
+- **`fresh` is shared with the caller** (§8.2), so a backend procedure can
+  finish a construct the rule started.
+
+**It is not `as` and `mx -b` again.** Those vary a template by tag inside the
+rule, so the two targets are read side by side and a third edits every rule
+that differs: the right shape for a small delta, which is what
+`examples/backends.mx` is. This varies by **file**, chosen at the command line,
+so a new target edits no rule at all and the grammar becomes an artifact that
+can be versioned on its own. That is the claim
+[prior-art.md](prior-art.md) §3.1 surveys, and it is answered by the flag
+rather than by the tag namespace it expected.
+
+**What is missing is two things, and the first is measured.**
+
+**`terminated` cannot follow the backend.** It belongs to a template and not to
+a rule precisely because one target may brace a branch where another does not
+([COMPLETED.md](COMPLETED.md), "`as`: a rule may emit more than once"). This
+shape has one template per rule, so the flag is the grammar's and every target
+shares it. **The counterexample is `examples/backends.mx`**, which is the tag
+form's own live customer:
+
+```
+@syntax "if" c "then" "{" t:stmts "}"
+    => "if ({c}) {{\n    {t};\n}}" terminated
+    => { emit "if (" + c + ") " + t + ";" } as tight
+```
+
+Those two templates differ in the flag and have to: the first braces the branch
+and so ends a statement, the second writes one statement and its semicolon and
+so does not. **Written as two backend files those two targets could not be
+expressed at all**, because the rule would carry one template and one flag.
+`lib/mini.mx` does not meet this, and the reason is worth stating rather than
+claiming as a property: both of its backends end a block with something that
+ends a statement, a brace in C and an indented suite in Python, so both want
+the same answer. A third backend that wrote an unbraced branch would want the
+other, and there would be nowhere to say so.
+
+Three ways out, and nothing picks one. Let a **procedure** carry the flag and a
+rule inherit it from the last thing it emitted, which is how a `stmts` hole
+already answers `terminated(h)` (§8.3) and so is the shape with a precedent.
+Or keep a tagged `=>` on the handful of rules whose flag differs and let the
+rest go through procedures, which works today and puts target names back into
+the grammar for exactly those rules. Or hold that a backend which disagrees
+about bracing is a second grammar's worth of difference and out of scope here.
+
+**A grammar file cannot say what it requires.** There is no declaration of the
+procedures a set of rules calls, so a grammar cannot be sealed on its own:
+`mx -g -u lib/mini.mx` is `no template called 'program'`, naming the call site,
+which is a good message about a missing thing and not a statement of a
+contract. A backend cannot be checked at all until something calls it, and
+nothing says whether two backends offer the same set. Whether that wants an
+`@expect name(x, y)` or wants nothing depends on whether backends are ever
+written by somebody other than the author of the grammar, and nothing here has
+been.
+
+**And what the demonstration cost, which is the honest half.** Where the tag
+form writes only the rules that differ, the file form writes every procedure
+again: eleven in `lib/mini-c.mx` and eleven in `lib/mini-python.mx`, four of
+them identical. A backend that `@use`d a shared base and overrode what it
+disagreed with would fix that and is not built, because with two backends of
+eleven procedures the duplication is legible and the indirection would not be.
+Item [3](#3--the-three-rules-as-cannot-share) is the same argument one level
+up, and reached the same answer.
+
+**Its neighbour is [3](#3--the-three-rules-as-cannot-share)** and they do not
+overlap. 3 is the three rules whose **patterns** differ, which no template
+mechanism reaches, tag or procedure. This is the templates, and it is the half
+that already works.
+
+---
+
 ## 5 · Source maps
 
 The output has no way back to the line that produced it, so an error from a

@@ -12,6 +12,55 @@ Newest first.
 
 ---
 
+## 39 · A roadmap item whose evidence was deleted, and did not reproduce when it was rebuilt
+
+**Issue.** ROADMAP 15 was written around one defect: that `terminated` belongs
+to a template, so a grammar read out by two backend files cannot let the two
+targets disagree about it. The measurement behind that was a scratch grammar
+with a C backend and a JavaScript one, in a temporary directory, and the
+transcript went into the item. When the shape was then built properly as
+`lib/mini.mx` with `lib/mini-c.mx` and `lib/mini-python.mx`, **the defect did
+not reproduce**: both backends end a block with something that already ends a
+statement, a brace in C and an indented suite in Python, so both want the same
+flag and sharing it costs nothing. The item's central evidence had been
+deleted with the directory that held it, and it was not true of the tree it
+was written into.
+
+**Root cause.** Two things, and the second is the one that generalises. The
+scratch backends were written **to show the seam**, so the JavaScript one
+emitted an unbraced branch, which is the one shape that meets it; a demo built
+to show a thing will show it. And the measurement lived nowhere the suite
+could reach, so nothing could re-run it: an item stays open for longer than the
+session that wrote it, and its evidence has to outlive that session too. This
+is [19](#19--an-example-that-was-written-instead-of-run) one turn on. 19 was a
+transcript written instead of run; this one was run, and then made
+unrepeatable, which reads exactly the same to the next person.
+
+The counterexample was in the tree the whole time, and no search for one
+happened before the scratch files were written. `examples/backends.mx` carries
+two templates for one `if` rule that differ in the flag **and have to**: the
+default braces its branch and so ends a statement, the `tight` one writes a
+single statement and its semicolon and so does not. That is the tag form's own
+live customer, and it says in its own note why the flag belongs to the
+template.
+
+**Solution.** The item now rests on `examples/backends.mx`, which `make check`
+runs, and states plainly that `lib/mini.mx` does **not** meet the seam and
+why, rather than implying that any two backends would. The shape itself landed
+as `examples/mini.mx` and `tests/mini.sh`, so the next claim about it has
+files to be measured against.
+
+**Learnings.** This tree already requires a **live customer** before a
+mechanic counts as earned. The same rule had never been applied to an *item's
+evidence*, which is where it is needed more, because an unbuilt item is
+believed for longer and re-read by somebody who cannot re-derive it. What
+would have caught this: before writing a defect down, look for a file already
+in the tree that exhibits it, and if there is none, land the files that do
+alongside the item. A measurement made on files written for the measurement,
+and then deleted, is a claim and not a measurement.
+
+---
+
 ## 38 · Two pages counting the same thing, a third counting it right, and nothing that could see the disagreement
 
 **Issue.** `README.md` said `make check` runs "the nine scripts in tests/,

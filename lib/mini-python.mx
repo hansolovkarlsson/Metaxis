@@ -1,0 +1,28 @@
+; mini-python.mx -- lib/mini.mx read out as Python. Procedures only, no rule.
+;
+; The same eleven procedures as lib/mini-c.mx, answering differently. Three
+; differences are worth naming, because they are the ones a tag on a template
+; would have had to carry through the grammar:
+;
+;   the head      Python needs no include and no main, so `program` emits its
+;                 body and nothing else, where C wraps it.
+;   a block       a brace in one, a colon and a deeper column in the other.
+;                 `indent(s, n)` writes both.
+;   a declaration `let` and `set` are one thing here and two in C. A backend
+;                 may collapse what the grammar keeps apart; it may not do the
+;                 reverse, which is why the grammar keeps them apart.
+
+@template program(b) { emit b }
+
+@template let(n, v)  { emit n + " = " + v }
+@template set(n, v)  { emit n + " = " + v }
+@template print(x)   { emit "print(" + x + ")" }
+
+@template iff(c, b)  { emit "if " + c + ":\n" + indent(b, 4) }
+@template loop(c, b) { emit "while " + c + ":\n" + indent(b, 4) }
+
+@template lt(a, b)   { emit group(a, 40) + " < " + group(b, 41) }
+@template add(a, b)  { emit group(a, 60) + " + " + group(b, 61) }
+@template sub(a, b)  { emit group(a, 60) + " - " + group(b, 61) }
+@template mul(a, b)  { emit group(a, 70) + " * " + group(b, 71) }
+@template paren(e)   { emit "(" + e + ")" }

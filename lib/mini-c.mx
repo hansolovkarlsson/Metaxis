@@ -1,0 +1,27 @@
+; mini-c.mx -- lib/mini.mx read out as C. Procedures only, no rule.
+;
+; The head of the output is this file's: a program in mini declares no
+; includes and has no main, and C wants both. `program` is where they are put,
+; which is why the grammar has a rule for the whole file rather than leaving
+; the body a run of statements.
+
+@template program(b) {
+    emit "#include <stdio.h>\n\nint main(void)\n{\n" + indent(b, 4)
+       + "\n    return 0;\n}"
+}
+
+@template let(n, v)  { emit "int " + n + " = " + v + ";" }
+@template set(n, v)  { emit n + " = " + v + ";" }
+@template print(x)   { emit "printf(\"%d\\n\", " + x + ");" }
+
+@template iff(c, b)  { emit "if (" + c + ") {\n" + indent(b, 4) + "\n}" }
+@template loop(c, b) { emit "while (" + c + ") {\n" + indent(b, 4) + "\n}" }
+
+; The operands ask their own level and are bracketed only where C needs it,
+; which is the fact that has to reach the backend for the split to be worth
+; anything: the grammar says `a + b` and says nothing about parentheses.
+@template lt(a, b)   { emit group(a, 40) + " < " + group(b, 41) }
+@template add(a, b)  { emit group(a, 60) + " + " + group(b, 61) }
+@template sub(a, b)  { emit group(a, 60) + " - " + group(b, 61) }
+@template mul(a, b)  { emit group(a, 70) + " * " + group(b, 71) }
+@template paren(e)   { emit "(" + e + ")" }

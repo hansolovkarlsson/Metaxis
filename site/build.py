@@ -229,7 +229,7 @@ def render_md(src):
 def examples_page():
     readme = open(os.path.join(ROOT, 'README.md')).read()
     rows = re.findall(r'^\| \[([\w.-]+)\]\(examples/[\w.-]+\) \| (.*) \|$', readme, re.M)
-    out = ['<p class="note">Every file here is run by <code>make check</code> against the output recorded beside it, and five of them are compiled and executed. The descriptions are the README\'s; the sources and outputs are the files in the tree, exactly.</p>']
+    out = ['<p class="note">Every file here is run by <code>make check</code> against the output recorded beside it, and seven of them are compiled and executed. The descriptions are the README\'s; the sources and outputs are the files in the tree, exactly.</p>']
     toc = []
     for name, desc in rows:
         base = name[:-3]

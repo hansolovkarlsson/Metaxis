@@ -1,0 +1,17 @@
+#include <stdio.h>
+
+int main(void)
+{
+    int total = 0;
+    int i = 1;
+    while (i < 6) {
+        int sq = i * i;
+        total = total + sq;
+        if (9 < sq) {
+            printf("%d\n", sq);
+        }
+        i = i + 1;
+    }
+    printf("%d\n", total);
+    return 0;
+}

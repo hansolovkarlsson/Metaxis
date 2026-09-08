@@ -387,7 +387,10 @@ only things besides a rule that can be named.
 - At most **8 parameters**. Declaring the same name twice is refused unless the
   second says `override`, as everything else is (§3.10).
 - `examples/asm.mx` is the customer: one `load` against eight call sites, and
-  `examples/code.mx` is the second: one `subprogram` against two.
+  `examples/code.mx` is the second: one `subprogram` against two. The third is
+  the largest: `lib/mini-c.mx` and `lib/mini-python.mx` are eleven procedures
+  each and no rule at all, called by the eleven rules of `lib/mini.mx`, which
+  names neither of them. §9.1 is what lets a target be chosen there.
 
 ### 3.9 `@fragment name = pattern`
 

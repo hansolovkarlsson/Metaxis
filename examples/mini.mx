@@ -1,0 +1,34 @@
+; mini.mx -- one grammar, two languages out, and the target named from outside.
+;
+; The header is two `@use` lines and no rules of its own: lib/mini.mx is the
+; grammar of the little language below, lib/mini-c.mx says what its eleven
+; constructs are written as in C, and lib/mini-python.mx, which this file does
+; not use, says what they are written as in Python. Reading this file gives the
+; C beside it in examples/mini.out.
+;
+; The same body with the other backend is the point of the pair, and it needs
+; the two-file form, because a file that carries its own body carries its own
+; header with it:
+;
+;     mx -u lib/mini.mx -u lib/mini-python.mx -i prog.mini
+;
+; tests/mini.sh does exactly that: it takes the body below as a file of its
+; own, reads it out to C and to Python, compiles the one, runs the other, and
+; requires the two programs to print the same three numbers. Two targets that
+; agree on a wrong answer would be caught by the numbers being pinned there as
+; well.
+
+@use "../lib/mini.mx"
+@use "../lib/mini-c.mx"
+@end
+program {
+    let total = 0;
+    let i = 1;
+    while i < 6 do {
+        let sq = i * i;
+        set total = total + sq;
+        if 9 < sq then { print sq };
+        set i = i + 1
+    };
+    print total
+}
