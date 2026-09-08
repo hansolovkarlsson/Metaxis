@@ -12,6 +12,48 @@ Newest first.
 
 ---
 
+## 40 · A survey that kept its scores after the work was done
+
+**Issue.** `docs/prior-art.md` scores nine features by *whether anything in
+this tree has asked for them*. On 2026-09-08, three of its sections described
+work already built: §3.1 said `-b` and `-t` were letters `mx` had not spent,
+when both had been spent on 2026-09-06 and 2026-09-05; §3.7 costed `mx -t` as
+a feature to build, on a page written the same day `-t` landed; and three
+shortlist rows were scored as wanted while two of their neighbours carried
+**Built** annotations. It was found by reading the page for an unrelated
+reason, not by anything in the suite.
+
+**Root cause.** The tree already learned that a **number** in prose is a claim
+and built `hygiene.sh`'s seventh check for it
+([38](#38--two-pages-counting-the-same-thing-a-third-counting-it-right-and-nothing-that-could-see-the-disagreement)),
+and it checks that a **citation** resolves. What went stale here is a
+**verdict**: a page's judgement that something is absent. A verdict is prose
+about a state of the world, and nothing here can hold prose to a state of the
+world.
+
+There is a second cause, and it is about how the work is done rather than what
+checks it. Two of the three sections were made false **by the very day they
+were written**: the page was written on 2026-09-05 and `-t` landed on
+2026-09-05. A survey written as a snapshot is correct at the instant it is
+taken and starts decaying immediately, and the ones most likely to decay are
+the entries the survey itself argued hardest for, because those are the ones
+somebody then goes and builds. **The page's best findings rot first.**
+
+**Solution.** All three corrected, each row now carrying the date it landed,
+and the shortlist headed by a line saying five of the eight have since been
+built or half built. [ROADMAP.md](ROADMAP.md) 16 holds the guard, with two
+shapes and the honest note that the cheap one is a reminder and not a check.
+
+**Learnings.** **A check that guards numbers does not guard verdicts**, and
+the tree had quietly assumed the script-count check generalised further than
+it does. What would have caught this: when a roadmap item lands, re-read the
+prior-art section that argued for it, in the same commit. That is one page,
+named by the item itself, and it is the only page whose whole content is
+claims about what is missing. The completed ledger already names the item; the
+survey that asked for it is one hop away and nothing walks that hop.
+
+---
+
 ## 39 · A roadmap item whose evidence was deleted, and did not reproduce when it was rebuilt
 
 **Issue.** ROADMAP 15 was written around one defect: that `terminated` belongs

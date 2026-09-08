@@ -425,6 +425,47 @@ the other can use it.
 
 ---
 
+## 16 · A page's verdict about the tree, gone stale, and nothing that can see it
+
+**Found on 2026-09-08** by reading `prior-art.md` against the tree while
+answering a question about something else. Three of its sections described
+work that was already done:
+
+| | |
+| --- | --- |
+| §3.1 | *"the flag letters here are illustrative: `-b` and `-t` below are simply two that `mx` has not spent"*. Both were spent, on 2026-09-06 and 2026-09-05 |
+| §3.7 | `mx -t` costed as a feature to build, on a page written the same day `-t` landed |
+| §6 | three shortlist rows scored as wanted, two of their neighbours annotated as built |
+
+**The existing guards cannot see it, and the reason is worth stating.**
+`hygiene.sh` checks a **number** in prose against the tree, which is
+[COMPLETED.md](COMPLETED.md)'s script-count entry, and it checks that a
+**citation** resolves. What went stale here is neither: it is a **verdict**,
+a page's judgement that something is absent. A verdict is prose about a state
+of the world, and the tree has no way to hold one to that state.
+
+**Two shapes, and the cost is the whole difference.**
+
+- **A status marker per section, checked against `COMPLETED.md`.** Every
+  `### 3.N` heading carries a built-or-not marker, and a section whose feature
+  is named by a heading in the completed ledger must say so. It needs a
+  mapping from a survey section to a completed entry, written by hand and kept
+  by hand, which is another thing to go stale: a guard whose own input rots is
+  the failure it was built to stop, one level up.
+- **A date per verdict.** Every scored section says when it was scored, and a
+  section whose date predates the newest entry in `COMPLETED.md` is *flagged
+  for reading*, not failed. Cheap, needs no mapping, and catches nothing by
+  itself: it converts a silent staleness into a list of pages to re-read,
+  which is what actually happened today by accident.
+
+**Nothing picks one, and the honest position is that the second is not a
+check.** It is a reminder, and this tree has said elsewhere that a reminder
+is what a check replaces. The page has been corrected and every row now
+carries the date it landed, which buys time and not a guarantee.
+[POSTMORTEM.md](POSTMORTEM.md) 40 is the entry.
+
+---
+
 ## 8 · A conformance suite: for a second engine, when one is wanted
 
 **Hans, 2026-09-06:** *we perhaps need a conformance suite if someone likes
