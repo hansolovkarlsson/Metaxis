@@ -1043,9 +1043,11 @@ handle silently cannot be caught by having no rule for it: having no rule is
 exactly how a file says *pass this through*. Without `refuse` the only
 choices are a wrong answer or a rule that emits something and hopes.
 `lib/cpp.mx` is the customer: everything it does not read passes through for
-the C compiler standing behind it, except `#elif`, which stands *inside* a
-conditional it does read and would otherwise be dropped along with the arm
-holding it, silently and with status 0.
+the C compiler standing behind it, except a `#elif` it cannot read, which
+stands *inside* a conditional it does read and would otherwise be dropped
+along with the arm holding it, silently and with status 0. Since 2026-09-08
+it reads `#elif defined(NAME)` as an arm, so what refuses there is a
+condition of any other shape, and the refusal is the narrower for it.
 
 Using it where a value is wanted is `'refuse' is a statement -- it stops the
 run on a line of its own and has no value to use here`, which is the mistake

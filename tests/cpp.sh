@@ -52,6 +52,7 @@ lim=$(idents LIMIT)
 gone=$(( $(idents TOTAL) + $(idents GREETING) + $(idents A) + $(idents B) \
        + $(idents DOUBLE) + $(idents ADD) + $(idents SEVEN) + $(idents TWICE) \
        + $(idents DEBUG) + $(idents LEVEL) + $(idents MODE) + $(idents NOTDEFINED) \
+       + $(idents NOTEITHER) + $(idents ARM) \
        + $(idents FROM_HEADER) + $(idents STR) + $(idents GLUE) ))
 step=$(idents STEP)
 self=$(idents SELF)
@@ -59,7 +60,7 @@ if [ "$dirs" != 1 ] || [ "$inc" != 1 ] || [ "$lim" != 1 ] || [ "$gone" != 0 ] ||
     echo "FAILED  cpp.sh: the rules did not do what they do to examples/cpp.mx's body"
     echo "        directives left: $dirs (want 1, the include: $inc)"
     echo "        LIMIT as an identifier: $lim (want 1, inside the string)"
-    echo "        TOTAL, GREETING, A, B, the four function-like names and the four conditional ones left: $gone (want 0)"
+    echo "        TOTAL, GREETING, A, B, the four function-like names and the six conditional ones left: $gone (want 0)"
     echo "        STEP left: $step (want 4: the undefined variable, its use, the comment, and TOTAL's body read after the undef)"
     echo "        SELF left: $self (want 2: the variable and its use, the macro having stopped at itself)"
     exit 1
@@ -92,7 +93,7 @@ LIMIT is not a macro inside a string
 70
 5 4
 20 5 7 9
-2 nested
+2 nested third
 103
 5 hello world 10'
 
@@ -158,30 +159,98 @@ case "$msg" in
         exit 1 ;;
 esac
 
-# `#elif` is refused, and this is the one thing these rules refuse rather than
-# pass through. It stands inside a conditional they do read, so the arm holding
-# it is taken or dropped whole: before 2026-09-07 the file below expanded to
-# `int before;` and `int after;` with `int a;` gone, no message and status 0,
-# where cc keeps `int a;`. That is a wrong answer and not an unfinished one,
-# which is why it became a refusal. Both arms are checked, and so is a `#elif`
-# standing outside any conditional.
-printf '#define A 1\nint before;\n#ifdef B\nint b;\n#elif defined(A)\nint a;\n#endif\nint after;\n' > "$TMP/elif.c"
+# `#elif`, read where these rules read it and refused where they do not.
+# Since 2026-09-08 `#elif defined(NAME)` is an arm like any other, and the
+# oracle for it is the compiler's own preprocessor on the same file rather
+# than anything written down here: the chain below has a dead first arm, a
+# true second, a third that must not be reached and an `#else` that must not
+# either; an `#ifndef` whose arms are all false and which has no `#else`; a
+# conditional nested in an arm that is taken and has arms of its own after
+# it, which is the case a bracket balances, a line-based check cannot tell
+# from an own-level one, and a flag not keyed by depth gets wrong in both
+# directions; a `#elif` inside a string, which the string class keeps whole;
+# and `defined(A)` standing in ordinary C, which is not a directive and is
+# left alone with its argument expanded. `-P` drops the line markers, and blank lines are dropped from
+# both sides because neither preprocessor promises the other's.
+cat > "$TMP/elif.c" <<'EOF'
+#define A 1
+#define DEBUG
+int before;
+#ifdef B
+int b;
+#elif defined(A)
+int a;
+#elif defined(DEBUG)
+int d;
+#else
+int e;
+#endif
+#ifndef A
+int na;
+#elif defined(NOPE)
+int nope;
+#endif
+#ifdef A
+int then;
+#ifdef NOPE
+int inner_then;
+#elif defined(DEBUG)
+int inner_elif;
+#else
+int inner_else;
+#endif
+#elif defined(DEBUG)
+int outer_elif;
+#else
+int outer_else;
+#endif
+char *s = "#elif is not a directive in here";
+int x = defined(A);
+int after;
+EOF
+if ! sh tests/limit.sh "$LIMIT" "$MX" -u lib/cpp.mx -i "$TMP/elif.c" > "$TMP/elif.ours" 2> "$TMP/err"; then
+    echo "FAILED  cpp.sh: the #elif chain did not expand"
+    cat "$TMP/err"
+    exit 1
+fi
+"$CC" -E -P "$TMP/elif.c" > "$TMP/elif.cc" || exit 1
+sed '/^$/d' "$TMP/elif.ours" > "$TMP/elif.ours.t"
+sed '/^$/d' "$TMP/elif.cc"   > "$TMP/elif.cc.t"
+if ! diff -u "$TMP/elif.cc.t" "$TMP/elif.ours.t" > "$TMP/diff"; then
+    echo "FAILED  cpp.sh: the #elif chain and cc -E -P disagree"
+    echo "        left: cc -E -P     right: mx -u lib/cpp.mx -i"
+    cat "$TMP/diff"
+    exit 1
+fi
+
+# And the two refusals. A condition these rules do not read stands inside a
+# conditional they do, so the arm holding it would be taken or dropped whole
+# with the condition unread: that is the wrong answer `refuse` was built for
+# on 2026-09-07, and what catches it now is the pattern, since the group's
+# word is `#elif` and not the readable form, so an arm always ends at one.
+# The message names the condition it could not read. A `#elif` outside any
+# conditional has no arm to open and is refused where it stands.
+printf '#define A 1\n#define B 2\n#ifdef X\nint x;\n#elif defined(A) && defined(B)\nint ab;\n#endif\n' > "$TMP/cond.c"
 printf 'int a;\n#elif whatever\n' > "$TMP/stray.c"
-for f in elif stray; do
-    msg=$(sh tests/limit.sh "$LIMIT" "$MX" -u lib/cpp.mx -i "$TMP/$f.c" 2>&1)
+check_refused() {
+    msg=$(sh tests/limit.sh "$LIMIT" "$MX" -u lib/cpp.mx -i "$TMP/$1.c" 2>&1)
     rc=$?
     case "$rc:$msg" in
-        1:*"'#elif' is not a directive these rules read"*) ;;
-        *)  echo "FAILED  cpp.sh: $f.c was not refused"
+        1:*"$2"*) ;;
+        *)  echo "FAILED  cpp.sh: $1.c was not refused"
             echo "        status: $rc"
+            echo "        want:   $2"
             echo "        got:    $msg"
             exit 1 ;;
     esac
-done
+}
+check_refused cond  "'#elif defined(A) && defined(B)' is not a condition these rules read"
+check_refused stray "'#elif' here stands outside any conditional these rules read"
 
 echo "ok      cpp.sh: macros, conditionals, an include, # and ##, and cc's own preprocessor agrees"
 echo "            no directive left but the system include, LIMIT kept inside its string,"
 echo "            and both programs print the same nine lines"
 echo "            and mx -u lib/cpp.mx -i prog.c gives the same bytes, compiles and prints them too,"
-echo "            with #elif refused in an arm and outside one rather than dropped in silence"
+echo "            with an #elif chain that cc -E -P agrees with line for line, and a condition"
+echo "            these rules cannot read refused rather than dropped in silence"
 exit 0

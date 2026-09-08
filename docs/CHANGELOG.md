@@ -10,6 +10,15 @@ are grouped by the day the work happened, newest first.
 
 ## 2026-09-08
 
+**`lib/cpp.mx` reads `#elif defined(NAME)`.** A conditional's arms are a
+repeated group, so `#ifdef` and `#ifndef` take any number of `#elif` arms and
+an optional `#else`, nested, and what was four rules is two. Nothing in the
+tool changed. The refusal narrowed rather than went: a `#elif` whose condition
+these rules cannot read is refused where it stands and the message names the
+condition, and one standing outside any conditional is refused as before.
+`tests/cpp.sh` holds a chain to `cc -E -P` line for line, and the body of
+`examples/cpp.mx` prints the arm its own chain takes.
+
 **One grammar read out to two languages, with the target named from outside
 the file.** `lib/mini.mx` is a small imperative language whose every rule
 emits by calling one procedure and which names no target; `lib/mini-c.mx` and

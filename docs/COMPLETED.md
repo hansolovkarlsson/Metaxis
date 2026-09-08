@@ -9,6 +9,90 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## `#elif` read as an arm: a repeated group where a fixed pair was
+
+**The question that asked for it was about something else.** Could
+`if`/`elsif`/`else`/`endif` be read if the tool had global variables, so that
+a conditional were four ordinary rules assigning and testing a flag rather
+than a bracket over two arms? The variables have been there since 2026-09-07:
+the store is exactly that, and `lib/cpp.mx` already keeps a macro table, a
+`busy:` guard and a depth counter in it. **What a flag cannot reach is text
+mode's pass-through.** A flag changes what a rule that fires emits, and the
+text a dropped arm has to lose is text no rule fires on: suppressing it needs
+a rule that matches every line, and a rule may not be led by a `raw` hole
+(REFERENCE §4.2, §7). What that scheme actually wants is a mute on the
+copier, and a mute that only silences `emit` would be the quiet kind of wrong,
+since a `#define` in the dropped arm would still reach the table. Muting
+properly is a second scanning mode with a list of the rules that keep firing,
+which is the tool learning which of a file's rules are its control flow. That
+is declined here, and [ROADMAP.md](ROADMAP.md) 15 is the same wall.
+
+**What the question did turn up is that the arms never had to be a fixed
+pair.** Groups work in text mode, a hole inside a repeated group is a list a
+code template can loop over, and a hole stops only where the declared brackets
+are balanced. So:
+
+```
+@syntax "#ifdef " n:name "\n" t:raw [ "#elif" c:raw "\n" a:raw ]* [ "#else\n" f:raw ] "#endif\n"
+```
+
+reads any number of arms and an optional `#else`, nested, and the four rules
+that spelled the two shapes of `#ifdef` and `#ifndef` are two. **Nothing in
+the tool was built for it.**
+
+**The group's word is `#elif` and its condition is whatever follows**, and
+that is the whole of what keeps this from reintroducing the bug `refuse` was
+built for on 2026-09-07. Put the readable form in the pattern instead,
+`"#elif defined(" e:name ")\n"`, and a condition the pattern cannot match is
+swallowed by the arm before it and taken or dropped whole with it, silently.
+Written this way an own-level `#elif` always ends the arm before it, whatever
+it says, and is then read or refused. One inside a **nested** conditional is
+not at this level, because the arm's hole may not stop where `#ifdef` and
+`#endif` are unbalanced, so the nested rule reads it in its turn. That
+distinction is the one a check over the arm's text could not make: the
+`@template no_elif` this replaces refused a legal nested `#elif` and had a
+residue it wrote down, a `#elif` after a newline inside a string. Both are
+gone, the second because a declared class makes the scan move by tokens and a
+hole cannot stop inside a string.
+
+**The condition is a rule, and reading it and evaluating it are one act.**
+`defined(NAME)` emits `1` or `0`, but only while a `cond` key is remembered,
+which is the moment an arm is being decided and nothing else, so `defined(x)`
+standing in ordinary C is left as it was found with its argument expanded, the
+way cc leaves it there too. A condition that expands to neither `1` nor `0` is
+what `refuse` now catches, and the message names it, after the `file:line:`
+every refusal carries and which is not repeated here because nothing checks a
+line number written down on a page:
+
+```
+'#elif defined(A) && defined(B)' is not a condition these rules read --
+'defined(NAME)' is the only one -- and it stands inside a conditional they do
+read, so an arm holding it would be taken or dropped whole. Write that arm as
+an '#ifdef' nested in the '#else'.
+```
+
+**And the flag earned its place one level down.** At most one arm is taken, so
+the loop over the arms wants a flag, and a plain key is wrong: a conditional
+inside the arm being expanded runs in the middle of that loop and clobbers it,
+which a probe showed by firing a second true arm as well. It is keyed by a
+depth this file counts, exactly as a macro's arguments already are.
+
+**The oracle is `cc -E -P` on the same file.** `tests/cpp.sh` diffs a chain
+with a dead arm, a true arm, an arm that must not be reached and an `#else`
+that must not either, an `#ifndef` whose arms are all false, a conditional
+nested in an arm with a `#elif` of its own, a `#elif` inside a string, and
+`defined(A)` standing in ordinary C, against what the compiler's own
+preprocessor makes of it. The body of `examples/cpp.mx` gained a four-arm
+chain whose answer both programs print. Three plants confirmed the test fails
+when it should: an arm selected without the flag, and each of the two refusals
+neutered.
+
+**What it still does not read**, in the file's own note: `#elif !defined(X)`,
+and `#elif` over a constant expression, since there is no `#if` over one
+either. A condition standing after the arm that was taken is not read and not
+refused, because cpp does not evaluate it there and the answer is the same
+without it. Verified at `make check` green, 229 `ok` lines, 106 error cases.
+
 ## One grammar, two languages out: a backend in a file of its own
 
 **Nothing in the tool was built for this.** `lib/mini.mx` is the grammar of a
@@ -108,8 +192,8 @@ three pages that then needed an edit. Verified at `make check` green, 227
 
 ## `refuse(text)`: the way out of a text-mode rule that is not `emit`
 
-What a file that refuses says, on a C source with a `#elif` in it, wrapped
-here and on one line there:
+What a file that refuses said on the day this landed, on a C source with a
+`#elif` in it, wrapped here and on one line there:
 
 ```
 mx: lib/cpp.mx:131: '#elif' is not a directive these rules read, and it
@@ -151,6 +235,12 @@ a plain rule catches one standing outside any conditional. Both are pinned in
 `tests/cpp.sh`, and `#elif` inside a string still passes, since a line start
 is what is looked for. Verified at `make check` green, 226 `ok` lines, 106
 error cases.
+
+*That is the day this landed, and the message above is the one it said then.
+On 2026-09-08 `#elif defined(NAME)` became an arm like any other, the
+`@template` went, and what refuses is a condition these rules cannot read.
+The entry at the top of this page has the shape and why the check over the
+arm's text could not stay.*
 
 ## `-u` and `-i`: the grammar a file is read with, named from outside it
 

@@ -201,6 +201,12 @@ one could never fire: a `@template` reads each arm before either is taken,
 and a plain rule catches a `#elif` outside any conditional. Both pinned in
 `tests/cpp.sh`, the three messages in `tests/errors.sh`.
 
+*Written on the day. On 2026-09-08 the `@template` went: a conditional's arms
+became a repeated group, so `#elif defined(NAME)` is an arm and what catches
+an unreadable one is the pattern rather than a check over the arm's text. The
+refusal narrowed and did not go, and neither did the lesson below, which is
+about the list and not about the mechanism.*
+
 **Learnings.** **A retired roadmap item says a list was read, not that the
 thing is finished.** Item 11 was retired with its whole list read, honestly,
 and the page was right. The question "is the CPP basically done, no open

@@ -46,6 +46,8 @@
 #endif
 #ifndef DEBUG
 #define LEVEL 9
+#elif defined(NOTDEFINED)
+#define LEVEL 7
 #endif
 #ifdef NOTDEFINED
 #define LEVEL 8
@@ -53,6 +55,15 @@
 #ifdef DEBUG
 #define MODE "nested"
 #endif
+#endif
+#ifdef NOTDEFINED
+#define ARM "first"
+#elif defined(NOTEITHER)
+#define ARM "second"
+#elif defined(DEBUG)
+#define ARM "third"
+#else
+#define ARM "last"
 #endif
 
 int main(void)
@@ -67,7 +78,7 @@ int main(void)
     int SELF = 4;                 /* a macro that names itself expands once and stops, as cpp stops */
     printf("%d %d\n", A, SELF);   /* the first is 5: its body names a macro defined after it, looked up at use */
     printf("%d %d %d %d\n", DOUBLE(LIMIT), ADD(1, DOUBLE(2)), SEVEN(), TWICE(3));
-    printf("%d %s\n", LEVEL, MODE);   /* 2 nested: the arms taken, the ones not taken never defining anything */
+    printf("%d %s %s\n", LEVEL, MODE, ARM);   /* 2 nested third: the arms taken, the ones not taken never defining anything, and the third of four arms is the first whose condition holds */
     printf("%d\n", helper(TWICE(1)));  /* 103: the function and the constant it adds come from the included file */
     int value = 5;
     printf("%d %s %d\n", GLUE(val, ue), STR(hello world), GLUE(LIM, IT));  /* pasted, quoted, and pasted then expanded */

@@ -20,8 +20,8 @@
 ; a macro's arguments to its parameters through the store and expands the
 ; body; a rule led by a class hole, `x:name`, fires on every identifier
 ; in the file and emits an argument, a macro's body, or the identifier
-; itself, in that order of preference; and `#ifdef`, `#ifndef`, `#else`
-; and `#endif` take one arm and drop the other unread. The four
+; itself, in that order of preference; and `#ifdef`, `#ifndef`, `#elif`,
+; `#else` and `#endif` take one arm and drop the rest unread. The four
 ; classes are C's, as in lib/island.mx, so that a macro name inside a string,
 ; a character literal or a comment is a token the scan passes over and never
 ; a name the third rule sees; the three brackets keep a hole over `(a, b)`
@@ -34,11 +34,15 @@
 ; An argument that forms a call with the text after it, `CALL(F)` for
 ; `#define CALL(f) f(1)`, is not rescanned as a call, where cpp would expand
 ; `F(1)`. A conditional's word ends its line, so `#ifdef X` reads and
-; `#ifdef X /* why */` does not; there is no `#if` over an expression. There
-; is no `#elif` either, and that one is **refused** rather than passed
-; through, for the reason written above the rule that refuses it: everything
+; `#ifdef X /* why */` does not; there is no `#if` over an expression, and
+; the one condition a `#elif` may carry is `defined(NAME)`, so `#elif !defined(X)`
+; and `#elif A && B` do not read. Those are **refused** rather than passed
+; through, for the reason written above the rule that refuses them: everything
 ; else these rules do not read is still C for the compiler behind them, and a
-; `#elif` is not, because it stands inside a conditional they do read.
+; `#elif` is not, because it stands inside a conditional they do read. A
+; condition standing after the arm that was taken is not read at all, and is
+; not refused either, since cpp does not evaluate it there and the answer is
+; the same without it.
 ; An included file is read once per include and is not searched
 ; for on any path but beside the file being expanded, which under `-i` is
 ; the input and not this one. `#x` quotes the argument after it
@@ -95,52 +99,87 @@
 ; `#include <stdio.h>` has no rule and goes through for the C compiler.
 @syntax "#include " f:string "\n" => { emit expand(read(drop(f, 1, 1))) }
 
-; `#elif` is refused rather than passed through, and it is the only thing
-; here that is. Everything else these rules do not read goes through whole,
-; which is safe because a C compiler with a preprocessor stands behind us and
-; reads it: `#if`, `#  define`, `#include <stdio.h>`. `#elif` cannot, because
-; it stands *inside* a conditional this file does read. An arm is a `raw`
-; hole running to its `#endif`, so `#ifdef B` ... `#elif` ... `#endif` with
-; `B` undefined drops the `#elif` arm along with the rest, and the output is
-; wrong with no message and status 0 -- which is the quiet kind of wrong the
-; whole tree is built to refuse. So the arms are read for one before either
-; is taken, and a rule catches one standing anywhere else. `refuse` is the
-; statement that says so, REFERENCE §8.3.
-;
-; The check is `#elif` at the start of a line, since a directive is a line
-; with a word at the front; the arm is given a newline in front so that an
-; arm beginning with one is seen too. A `#elif` inside a string is not a
-; line start and passes, and one written after a newline inside a string
-; would be refused, which is a refusal and not a wrong answer.
-@template no_elif(a) {
-    if replace("\n" + a, "\n#elif", "") != "\n" + a {
-        refuse("'#elif' is not a directive these rules read, and it stands inside a conditional they do -- an arm holding one would be taken or dropped whole. Write it as an '#ifdef' nested in the '#else'.")
-    }
-}
-
+; `#elif` outside any conditional these rules read. Inside one it opens an
+; arm, below; here there is nothing for it to be an arm of, and a file that
+; spells one there is not C the compiler behind us can be handed, so it is
+; refused rather than passed through. This and the refusal in `arms` below
+; are the only two things here that are refused: everything else these rules
+; do not read is still C for that compiler, `#if`, `#  define`,
+; `#include <stdio.h>`. `refuse` is REFERENCE §8.3.
 @syntax "#elif" => {
-    refuse("'#elif' is not a directive these rules read. Write it as an '#ifdef' nested in the '#else'.")
+    refuse("'#elif' here stands outside any conditional these rules read, so there is no arm for it to open. Write the conditional it belongs to as an '#ifdef' or an '#ifndef'.")
 }
 
-; Conditional inclusion. Each arm is a `raw` hole, so a `#define` inside the
+; `defined(NAME)`, the one expression these rules read, and read only where
+; an arm is being decided: `cond` is remembered for that moment and forgotten
+; before any arm is expanded, so `defined(x)` standing in ordinary C is left
+; as it was found, with its argument expanded the way every other identifier
+; is, which is what cc does with it there too. Reading the condition and
+; evaluating it are one act: what comes back is `1`, `0`, or a text that is
+; neither, and the third is what `arms` refuses. `defined` is `known` under
+; either key, since a function-like macro is defined too.
+@syntax "defined(" x:name ")" => {
+    if known("cond") {
+        if known("def:" + x) or known("fn:" + x) { emit "1" } else { emit "0" }
+    } else { emit "defined(" + expand(x) + ")" }
+}
+
+; Conditional inclusion. Each arm is a `raw` hole, so a `#define` inside an
 ; arm not taken never fires; the arm taken is handed to `expand`, and a
-; conditional nested inside it fires then, in its turn. The variant with an
-; `#else` is declared first: for a conditional without one, its `t` reaches
-; the rule's own `#endif`, which a hole may not span, so that variant fails
-; and the next is tried. `defined` in the C sense is `known` under either
-; key, since a function-like macro is defined too.
-@syntax "#ifdef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
-    => { no_elif(t); no_elif(f)
-         if known("def:" + n) or known("fn:" + n) { emit expand(t) } else { emit expand(f) } }
-@syntax "#ifdef " n:name "\n" t:raw "#endif\n"
-    => { no_elif(t)
-         if known("def:" + n) or known("fn:" + n) { emit expand(t) } }
-@syntax "#ifndef " n:name "\n" t:raw "#else\n" f:raw "#endif\n"
-    => { no_elif(t); no_elif(f)
-         if known("def:" + n) or known("fn:" + n) { emit expand(f) } else { emit expand(t) } }
-@syntax "#ifndef " n:name "\n" t:raw "#endif\n"
-    => { no_elif(t)
-         if not (known("def:" + n) or known("fn:" + n)) { emit expand(t) } }
+; conditional nested inside it fires then, in its turn. The `#elif` arms are
+; a repeated group, so there may be any number of them, and the `#else` is an
+; optional group, so a conditional without one is the same rule and not a
+; second: a group that takes no turn leaves `t` running to the `#endif`.
+;
+; The group's word is `"#elif"` and its condition is whatever follows, not
+; the readable form, and that is the whole of what keeps a condition these
+; rules cannot read from being swallowed into an arm and taken or dropped
+; whole with it. A `#elif` at this conditional's own level always ends the
+; arm before it, whatever it says, and is then read or refused; one inside a
+; *nested* conditional is not at this level, because a hole stops only where
+; the declared brackets are balanced, so the nested rule reads it in its turn
+; or it goes with the conditional that holds it, which is where cc puts it
+; too. Until 2026-09-08 the arms were two `raw` holes and a `@template
+; no_elif` read them for the word before either was taken, which could not
+; tell those two apart and refused both.
+;
+; `#ifdef` and `#ifndef` differ in one test, so both call one template. The
+; count is a depth this file keeps, exactly as a macro's arguments are keyed
+; below: a conditional inside the arm being expanded runs in the middle of
+; the loop over the arms and must not see the flag that loop set.
+@template conditional(hit, t, c, a, has_else, f) {
+    if known("ifdepth") { remember("ifdepth", num(recall("ifdepth")) + 1) }
+    else { remember("ifdepth", 1) }
+    arms(recall("ifdepth"), hit, t, c, a, has_else, f)
+}
+
+@template arms(d, hit, t, c, a, has_else, f) {
+    if hit { remember("taken:" + d, "1") emit expand(t) }
+    for i, x in c {
+        if not known("taken:" + d) {
+            remember("cond", "1")
+            remember("val:" + d, replace(expand(x), " ", ""))
+            forget("cond")
+            if recall("val:" + d) == "1" {
+                remember("taken:" + d, "1")
+                emit expand(at(a, i))
+            } else {
+                if recall("val:" + d) != "0" {
+                    refuse("'#elif" + x + "' is not a condition these rules read -- 'defined(NAME)' is the only one -- and it stands inside a conditional they do read, so an arm holding it would be taken or dropped whole. Write that arm as an '#ifdef' nested in the '#else'.")
+                }
+            }
+        }
+    }
+    if has_else and not known("taken:" + d) { emit expand(f) }
+    forget("taken:" + d)
+    forget("val:" + d)
+    remember("ifdepth", num(d) - 1)
+}
+
+@syntax "#ifdef " n:name "\n" t:raw [ "#elif" c:raw "\n" a:raw ]* [ "#else\n" f:raw ] "#endif\n"
+    => { conditional(known("def:" + n) or known("fn:" + n), t, c, a, matched(f), f) }
+@syntax "#ifndef " n:name "\n" t:raw [ "#elif" c:raw "\n" a:raw ]* [ "#else\n" f:raw ] "#endif\n"
+    => { conditional(not (known("def:" + n) or known("fn:" + n)), t, c, a, matched(f), f) }
 
 ; A call. Every call in the file fires this, and one that is not a macro is
 ; written back as it was. One that is binds each argument to its parameter's
