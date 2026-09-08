@@ -12,6 +12,80 @@ Newest first.
 
 ---
 
+## 41 · A check over a hole's text, right on the day it landed and one feature from wrong
+
+**Issue.** `refuse` landed on 2026-09-07 with two customers in `lib/cpp.mx`,
+and the larger of them was `@template no_elif(a)`, which read each arm of a
+conditional for `#elif` at the start of a line and stopped the run. It was
+correct that day: nothing read `#elif`, so refusing every one of them was the
+right answer and the arm's text was enough to find them all. It was also one
+feature away from being wrong, and nothing in the tree could have said so. When
+`#elif defined(NAME)` became readable on 2026-09-08, the same check refuses a
+**legal nested** arm, because a conditional inside an arm carries its own
+`#elif` and a check over the arm's text cannot tell that from one at the arm's
+own level. Put back on top of the rules that read it, it refuses this, which
+`cc -E -P` reads to `int then;` and `int inner_elif;`:
+
+```
+#define A 1
+#define DEBUG
+#ifdef A
+int then;
+#ifdef NOPE
+int inner_then;
+#elif defined(DEBUG)
+int inner_elif;
+#endif
+#endif
+```
+
+**Root cause.** The check was written one layer above the thing that already
+knew the answer. A hole's text is flat, and `replace` over it can see a line
+start and nothing else; the **pattern** that filled the hole knows the nesting
+exactly, because `@bracket "#ifdef" "#endif"` makes a hole stop only where the
+brackets balance. On the day it landed the two ways of asking agreed, since
+everything was refused either way, and an agreement between two different
+computations reads exactly like a design. Nothing marks the difference, and the
+cheaper one was reached for. The check wrote down its own second flaw in the
+same breath and it has the same cause: a `#elif` after a newline **inside a
+string literal** was refused, because a line start is what text can see and a
+token boundary is what the scan knows.
+
+**Solution.** The check is gone and the pattern does the work. The group's word
+is `#elif` and its condition is whatever follows, so an own-level `#elif` always
+ends the arm before it, whatever it says, and is then read or refused, while one
+inside a nested conditional is invisible to the outer rule. The string case went
+with it, because a declared class makes the scan move by tokens and a hole
+cannot stop inside a string at all. What is refused is now a **condition** and
+not a directive. [COMPLETED.md](COMPLETED.md)'s "`#elif` read as an arm" has the
+shape.
+
+**Learnings.** **When a refusal narrows into a reading, the case that has to
+survive is the one that is still refused.** The natural way to write the new
+feature is to put the readable form in the pattern,
+`"#elif defined(" e:name ")\n"`, and that shape silently restores the exact bug
+`refuse` was built for the day before: a condition the pattern cannot match is
+not an error there, the arm's hole simply runs past it, and the arm is taken or
+dropped whole with an unread `#elif` inside it. A feature's tests get written
+for what it now does; what protects the tree is a case for what it still will
+not do. That case exists in `tests/cpp.sh`, and neutering the refusal it guards
+prints nothing at all, status 0, for a file `cc -E` keeps a declaration from,
+which is [37](#37--seven-things-a-file-said-it-could-not-do-one-of-which-failed-differently-from-the-other-six)
+reproduced on purpose.
+
+**And a check over a hole's text cannot see what the pattern that filled it
+knows.** Where a rule's own machinery already answers a question, asking the
+text instead is a second answer that has to be kept true by hand. This is the
+first time that has cost anything here, and it cost nothing only because the
+feature that would have exposed it arrived while somebody was looking.
+
+**37's prediction met evidence.** *An oracle is only as broad as its input*,
+written when `tests/cpp.sh` compared on one body with no `#elif` in it. The
+input was widened to the gaps the file states, and it immediately did work:
+four plants, each a plausible way to get this wrong, and all four caught.
+
+---
+
 ## 40 · A survey that kept its scores after the work was done
 
 **Issue.** `docs/prior-art.md` scores nine features by *whether anything in

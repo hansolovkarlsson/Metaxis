@@ -25,7 +25,9 @@ copier, and a mute that only silences `emit` would be the quiet kind of wrong,
 since a `#define` in the dropped arm would still reach the table. Muting
 properly is a second scanning mode with a list of the rules that keep firing,
 which is the tool learning which of a file's rules are its control flow. That
-is declined here, and [ROADMAP.md](ROADMAP.md) 15 is the same wall.
+is declined, and it is written down as [ROADMAP.md](ROADMAP.md) 17 with the
+cases it would buy, each of which turned out to be reachable already; 15 is
+the same wall from the other side.
 
 **What the question did turn up is that the arms never had to be a fixed
 pair.** Groups work in text mode, a hole inside a repeated group is a list a

@@ -466,6 +466,47 @@ carries the date it landed, which buys time and not a guarantee.
 
 ---
 
+## 18 · Two sluggers, one convention: an item citation that works on GitHub and not on the site
+
+**Found on 2026-09-08, while writing item 17's citations.** This page links one
+item from another by writing GitHub's anchor for the heading, and `·` between
+the number and the name leaves **two** dashes there:
+`[3](#3--the-three-rules-as-cannot-share)`. `site/build.py`'s `slug()` collapses
+whitespace with `[\s]+` and produces **one**, `id="3-the-three-rules-as-cannot-share"`,
+so on the published site the link goes nowhere and on GitHub it is right.
+
+**Six of them, counted off the built HTML and all on this page**: three that
+were there before today, and the three that items 17 and 18 add by writing the
+convention the page already uses. The count is every `href="#…"` in
+`site/out/` against the `id="…"` on the page it lands on, and every other page
+the site builds is clean.
+
+Nothing sees it. `tests/docs.sh` checks that a transcript prints what it claims
+and that a labelled block is the file it quotes; `tests/hygiene.sh` checks that
+an item citation names an item that exists, which these all do. **A link that
+resolves in one renderer and not the other is a claim, and it is the shape
+[16](#16--a-pages-verdict-about-the-tree-gone-stale-and-nothing-that-can-see-it)
+is about**, one renderer down.
+
+### Two shapes, and the choice is which anchors are the real ones
+
+**Make `slug()` GitHub's.** One line: turn each whitespace character into a
+dash rather than each run. Every citation in the tree then resolves in both
+places, because the tree already writes GitHub's form everywhere. The cost is
+that every published anchor changes at once, so anything outside this
+repository that links to a heading breaks, which is a small population today
+and grows.
+
+**Or rewrite the citations to the site's form**, which breaks them on GitHub
+instead, where the documents are also read. That is the worse half of the same
+trade and is written here to be declined rather than rediscovered.
+
+**Either way the check is the same and is worth more than the fix**: build the
+site and require every in-page `href="#…"` to name an `id` on the page it
+lands on. It is a dozen lines, it is the thing that would have caught this on
+the day the second slugger was written, and it is what stops the two drifting
+again.
+
 ## 8 · A conformance suite: for a second engine, when one is wanted
 
 **Hans, 2026-09-06:** *we perhaps need a conformance suite if someone likes
@@ -515,6 +556,75 @@ it at `tests/` and read §3.1, §8.2, §10 and §11*, and no door has been close
 Nobody has asked; this item says so, and stays until someone does.
 
 ---
+
+## 17 · A mute on text mode's pass-through: explored, declined with its reason
+
+**Hans, 2026-09-08, about a conditional:** *would it be possible to solve that
+if we had global variables and instead of using brackets for if-endif, just did
+regular code templates assigning and testing a global flag?*
+
+The construct that asked turned out not to need it: `lib/cpp.mx` reads
+`#elif defined(NAME)` since that day, and what reads it is a repeated group and
+not a flag ([COMPLETED.md](COMPLETED.md), "`#elif` read as an arm"). So this
+has no customer, and it is kept for the same reason [6](#6--alternation-inside-a-pattern-explored-not-wanted-yet)
+is: what the exploring settled about the notation is worth more than the
+feature would be, and somebody would otherwise re-derive it.
+
+### What exists instead
+
+**The global variables are already there.** The store (REFERENCE §8.5) is
+exactly a set of them, written and read in body order, and `lib/cpp.mx` keeps
+three kinds of thing in it: a macro table, a `busy:` guard against a macro that
+names itself, and a depth counter so a macro called inside another macro's body
+does not clobber its arguments. A conditional's arm-taken flag is a fourth. So
+the flag half of the question costs nothing and was never the obstacle.
+
+### Why a flag cannot do the other half
+
+**A flag changes what a rule that fires emits. The text a dropped arm has to
+lose is text no rule fires on.** Text mode's default is to copy through: where
+no rule matches, one character is copied and the scan moves on (§7). Dropping
+`int a;` inside a false arm means suppressing the copier, and no rule can be
+written that covers it, because a rule here may be led by a word or by a class
+hole and by nothing else (§4.2, §7). One that could would be worse: leading at
+every line start, it would take each line away from the rules that should read
+it.
+
+### The shape it would take, if it were built
+
+Not a flag but a **mute** on the copier, a statement that turns the
+pass-through off and another that turns it back on. Written down, it is not one
+flag but a second scanning mode:
+
+- A mute that only silences `emit` is the quiet kind of wrong. The rules still
+  **run**, so a `#define` inside the dropped arm still reaches the store and a
+  `contribute` still contributes. Today the `raw` hole gets that right for
+  nothing, because an arm not taken is never scanned at all.
+- So a correct mute is a mode in which the copier writes nothing and **most
+  rules do not fire** while a few still do: the conditional's own directives,
+  which have to keep firing so that nesting closes.
+- Which few is a question the tool cannot answer. The file would have to say,
+  and saying it is the file telling the tool **which of its rules are its
+  control flow**. That is the one kind of thing the notation is built not to
+  know, and it is the wall
+  [15](#15--a-backend-in-a-file-of-its-own-and-the-flag-that-cannot-follow-it)
+  met from the other side.
+
+### What it would buy, checked rather than assumed
+
+Every case looked for turned out to be reachable already. A region that runs to
+a fixed closing word is a `@bracket`. A region that runs to the end of the file,
+Perl's `__END__` or lex's `%%`, is a rule whose last hole has nothing after it,
+which takes the rest of the text (§7). A conditional whose arms are not well
+nested is not C either, and the compiler behind these rules refuses it too. What
+is left is a region whose end is decided by something other than a word, and
+nothing here has one.
+
+### Why it is not built
+
+No customer, and the cost is not a mechanism but a concept: a second scanning
+mode, and a file naming its own control flow. A surface does not grow without
+a customer, and this one's only applicant withdrew.
 
 ## 6 · Alternation inside a pattern: explored, not wanted yet
 
