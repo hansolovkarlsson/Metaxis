@@ -12,6 +12,125 @@ Newest first.
 
 ---
 
+## 38 · Two pages counting the same thing, a third counting it right, and nothing that could see the disagreement
+
+**Issue.** `README.md` said `make check` runs "the nine scripts in tests/,
+six of which run what they produced". `notation.md` said six and four. There
+were ten, and seven of them run what they produced. `CLAUDE.md` said ten and
+was right. So three files in one tree stated the same number, two of them
+disagreed with the third, all three had been correct on the day they were
+written, and nothing in a suite that already tests its own prose could see it.
+
+**Root cause.** A number in prose with nothing checking it, which is
+[16](#16--a-number-counted-by-hand-wrong-on-the-day-it-was-written-that-a-close-out-read-and-did-not-check) exactly. It is worse than a
+recurrence: **it is the same two files**. 16's own Solution records that
+`CLAUDE.md`, `README.md` and `notation.md` all described `make check` wrongly
+on 2026-09-05, and the fix there was to delete the count from the sentence it
+could delete it from and correct the other three by hand. `README.md` and
+`notation.md` were corrected by hand that day and were wrong again by today,
+which is what "corrected by hand" means over three weeks of adding scripts.
+
+What 16 is missing is the case where its own remedy does not apply. Check 1
+in `tests/hygiene.sh` answered 16 by **stating a property instead of
+counting**, and that is the better move wherever it is available. Here it was
+not: "the ten scripts in `tests/`" is a number a reader wants, and the only
+way to make it uncheckable is to delete it. Faced with a number that could not
+be turned into a property, the tree corrected it by hand and moved on, twice.
+
+**Solution.** `tests/hygiene.sh` gains a seventh check. The count is read off
+the Makefile, which is the only thing deciding what `make check` runs, and
+every page stating one must agree. Two details were load-bearing and are
+recorded because a re-implementation would get them wrong: the pages are
+**joined into one line before the phrase is looked for**, since `README.md`'s
+claim is wrapped across two lines *and* written down the left of a fenced
+block behind `#`, where a line-based grep sees neither half; and the phrase
+is a number word immediately before `scripts in tests/`, not `scripts` alone,
+which is what leaves `prior-art.md`'s "most of the scripts in `tests/` run" as
+prose and `COMPLETED.md`'s "verified at … nine scripts" as a state on a day.
+Three plants confirmed it fails when it should, the useful one being a script
+removed from the Makefile, which named all three pages that then needed an
+edit.
+
+**Learnings.** **When a number in prose cannot be turned into a property,
+check the number.** 16's remedy is to restate the claim so it has no count in
+it, and that is right when it is possible. Its unavailability is not a licence
+to correct by hand and move on, which is what happened twice: the property
+move was made where it worked, and where it did not work nothing replaced it,
+so the same two files rotted the same way three weeks apart.
+
+**A correction is not a fix when the thing corrected will drift again.**
+Both times the count was wrong, the response was to write the right number
+down. That is the response that guarantees a third time. The test for whether
+a correction is finished is whether anything now fails when it goes stale.
+
+**And a tree can disagree with itself in the open.** The tell was not that a
+page was wrong; it was that `CLAUDE.md` was *right* while two pages were not.
+Three statements of one number, differing, sitting in tracked files that a
+suite reads for other purposes. Where a fact is stated in more than one place,
+the number of places is the thing to notice, and one of them should be
+computing it rather than repeating it.
+
+---
+
+## 37 · Seven things a file said it could not do, one of which failed differently from the other six
+
+**Issue.** `lib/cpp.mx` opens with a note listing what its rules do not do:
+one space after a directive word, no rescanning an argument that forms a call,
+a conditional's word must end its line, no `#if` over an expression, no
+`#elif`, an include read once and not searched for, and `#x` quoting after
+expansion. The list was accurate and complete. Six of those seven pass the
+text through, which is safe, because a C compiler with a preprocessor of its
+own stands behind these rules and reads what they left. `#elif` does not:
+it stands **inside** a conditional the rules do read, and an arm is a `raw`
+hole running to its `#endif`, so `#ifdef B` / `#elif defined(A)` / `#endif`
+with `B` undefined was one match whose arm was dropped whole. `cc -E` keeps
+`int a;`; this printed nothing, with no message and status 0. A wrong answer
+and not an unfinished one, in the tree that refuses that everywhere else.
+
+**Root cause.** Two things, and the second is the interesting one.
+
+The note was written by whoever chose not to build each of the seven, and a
+list written that way records *what is absent* and has no reason to record
+*how each absence fails*. Every entry read the same. Nothing in the shape of
+the sentence "there is no `#elif`" distinguishes an omission the layer behind
+you covers from an omission that corrupts what you did read.
+
+And the oracle could not have caught it. `tests/cpp.sh` is unusually strong,
+holding the output to the C compiler's own preprocessor on the same body, but
+it compares on **one body**, and that body has no `#elif` in it. An oracle
+answers for the input it is given; a gap the input does not contain is a gap
+the oracle is silent about, however good the oracle is.
+
+**Solution.** `refuse(text)` (REFERENCE §8.3), a statement that stops the run
+with the file's own sentence. It had to be built, because in text mode having
+no rule for a thing **is** how a file says pass this through, so that silence
+was not also available for *I must not touch this*. `lib/cpp.mx` refuses in
+two places, since a dropped arm is by design never scanned and a rule inside
+one could never fire: a `@template` reads each arm before either is taken,
+and a plain rule catches a `#elif` outside any conditional. Both pinned in
+`tests/cpp.sh`, the three messages in `tests/errors.sh`.
+
+**Learnings.** **A retired roadmap item says a list was read, not that the
+thing is finished.** Item 11 was retired with its whole list read, honestly,
+and the page was right. The question "is the CPP basically done, no open
+task?" is a different question from the one the roadmap answers, and reading
+the roadmap cannot answer it.
+
+**Run a file's own list of what it cannot do, and classify how each one
+fails.** That is the check that would have caught this, and it is cheap: seven
+files, one command each, and the only thing to look at is whether the failure
+is visible. Six passed through and one printed a wrong program. Nothing on any
+page distinguished them, and nothing was going to, because the distinction is
+about behaviour and the list is about intent.
+
+**And an oracle is only as broad as its input.** `tests/cpp.sh` compares
+against `cc -E` and is the strongest test in this tree; it was also completely
+blind here. Where a test's authority comes from an oracle, the question to ask
+is not whether the oracle is right but which of the file's stated gaps the
+input exercises.
+
+---
+
 ## 36 · A plan rehearsed before it was written, which was complete for the steps it rehearsed and for no others
 
 **Issue.** The C preprocessor was planned by [15](#15--a-prediction-that-held-in-every-part-and-the-one-measurement-that-is-why)'s

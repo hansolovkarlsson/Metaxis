@@ -9,6 +9,36 @@ taken. What a thing **costs** is not here: that is [notation.md](notation.md)'s
 
 Newest first.
 
+## The script count, checked instead of corrected
+
+`tests/hygiene.sh`'s seventh check. It reads the number of test scripts off
+the `Makefile`, which is the only thing that decides what `make check` runs,
+and every page stating that number must agree with it.
+
+**Why it is a count and not a property.** Check 1, the limit guard, answered
+[POSTMORTEM.md](POSTMORTEM.md) 16 by stating a property instead of counting,
+which is the better move wherever it is available. It is not available for
+this one: "the ten scripts in `tests/`" is a number a reader wants, and the
+only way to make it uncheckable is to delete it. So it is checked. 38 is why
+that distinction had to be drawn: `README.md` and `notation.md` had gone
+stale on this number **twice**, three weeks apart, and both times the response
+was to write the right number down.
+
+**Two things in it are load-bearing.** The pages are joined into one line
+before the phrase is looked for, because `README.md`'s claim is wrapped across
+two lines *and* written down the left of a fenced block behind `#`, where a
+line-based grep sees neither half. And the phrase is a number word immediately
+before `scripts in tests/`, not `scripts` alone, which leaves
+`prior-art.md`'s "most of the scripts in `tests/` run" as prose and this
+file's own "verified at … nine scripts" as a state on a day. A looser check
+would have been wrong about both.
+
+Three plants confirmed it fails when it should: `README.md` saying nine, which
+is the wrapped one; `CLAUDE.md` saying twelve; and a script removed from the
+`Makefile`, which is the direction that actually happens and which named all
+three pages that then needed an edit. Verified at `make check` green, 227
+`ok` lines, 106 error cases.
+
 ## `refuse(text)`: the way out of a text-mode rule that is not `emit`
 
 What a file that refuses says, on a C source with a `#elif` in it, wrapped

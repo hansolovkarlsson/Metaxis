@@ -263,6 +263,46 @@ this far down.
 
 ---
 
+## 14 · A rule's own error names the rule, not the place in the body
+
+**Found on 2026-09-07**, by pointing `mx -u lib/cpp.mx -i prog.c` at a C file
+whose `#include` names a header that is not there:
+
+```
+mx: ./lib/cpp.mx:96: 'read' cannot open '…/gone.h'
+```
+
+That names the rule that failed, which is right and useful, and says nothing
+about **where in `prog.c`** it fired. A parse error in the same run says
+`no rule reads 'x' here` and names `prog.c` at the line in `prog.c` that has
+it. So the split is not by mode: **the lexer
+and the parser know the body position and a running template does not.** Every
+message from a code template, `read`, `recall`, `num`, `at`, `refuse`, names
+`file:line` of the `@syntax` that wrote it.
+
+That was tolerable while a `.mx` file carried its own body, since the rule and
+the body were in one file and the author had both open. `-u` and `-i` end
+that: the rules are an artifact somebody else wrote and the body is the user's
+own source, and `lib/cpp.mx:96` is then a line in a file the user may never
+have read. **The customer is the split form** (REFERENCE §9.1), and it did not
+exist until today, which is why this is written down today and not earlier.
+
+**What it would take.** `Ev` carries the rule; it would have to carry the
+offset into the body that the current match began at, threaded through
+`expand_text`'s search and through `expand`'s re-entry, which is where it gets
+interesting: a rule firing inside `expand(t)` is at a position in a *derived*
+text, and the honest answer for it is the position of the outermost match that
+led there. The message would then name both, the rule and the body, the way a
+compiler names a macro's definition and its use.
+
+**Its neighbour is [5](#5--source-maps)**, and they are not the same item.
+5 is about the *output* pointing back at the input for a downstream compiler;
+this is about the tool's *own* messages. They want the same missing thing, a
+body position that survives, so whichever is built first should be built so
+the other can use it.
+
+---
+
 ## 8 · A conformance suite: for a second engine, when one is wanted
 
 **Hans, 2026-09-06:** *we perhaps need a conformance suite if someone likes
